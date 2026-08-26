@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ライト OS - 管理者ダッシュボード</title>
+    <style>
+        body { background-color: #1a1a24; color: #eee; font-family: sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; }
+        .sidebar { width: 200px; background-color: #0b0c10; padding: 20px; display: flex; flex-direction: column; gap: 10px; border-right: 1px solid #ff7eb3; }
+        .sidebar h2 { color: #ff7eb3; font-size: 16px; text-align: center; margin-bottom: 30px; }
+        .nav-btn { background: none; border: 1px solid #88c0d0; color: #88c0d0; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .nav-btn:hover, .nav-btn.active { background: #88c0d0; color: #000; font-weight: bold; }
+        
+        .content { flex-grow: 1; padding: 30px; overflow-y: auto; }
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        h1 { font-size: 20px; border-bottom: 2px solid #ff7eb3; padding-bottom: 10px; margin-top: 0; }
+        
+        /* 共有知識用 */
+        .knowledge-list { list-style: none; padding: 0; }
+        .knowledge-item { background: rgba(255,255,255,0.05); padding: 10px 15px; margin-bottom: 8px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #f1c40f; }
+        .delete-btn { background: #bf616a; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .add-box { display: flex; gap: 10px; margin-top: 20px; }
+        .add-box input { flex-grow: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; background: #333; color: white; }
+        .add-box button { padding: 10px 20px; background: #a3be8c; border: none; border-radius: 8px; color: #000; font-weight: bold; cursor: pointer; }
+
+        /* チャット履歴用 */
+        .log-box { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 15px; max-height: 500px; overflow-y: auto; font-size: 14px; line-height: 1.6; }
+        .log-item { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .log-time { font-size: 11px; color: #888; margin-right: 10px; }
+        .log-user { color: #a3be8c; font-weight: bold; }
+        .log-ai { color: #b48ead; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h2>✨ 管理者メニュー</h2>
+        <button class="nav-btn active" id="btn-knowledge">🧠 共有知識の管理</button>
+        <button class="nav-btn" id="btn-history">💬 トーク履歴閲覧</button>
+    </div>
+
+    <div class="content">
+        <!-- 共有知識セクション -->
+        <div id="sec-knowledge" class="section active">
+            <h1>部活全体 共有知識（ライトの記憶）</h1>
+            <p style="font-size: 13px; color: #ccc;">部員全員のライトに共通して反映されるルールや事実です。</p>
+            <ul class="knowledge-list" id="knowledge-ul">
+                <li>読み込み中...</li>
+            </ul>
+            <div class="add-box">
+                <input type="text" id="new-knowledge-input" placeholder="新しい共有知識を入力 (例: 部室の鍵は最後に帰る人が閉める)">
+                <button id="add-knowledge-btn">追加</button>
+            </div>
+            <button id="save-knowledge-btn" style="margin-top: 20px; padding: 10px; width: 100%; background: #ff7eb3; color: #000; font-weight: bold; border: none; border-radius: 8px; cursor: pointer;">
+                ☁️ 変更をクラウドに保存
+            </button>
+        </div>
+
+        <!-- チャット履歴セクション -->
+        <div id="sec-history" class="section">
+            <h1>トーク履歴（直近100件）</h1>
+            <p style="font-size: 13px; color: #ccc;">部員がライトとどのような会話をしたか確認できます。</p>
+            <button id="reload-history-btn" style="margin-bottom: 15px; padding: 8px 15px; cursor: pointer;">🔄 最新履歴を読み込む</button>
+            <div class="log-box" id="log-container">
+                履歴を読み込み中...
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
+            authDomain: "light-65413.firebaseapp.com",
+            projectId: "light-65413"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const GLOBAL_CLUB_ID = "shout_club_global_space";
+
+        let currentGlobalFacts = [];
+
+        // --- タブ切り替え ---
+        document.getElementById('btn-knowledge').addEventListener('click', () => {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById('btn-knowledge').classList.add('active');
+            document.getElementById('sec-knowledge').classList.add('active');
+        });
+        document.getElementById('btn-history').addEventListener('click', () => {
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById('btn-history').classList.add('active');
+            document.getElementById('sec-history').classList.add('active');
+            loadHistory();
+        });
+
+        // --- 共有知識の管理 ---
+        const knowledgeUl = document.getElementById('knowledge-ul');
+        
+        async function loadKnowledge() {
+            try {
+                const docSnap = await getDoc(doc(db, "light_memories", GLOBAL_CLUB_ID));
+                if (docSnap.exists()) {
+                    currentGlobalFacts = docSnap.data().globalFacts || [];
+                }
+                renderKnowledge();
+            } catch (e) {
+                knowledgeUl.innerHTML = "<li style='color:red;'>読み込みエラー</li>";
+            }
+        }
+
+        function renderKnowledge() {
+            knowledgeUl.innerHTML = "";
+            if (currentGlobalFacts.length === 0) {
+                knowledgeUl.innerHTML = "<li>(登録されている共有知識はありません)</li>";
+                return;
+            }
+            currentGlobalFacts.forEach((fact, index) => {
+                const li = document.createElement('li');
+                li.className = "knowledge-item";
+                li.innerHTML = `<span>${fact}</span> <button class="delete-btn" data-index="${index}">削除</button>`;
+                knowledgeUl.appendChild(li);
+            });
+
+            // 削除ボタンのイベント
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const idx = e.target.getAttribute('data-index');
+                    currentGlobalFacts.splice(idx, 1);
+                    renderKnowledge();
+                });
+            });
+        }
+
+        document.getElementById('add-knowledge-btn').addEventListener('click', () => {
+            const input = document.getElementById('new-knowledge-input');
+            const val = input.value.trim();
+            if (val) {
+                currentGlobalFacts.push(val);
+                input.value = "";
+                renderKnowledge();
+            }
+        });
+
+        document.getElementById('save-knowledge-btn').addEventListener('click', async () => {
+            try {
+                await setDoc(doc(db, "light_memories", GLOBAL_CLUB_ID), {
+                    globalFacts: currentGlobalFacts,
+                    updatedAt: new Date()
+                });
+                alert("クラウドに保存しました！");
+            } catch (e) {
+                alert("保存に失敗しました。");
+            }
+        });
+
+        // --- チャット履歴の読み込み ---
+        const logContainer = document.getElementById('log-container');
+        
+        async function loadHistory() {
+            logContainer.innerHTML = "読み込み中...";
+            try {
+                const q = query(collection(db, "light_chat_logs"), orderBy("timestamp", "desc"), limit(100));
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    logContainer.innerHTML = "履歴がありません。";
+                    return;
+                }
+
+                logContainer.innerHTML = "";
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const date = data.timestamp ? data.timestamp.toDate() : new Date();
+                    const timeStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
+                    
+                    const div = document.createElement('div');
+                    div.className = "log-item";
+                    
+                    const nameSpan = data.role === 'ai' ? 
+                        `<span class="log-ai">ライト</span>` : 
+                        `<span class="log-user">部員 (${data.userId})</span>`;
+                    
+                    div.innerHTML = `<span class="log-time">[${timeStr}]</span> ${nameSpan} : ${data.text}`;
+                    logContainer.appendChild(div);
+                });
+            } catch (e) {
+                logContainer.innerHTML = "<span style='color:red;'>履歴の読み込みに失敗しました。</span>";
+                console.error(e);
+            }
+        }
+
+        document.getElementById('reload-history-btn').addEventListener('click', loadHistory);
+
+        // 初期ロード
+        loadKnowledge();
+    </script>
+</body>
+</html>
