@@ -5,147 +5,146 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ライト OS</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Firebase v9 compat SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <style>
-    body { background-color: #0d0d12; color: #ffffff; font-family: sans-serif; }
-    .neon-btn {
-      background: linear-gradient(135deg, #ff6584, #ff8da1);
-      box-shadow: 0 0 15px rgba(255, 101, 132, 0.4);
-    }
-    .neon-btn:hover {
-      box-shadow: 0 0 25px rgba(255, 101, 132, 0.7);
-    }
+    body { background-color: #0b0b10; color: #ffffff; font-family: sans-serif; overflow: hidden; }
+    
+    /* 浮かび上がるUI要素のスタイル */
+    .glass-panel { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(8px); }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
     /* アバター呼吸アニメーション */
     @keyframes breathe {
       0%, 100% { transform: translateY(0px) scale(1); }
-      50% { transform: translateY(-6px) scale(1.02); }
+      50% { transform: translateY(-8px) scale(1.01); }
     }
-    .avatar-breathe { animation: breathe 3.5s ease-in-out infinite; }
+    .avatar-breathe { animation: breathe 4s ease-in-out infinite; }
+    
     /* 発話中の身振り */
     @keyframes talking {
       0%, 100% { transform: translateY(0px) rotate(0deg); }
-      25% { transform: translateY(-4px) rotate(1deg); }
-      75% { transform: translateY(-2px) rotate(-1deg); }
+      25% { transform: translateY(-3px) rotate(1deg); }
+      75% { transform: translateY(-1px) rotate(-1deg); }
     }
     .avatar-talking { animation: talking 0.6s ease-in-out infinite; }
+    
+    /* ログの装飾（スクショ風） */
+    .log-system { color: #8bb4c5; font-size: 0.8rem; }
+    .log-light { 
+      border-left: 3px solid #ff6584; 
+      border-radius: 50% 0 0 50%;
+      padding-left: 8px;
+    }
   </style>
 </head>
-<body class="h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
+<body class="h-screen w-screen relative flex items-center justify-center">
 
-  <!-- 1. ログイン画面（初期表示） -->
-  <div id="login-screen" class="flex flex-col items-center justify-center space-y-6 z-10">
-    <div class="text-3xl font-bold flex items-center gap-2">
-      <span class="text-yellow-300">✨</span> ライト OS
-    </div>
+  <!-- 1. ログイン画面 -->
+  <div id="login-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center space-y-6 bg-[#0b0b10]">
+    <div class="text-3xl font-bold flex items-center gap-2"><span class="text-yellow-300">✨</span> ライト OS</div>
     <p class="text-gray-400 text-sm">合言葉（パスワード）を入力</p>
-    
     <input id="passcode-input" type="password" value="shout" class="w-80 bg-[#1e1e26] border border-pink-500/40 rounded-full px-6 py-3 text-center text-white focus:outline-none focus:border-pink-500 transition">
-    
-    <button onclick="handleLogin()" class="w-80 neon-btn text-white font-bold py-3 rounded-full transition transform active:scale-95">
-      起動
-    </button>
-
-    <div class="text-xs text-gray-500 pt-4">または</div>
-    <button class="border border-cyan-500/40 text-cyan-300 text-xs px-6 py-2 rounded-full hover:bg-cyan-500/10 transition">
-      自分専用の合言葉を作る（新規）
-    </button>
+    <button onclick="handleLogin()" class="w-80 bg-gradient-to-r from-pink-500 to-pink-400 text-white font-bold py-3 rounded-full hover:shadow-[0_0_15px_rgba(255,101,132,0.6)] transition">起動</button>
   </div>
 
-  <!-- 2. チャット＆アバター画面（ログイン後表示） -->
-  <div id="chat-screen" class="hidden w-full h-full flex flex-col md:flex-row bg-[#0d0d12]">
+  <!-- 2. メイン画面（全画面UI） -->
+  <div id="main-screen" class="hidden absolute inset-0 w-full h-full flex flex-col justify-between">
     
-    <!-- 左側 / アバター表示エリア (コピペ可能エリア) -->
-    <div class="w-full md:w-1/2 h-1/2 md:h-full flex flex-col items-center justify-center relative border-b md:border-b-0 md:border-r border-gray-800 bg-[#12121a]">
-      <!-- アバターコンテナ -->
-      <div id="avatar-container" class="relative w-64 h-80 flex items-center justify-center avatar-breathe transition-transform duration-300">
-        <!-- ベース立ち絵 -->
-        <img id="avatar-img" src="https://via.placeholder.com/300x400/1e1e26/ff6584?text=Light+Avatar" alt="Avatar" class="max-h-full object-contain filter drop-shadow-[0_0_15px_rgba(255,101,132,0.3)]">
-      </div>
-      <div id="avatar-status" class="absolute bottom-4 text-xs text-gray-400 bg-black/40 px-3 py-1 rounded-full border border-gray-700">
-        待機中...
+    <!-- 背景・アバター表示エリア (一番奥) -->
+    <div class="absolute inset-0 flex items-end justify-center pb-20 -z-10">
+      <div id="avatar-container" class="avatar-breathe transition-transform duration-300 h-[85vh]">
+        <img id="avatar-img" src="https://via.placeholder.com/400x800/000000/ff6584?text=Loading..." alt="Avatar" class="h-full object-contain filter drop-shadow-[0_0_20px_rgba(255,255,255,0.05)]">
       </div>
     </div>
 
-    <!-- 右側 / チャットエリア -->
-    <div class="w-full md:w-1/2 h-1/2 md:h-full flex flex-col justify-between p-4 bg-[#0d0d12]">
-      <!-- ヘッダー -->
-      <div class="flex justify-between items-center border-b border-gray-800 pb-3">
-        <span class="font-bold flex items-center gap-2"><span class="text-yellow-300">✨</span> ライト OS</span>
-        <button onclick="location.reload()" class="text-xs text-gray-400 hover:text-white">切断</button>
+    <!-- 上部ヘッダー -->
+    <div class="flex justify-between items-start p-6 z-10 pointer-events-none">
+      <div class="font-bold flex items-center gap-2 text-lg text-white drop-shadow-md"><span class="text-yellow-300">✨</span> ライト</div>
+      <button onclick="location.reload()" class="pointer-events-auto border border-pink-500/50 bg-black/40 text-pink-300 text-xs px-4 py-1.5 rounded-full hover:bg-pink-500/20 backdrop-blur-md transition flex items-center gap-1">
+        ⚙️ 設定
+      </button>
+    </div>
+
+    <!-- 下部UIエリア (ログ ＋ 入力) -->
+    <div class="w-full flex flex-col items-center pb-6 z-10 pointer-events-none">
+      
+      <!-- 浮かび上がるチャットログ -->
+      <div class="w-full max-w-2xl px-4 flex flex-col items-start gap-2 mb-4">
+        <div id="chat-logs" class="w-full max-h-48 overflow-y-auto hide-scrollbar flex flex-col gap-2 pointer-events-auto drop-shadow-md">
+          <!-- ログがここに追加されます -->
+        </div>
       </div>
 
-      <!-- ログ表示 -->
-      <div id="chat-logs" class="flex-1 overflow-y-auto my-4 space-y-4 pr-2"></div>
-
-      <!-- 画像プレビュー -->
-      <div id="image-preview-container" class="hidden relative mb-2 w-20 h-20">
-        <img id="image-preview" src="" class="w-full h-full object-cover rounded-lg border border-pink-500">
-        <button onclick="removeImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">×</button>
+      <!-- 画像プレビュー (非表示時スペースを取らない) -->
+      <div id="image-preview-container" class="hidden relative mb-4 pointer-events-auto">
+        <img id="image-preview" src="" class="w-24 h-24 object-cover rounded-xl border-2 border-pink-500 shadow-lg">
+        <button onclick="removeImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center font-bold">×</button>
       </div>
 
-      <!-- 入力フォーム -->
-      <div class="flex items-center gap-2 bg-[#181822] border border-gray-700 rounded-xl p-2">
-        <label class="cursor-pointer text-gray-400 hover:text-pink-400 px-2">
-          📷
-          <input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
-        </label>
-        <input id="user-msg" type="text" placeholder="メッセージを入力..." class="flex-1 bg-transparent text-white focus:outline-none text-sm" onkeydown="if(event.key==='Enter') sendMsg()">
-        <button onclick="sendMsg()" class="neon-btn text-white px-4 py-2 rounded-lg text-sm font-bold">送信</button>
+      <!-- 入力バー -->
+      <div class="w-full max-w-2xl px-4 flex gap-3 items-center pointer-events-auto">
+        <!-- マイクボタン (ダミー) -->
+        <button class="bg-pink-500 hover:bg-pink-400 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg transition">🎤</button>
+        
+        <!-- テキスト＆画像入力エリア -->
+        <div class="flex-1 glass-panel border border-gray-600 rounded-full flex items-center px-4 h-12 shadow-lg">
+          <label class="cursor-pointer text-gray-400 hover:text-pink-400 mr-2 transition">
+            📷<input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+          </label>
+          <input id="user-msg" type="text" placeholder="コメントを追加..." class="bg-transparent w-full text-white text-sm focus:outline-none placeholder-gray-500" onkeydown="if(event.key==='Enter') sendMsg()">
+        </div>
+
+        <!-- 送信ボタン -->
+        <button onclick="sendMsg()" class="bg-cyan-500 hover:bg-cyan-400 text-white font-bold rounded-full px-6 h-12 shadow-lg transition">送信</button>
       </div>
     </div>
   </div>
 
   <script>
-    // --- Firebase 設定（環境に合わせてキーを入力） ---
     const firebaseConfig = {
       apiKey: "YOUR_API_KEY",
       authDomain: "YOUR_PROJECT.firebaseapp.com",
       projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
+      storageBucket: "YOUR_PROJECT.appspot.com"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-
-    // --- Gemini API & 設定 ---
     const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY";
+
     let base64Image = null;
-    let systemPrompt = "あなたは横浜清陵高校軽音楽部のサポーター「ライト」です。明るく元気に部員をサポートしてください。返答の先頭に [normal], [smile], [think] のいずれかの感情タグを必ず付けてください。";
+    let systemPrompt = "あなたは横浜清陵高校軽音楽部のサポーター「ライト」です。返答の先頭に [normal], [smile], [think] のいずれかを付けてください。";
+    
+    // アバター画像のURLを保持するオブジェクト
+    let AVATAR_IMAGES = { normal: "", smile: "", think: "" };
 
-    // --- アバター画像設定 (コピペで差し替え可能) ---
-    const AVATAR_IMAGES = {
-      normal: "https://via.placeholder.com/300x400/1e1e26/ff6584?text=Normal",
-      smile: "https://via.placeholder.com/300x400/1e1e26/ff6584?text=Smile",
-      think: "https://via.placeholder.com/300x400/1e1e26/ff6584?text=Thinking"
-    };
-
-    // 共有知識（ルール）の取得
-    async function loadSystemKnowledge() {
-      try {
-        const snap = await db.collection("settings").doc("sharedKnowledge").get();
-        if (snap.exists && snap.data().items) {
-          const rules = snap.data().items.join("\n・");
-          systemPrompt += "\n\n【部活全体共有知識】\n・" + rules;
-        }
-      } catch (e) { console.error("Rule load error:", e); }
-    }
-
-    // ログイン処理
     async function handleLogin() {
       const pass = document.getElementById("passcode-input").value;
       if (pass === "shout") {
-        await loadSystemKnowledge();
         document.getElementById("login-screen").classList.add("hidden");
-        document.getElementById("chat-screen").classList.remove("hidden");
-      } else {
-        alert("合言葉が違います");
+        document.getElementById("main-screen").classList.remove("hidden");
+        
+        // 1. システムルールの読み込み
+        db.collection("settings").doc("sharedKnowledge").get().then(snap => {
+          if (snap.exists && snap.data().items) {
+            systemPrompt += "\n\n【部活全体共有知識】\n・" + snap.data().items.join("\n・");
+          }
+        });
+
+        // 2. ⚡️ アバター設定のリアルタイム監視（アドミンが変えたら即反映）
+        db.collection("settings").doc("avatarConfig").onSnapshot(doc => {
+          if (doc.exists) {
+            AVATAR_IMAGES = doc.data();
+            updateAvatar('normal'); // データが来たらまずはnormalを表示
+            appendLog('system', 'クラウドからアバターデータを読み込み完了...');
+          }
+        });
+        
+        appendLog('system', 'システム起動。データ同期中...');
       }
     }
 
-    // 画像選択処理
     function handleImageSelect(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -164,44 +163,26 @@
       document.getElementById("image-preview-container").classList.add("hidden");
     }
 
-    // アバター状態更新
     function updateAvatar(emotion, isSpeaking = false) {
       const imgEl = document.getElementById("avatar-img");
       const container = document.getElementById("avatar-container");
-      const statusEl = document.getElementById("avatar-status");
-
-      if (AVATAR_IMAGES[emotion]) {
-        imgEl.src = AVATAR_IMAGES[emotion];
-      }
-
-      if (isSpeaking) {
-        container.classList.add("avatar-talking");
-        statusEl.innerText = "話しています...";
-        statusEl.classList.replace("text-gray-400", "text-pink-400");
-      } else {
-        container.classList.remove("avatar-talking");
-        statusEl.innerText = "待機中...";
-        statusEl.classList.replace("text-pink-400", "text-gray-400");
-      }
+      
+      if (AVATAR_IMAGES[emotion]) imgEl.src = AVATAR_IMAGES[emotion];
+      
+      if (isSpeaking) container.classList.add("avatar-talking");
+      else container.classList.remove("avatar-talking");
     }
 
-    // 音声読み上げ（Web Speech API / 高音質枠）
     function speakText(text, emotion) {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
-
       const uttr = new SpeechSynthesisUtterance(text);
-      uttr.lang = 'ja-JP';
-      uttr.pitch = 1.2; // 少し高めのトーン
-      uttr.rate = 1.0;
-
+      uttr.lang = 'ja-JP'; uttr.pitch = 1.2; uttr.rate = 1.0;
       uttr.onstart = () => updateAvatar(emotion, true);
       uttr.onend = () => updateAvatar('normal', false);
-
       window.speechSynthesis.speak(uttr);
     }
 
-    // メッセージ送信
     async function sendMsg() {
       const input = document.getElementById("user-msg");
       const text = input.value.trim();
@@ -211,52 +192,27 @@
       input.value = "";
       const tempImg = base64Image;
       removeImage();
-
       updateAvatar('think', false);
 
-      // Gemini API 呼び出し
       try {
-        const contents = [{
-          role: "user",
-          parts: [
-            ...(tempImg ? [{ inline_data: { mime_type: "image/jpeg", data: tempImg } }] : []),
-            { text: text }
-          ]
-        }];
-
+        const contents = [{ role: "user", parts: [...(tempImg ? [{ inline_data: { mime_type: "image/jpeg", data: tempImg } }] : []), { text: text }] }];
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: systemPrompt }] },
-            contents: contents
-          })
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ system_instruction: { parts: [{ text: systemPrompt }] }, contents: contents })
         });
-
         const data = await res.json();
         let reply = data.candidates[0].content.parts[0].text;
-
-        // 感情タグの解析 [smile], [think], [normal]
+        
         let emotion = 'normal';
         const match = reply.match(/^\[(normal|smile|think)\]/);
-        if (match) {
-          emotion = match[1];
-          reply = reply.replace(/^\[(normal|smile|think)\]\s*/, '');
-        }
-
+        if (match) { emotion = match[1]; reply = reply.replace(/^\[(normal|smile|think)\]\s*/, ''); }
+        
         appendLog("light", reply);
         speakText(reply, emotion);
-
-        // Firestoreにログ保存
-        db.collection("chatLogs").add({
-          userText: text,
-          lightReply: reply,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
+        
+        db.collection("chatLogs").add({ userText: text, lightReply: reply, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
       } catch (e) {
-        console.error(e);
-        appendLog("light", "エラーが発生しました。");
+        appendLog("system", "通信エラーが発生しました。");
         updateAvatar('normal', false);
       }
     }
@@ -264,11 +220,19 @@
     function appendLog(role, text, imgSrc = null) {
       const container = document.getElementById("chat-logs");
       const div = document.createElement("div");
-      div.className = `flex flex-col ${role === 'user' ? 'items-end' : 'items-start'}`;
       
-      let html = `<div class="max-w-[80%] rounded-2xl px-4 py-2 text-sm ${role === 'user' ? 'bg-pink-500/20 text-pink-100 border border-pink-500/30' : 'bg-[#1a1a24] text-gray-200 border border-gray-800'}">`;
-      if (imgSrc) html += `<img src="${imgSrc}" class="w-32 h-32 object-cover rounded-lg mb-2">`;
-      html += `${text}</div>`;
+      let html = '';
+      if (role === 'system') {
+        html = `<div class="log-system">システム: ${text}</div>`;
+      } else if (role === 'user') {
+        html = `<div class="text-white text-sm font-bold bg-black/30 px-3 py-1 rounded-lg backdrop-blur-sm">あなた: ${text}</div>`;
+      } else {
+        html = `<div class="log-light text-white text-sm font-bold bg-black/20 pr-3 py-1 rounded-r-lg backdrop-blur-sm"><span class="text-pink-400 text-xs">✨ ライト: </span>${text}</div>`;
+      }
+      
+      if (imgSrc) {
+        html += `<img src="${imgSrc}" class="w-24 h-24 object-cover rounded mt-1 border border-pink-500/30">`;
+      }
       
       div.innerHTML = html;
       container.appendChild(div);
