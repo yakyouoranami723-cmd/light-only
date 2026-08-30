@@ -1,204 +1,182 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ライト OS - 管理者ダッシュボード</title>
-    <style>
-        body { background-color: #1a1a24; color: #eee; font-family: sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; }
-        .sidebar { width: 200px; background-color: #0b0c10; padding: 20px; display: flex; flex-direction: column; gap: 10px; border-right: 1px solid #ff7eb3; }
-        .sidebar h2 { color: #ff7eb3; font-size: 16px; text-align: center; margin-bottom: 30px; }
-        .nav-btn { background: none; border: 1px solid #88c0d0; color: #88c0d0; padding: 10px; border-radius: 8px; cursor: pointer; transition: 0.2s; }
-        .nav-btn:hover, .nav-btn.active { background: #88c0d0; color: #000; font-weight: bold; }
-        
-        .content { flex-grow: 1; padding: 30px; overflow-y: auto; }
-        .section { display: none; }
-        .section.active { display: block; }
-        
-        h1 { font-size: 20px; border-bottom: 2px solid #ff7eb3; padding-bottom: 10px; margin-top: 0; }
-        
-        /* 共有知識用 */
-        .knowledge-list { list-style: none; padding: 0; }
-        .knowledge-item { background: rgba(255,255,255,0.05); padding: 10px 15px; margin-bottom: 8px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #f1c40f; }
-        .delete-btn { background: #bf616a; color: #fff; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-        .add-box { display: flex; gap: 10px; margin-top: 20px; }
-        .add-box input { flex-grow: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; background: #333; color: white; }
-        .add-box button { padding: 10px 20px; background: #a3be8c; border: none; border-radius: 8px; color: #000; font-weight: bold; cursor: pointer; }
-
-        /* チャット履歴用 */
-        .log-box { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 15px; max-height: 500px; overflow-y: auto; font-size: 14px; line-height: 1.6; }
-        .log-item { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .log-time { font-size: 11px; color: #888; margin-right: 10px; }
-        .log-user { color: #a3be8c; font-weight: bold; }
-        .log-ai { color: #b48ead; font-weight: bold; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ライト 管理者ダッシュボード</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    body { background-color: #0b0b10; color: #ffffff; font-family: sans-serif; }
+    .card-border { border-left: 4px solid #f59e0b; background-color: #161620; }
+  </style>
 </head>
-<body>
+<body class="h-screen w-screen flex">
 
-    <div class="sidebar">
-        <h2>✨ 管理者メニュー</h2>
-        <button class="nav-btn active" id="btn-knowledge">🧠 共有知識の管理</button>
-        <button class="nav-btn" id="btn-history">💬 トーク履歴閲覧</button>
+  <!-- 左側サイドバー -->
+  <div class="w-64 bg-[#07070a] border-r border-gray-900 flex flex-col p-4 space-y-6">
+    <div class="text-sm font-bold text-pink-400 flex items-center gap-2 px-2"><span>✨</span> 管理者メニュー</div>
+    <nav class="space-y-2">
+      <button onclick="switchTab('knowledge')" id="btn-tab-knowledge" class="w-full text-left bg-cyan-500/20 text-cyan-300 font-bold px-4 py-3 rounded-lg text-xs flex items-center gap-2 border border-cyan-500/30">
+        🧠 共有知識の管理
+      </button>
+      <button onclick="switchTab('avatar')" id="btn-tab-avatar" class="w-full text-left text-gray-400 hover:bg-gray-900 px-4 py-3 rounded-lg text-xs flex items-center gap-2 border border-transparent">
+        🖼️ アバター管理
+      </button>
+      <button onclick="switchTab('logs')" id="btn-tab-logs" class="w-full text-left text-gray-400 hover:bg-gray-900 px-4 py-3 rounded-lg text-xs flex items-center gap-2 border border-transparent">
+        💬 トーク履歴閲覧
+      </button>
+    </nav>
+  </div>
+
+  <!-- 右側メインコンテンツ -->
+  <div class="flex-1 h-full overflow-y-auto p-8 bg-[#0b0b10]">
+    
+    <!-- Tab 1: 共有知識 (省略なし) -->
+    <div id="tab-knowledge" class="space-y-6">
+      <div>
+        <h1 class="text-xl font-bold text-white">部活全体 共有知識（ライトの記憶）</h1>
+        <p class="text-xs text-gray-500 mt-1">部員全員のライトに共通して反映されるルール</p>
+      </div>
+      <div class="flex gap-2">
+        <input id="new-rule-input" type="text" placeholder="新しい共有知識を入力..." class="flex-1 bg-[#161620] border border-gray-800 rounded-lg px-4 py-2 text-sm">
+        <button onclick="addRule()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-6 py-2 rounded-lg text-sm">追加</button>
+      </div>
+      <div id="rules-container" class="space-y-3"></div>
     </div>
 
-    <div class="content">
-        <!-- 共有知識セクション -->
-        <div id="sec-knowledge" class="section active">
-            <h1>部活全体 共有知識（ライトの記憶）</h1>
-            <p style="font-size: 13px; color: #ccc;">部員全員のライトに共通して反映されるルールや事実です。</p>
-            <ul class="knowledge-list" id="knowledge-ul">
-                <li>読み込み中...</li>
-            </ul>
-            <div class="add-box">
-                <input type="text" id="new-knowledge-input" placeholder="新しい共有知識を入力 (例: 部室の鍵は最後に帰る人が閉める)">
-                <button id="add-knowledge-btn">追加</button>
-            </div>
-            <button id="save-knowledge-btn" style="margin-top: 20px; padding: 10px; width: 100%; background: #ff7eb3; color: #000; font-weight: bold; border: none; border-radius: 8px; cursor: pointer;">
-                ☁️ 変更をクラウドに保存
-            </button>
+    <!-- 🌟 Tab 2: アバター管理 (新規追加) -->
+    <div id="tab-avatar" class="hidden space-y-6">
+      <div>
+        <h1 class="text-xl font-bold text-white">アバター画像の管理 (URL設定)</h1>
+        <p class="text-xs text-gray-500 mt-1">ここに画像のURLをコピペして保存すると、即座にメインアプリの見た目が変わります。</p>
+      </div>
+      
+      <div class="bg-[#161620] p-6 rounded-xl border border-gray-800 space-y-4 max-w-2xl">
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">通常状態 (normal)</label>
+          <input id="url-normal" type="text" class="w-full bg-[#0b0b10] border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:border-pink-500 outline-none">
         </div>
-
-        <!-- チャット履歴セクション -->
-        <div id="sec-history" class="section">
-            <h1>トーク履歴（直近100件）</h1>
-            <p style="font-size: 13px; color: #ccc;">部員がライトとどのような会話をしたか確認できます。</p>
-            <button id="reload-history-btn" style="margin-bottom: 15px; padding: 8px 15px; cursor: pointer;">🔄 最新履歴を読み込む</button>
-            <div class="log-box" id="log-container">
-                履歴を読み込み中...
-            </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">笑顔 (smile)</label>
+          <input id="url-smile" type="text" class="w-full bg-[#0b0b10] border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:border-pink-500 outline-none">
         </div>
+        <div>
+          <label class="block text-sm text-gray-400 mb-1">考える・悩む (think)</label>
+          <input id="url-think" type="text" class="w-full bg-[#0b0b10] border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:border-pink-500 outline-none">
+        </div>
+        <div class="pt-4 flex items-center gap-4">
+          <button onclick="saveAvatarConfig()" class="bg-pink-600 hover:bg-pink-500 text-white font-bold px-8 py-2 rounded-lg transition shadow-[0_0_10px_rgba(255,101,132,0.4)]">
+            アバターを更新して反映
+          </button>
+          <span id="avatar-save-msg" class="text-sm text-cyan-400 opacity-0 transition-opacity">✅ 反映しました！</span>
+        </div>
+      </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, limit, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <!-- Tab 3: トーク履歴 -->
+    <div id="tab-logs" class="hidden space-y-6">
+      <h1 class="text-xl font-bold text-white">生徒のトーク履歴（リアルタイム）</h1>
+      <div id="logs-container" class="space-y-4"></div>
+    </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
-            authDomain: "light-65413.firebaseapp.com",
-            projectId: "light-65413"
-        };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const GLOBAL_CLUB_ID = "shout_club_global_space";
+  </div>
 
-        let currentGlobalFacts = [];
+  <script>
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-        // --- タブ切り替え ---
-        document.getElementById('btn-knowledge').addEventListener('click', () => {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById('btn-knowledge').classList.add('active');
-            document.getElementById('sec-knowledge').classList.add('active');
-        });
-        document.getElementById('btn-history').addEventListener('click', () => {
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.getElementById('btn-history').classList.add('active');
-            document.getElementById('sec-history').classList.add('active');
-            loadHistory();
-        });
+    let currentRules = [];
 
-        // --- 共有知識の管理 ---
-        const knowledgeUl = document.getElementById('knowledge-ul');
-        
-        async function loadKnowledge() {
-            try {
-                const docSnap = await getDoc(doc(db, "light_memories", GLOBAL_CLUB_ID));
-                if (docSnap.exists()) {
-                    currentGlobalFacts = docSnap.data().globalFacts || [];
-                }
-                renderKnowledge();
-            } catch (e) {
-                knowledgeUl.innerHTML = "<li style='color:red;'>読み込みエラー</li>";
-            }
+    window.onload = () => {
+      // 共有知識ロード
+      db.collection("settings").doc("sharedKnowledge").onSnapshot(doc => {
+        currentRules = (doc.exists && doc.data().items) ? doc.data().items : [];
+        renderRules();
+      });
+
+      // アバター設定ロード (画面表示用)
+      db.collection("settings").doc("avatarConfig").get().then(doc => {
+        if (doc.exists) {
+          document.getElementById("url-normal").value = doc.data().normal || "";
+          document.getElementById("url-smile").value = doc.data().smile || "";
+          document.getElementById("url-think").value = doc.data().think || "";
         }
+      });
 
-        function renderKnowledge() {
-            knowledgeUl.innerHTML = "";
-            if (currentGlobalFacts.length === 0) {
-                knowledgeUl.innerHTML = "<li>(登録されている共有知識はありません)</li>";
-                return;
-            }
-            currentGlobalFacts.forEach((fact, index) => {
-                const li = document.createElement('li');
-                li.className = "knowledge-item";
-                li.innerHTML = `<span>${fact}</span> <button class="delete-btn" data-index="${index}">削除</button>`;
-                knowledgeUl.appendChild(li);
-            });
-
-            // 削除ボタンのイベント
-            document.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const idx = e.target.getAttribute('data-index');
-                    currentGlobalFacts.splice(idx, 1);
-                    renderKnowledge();
-                });
-            });
-        }
-
-        document.getElementById('add-knowledge-btn').addEventListener('click', () => {
-            const input = document.getElementById('new-knowledge-input');
-            const val = input.value.trim();
-            if (val) {
-                currentGlobalFacts.push(val);
-                input.value = "";
-                renderKnowledge();
-            }
+      // ログロード
+      db.collection("chatLogs").orderBy("timestamp", "desc").onSnapshot(snap => {
+        const container = document.getElementById("logs-container");
+        container.innerHTML = "";
+        snap.forEach(d => {
+          const data = d.data();
+          container.innerHTML += `
+            <div class="bg-[#161620] p-4 rounded-xl border border-gray-800 space-y-1 text-xs">
+              <div class="text-gray-500">${data.timestamp ? data.timestamp.toDate().toLocaleString() : '...'}</div>
+              <div class="text-pink-300">生徒: ${data.userText}</div>
+              <div class="text-gray-300">ライト: ${data.lightReply}</div>
+            </div>`;
         });
+      });
+    };
 
-        document.getElementById('save-knowledge-btn').addEventListener('click', async () => {
-            try {
-                await setDoc(doc(db, "light_memories", GLOBAL_CLUB_ID), {
-                    globalFacts: currentGlobalFacts,
-                    updatedAt: new Date()
-                });
-                alert("クラウドに保存しました！");
-            } catch (e) {
-                alert("保存に失敗しました。");
-            }
-        });
+    // --- アバター保存処理 ---
+    async function saveAvatarConfig() {
+      const normal = document.getElementById("url-normal").value.trim();
+      const smile = document.getElementById("url-smile").value.trim();
+      const think = document.getElementById("url-think").value.trim();
+      
+      await db.collection("settings").doc("avatarConfig").set({ normal, smile, think });
+      
+      // 保存完了メッセージのアニメーション
+      const msg = document.getElementById("avatar-save-msg");
+      msg.classList.remove("opacity-0");
+      setTimeout(() => msg.classList.add("opacity-0"), 2000);
+    }
 
-        // --- チャット履歴の読み込み ---
-        const logContainer = document.getElementById('log-container');
-        
-        async function loadHistory() {
-            logContainer.innerHTML = "読み込み中...";
-            try {
-                const q = query(collection(db, "light_chat_logs"), orderBy("timestamp", "desc"), limit(100));
-                const querySnapshot = await getDocs(q);
-                
-                if (querySnapshot.empty) {
-                    logContainer.innerHTML = "履歴がありません。";
-                    return;
-                }
+    // --- 共有知識周り (変更なし) ---
+    function renderRules() {
+      const container = document.getElementById("rules-container");
+      container.innerHTML = "";
+      currentRules.forEach((rule, index) => {
+        container.innerHTML += `
+          <div class="card-border p-4 rounded-r-xl flex justify-between items-center text-sm text-gray-200">
+            <span>${rule}</span>
+            <button onclick="deleteRule(${index})" class="bg-[#d97706] hover:bg-[#b45309] text-white text-xs px-3 py-1.5 rounded transition">削除</button>
+          </div>`;
+      });
+    }
+    async function addRule() {
+      const input = document.getElementById("new-rule-input");
+      if (!input.value.trim()) return;
+      currentRules.push(input.value.trim());
+      await db.collection("settings").doc("sharedKnowledge").set({ items: currentRules });
+      input.value = "";
+    }
+    async function deleteRule(index) {
+      currentRules.splice(index, 1);
+      await db.collection("settings").doc("sharedKnowledge").set({ items: currentRules });
+    }
 
-                logContainer.innerHTML = "";
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const date = data.timestamp ? data.timestamp.toDate() : new Date();
-                    const timeStr = `${date.getMonth()+1}/${date.getDate()} ${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`;
-                    
-                    const div = document.createElement('div');
-                    div.className = "log-item";
-                    
-                    const nameSpan = data.role === 'ai' ? 
-                        `<span class="log-ai">ライト</span>` : 
-                        `<span class="log-user">部員 (${data.userId})</span>`;
-                    
-                    div.innerHTML = `<span class="log-time">[${timeStr}]</span> ${nameSpan} : ${data.text}`;
-                    logContainer.appendChild(div);
-                });
-            } catch (e) {
-                logContainer.innerHTML = "<span style='color:red;'>履歴の読み込みに失敗しました。</span>";
-                console.error(e);
-            }
+    // --- タブ切り替え処理 ---
+    function switchTab(tabName) {
+      ['knowledge', 'avatar', 'logs'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
+        const btn = document.getElementById(`btn-tab-${t}`);
+        if (t === tabName) {
+          btn.className = "w-full text-left bg-cyan-500/20 text-cyan-300 font-bold px-4 py-3 rounded-lg text-xs flex items-center gap-2 border border-cyan-500/30";
+        } else {
+          btn.className = "w-full text-left text-gray-400 hover:bg-gray-900 px-4 py-3 rounded-lg text-xs flex items-center gap-2 border border-transparent";
         }
-
-        document.getElementById('reload-history-btn').addEventListener('click', loadHistory);
-
-        // 初期ロード
-        loadKnowledge();
-    </script>
+      });
+    }
+  </script>
 </body>
 </html>
