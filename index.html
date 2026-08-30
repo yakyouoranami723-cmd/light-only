@@ -1,398 +1,279 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ライト OS v8.7 Cloud</title>
-    <!-- Three.js & @pixiv/three-vrm (ES Modules) -->
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
-                "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js"
-            }
-        }
-    </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-    <style>
-        body { background-color: #0b0c10; color: #fff; font-family: 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100dvh; margin: 0; overflow: hidden; transition: all 0.5s; }
-        
-        #avatar-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; transition: all 0.5s; }
-
-        #main-app { display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; position: relative; z-index: 10; transition: all 0.5s; }
-        #header-bar { width: 90%; max-width: 650px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; z-index: 20; }
-        .app-title { font-weight: bold; font-size: 16px; color: #ff7eb3; letter-spacing: 1px; text-shadow: 0 0 10px rgba(255,126,179,0.5); }
-        
-        .icon-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid #ff7eb3; color: #fff; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s; backdrop-filter: blur(5px); }
-        .icon-btn:hover { background: rgba(255, 126, 179, 0.3); }
-        
-        #chat-log { width: 90%; max-width: 650px; height: 350px; background: rgba(20, 20, 30, 0.65); padding: 15px; border-radius: 16px; overflow-y: auto; margin-bottom: 15px; border: 1px solid rgba(255, 126, 179, 0.4); box-shadow: 0 0 25px rgba(255, 126, 179, 0.15); font-size: 15px; line-height: 1.6; box-sizing: border-box; backdrop-filter: blur(8px); scroll-behavior: smooth; transition: opacity 0.5s; }
-        
-        #chat-log::-webkit-scrollbar { width: 6px; }
-        #chat-log::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 3px; }
-        #chat-log::-webkit-scrollbar-thumb { background: rgba(255, 126, 179, 0.5); border-radius: 3px; }
-
-        .msg-sys { color: #88c0d0; font-size: 13px; } .msg-user { color: #a3be8c; margin-top: 6px; } .msg-ai { color: #b48ead; margin-top: 6px; } .msg-error { color: #bf616a; font-weight: bold; background: rgba(191, 97, 106, 0.1); padding: 5px; border-radius: 5px; margin-top: 6px; }
-        
-        .controls { display: flex; gap: 10px; align-items: center; width: 90%; max-width: 650px; transition: all 0.5s; z-index: 20; }
-        button, input[type="text"] { padding: 12px 18px; font-size: 14px; border-radius: 30px; border: none; outline: none; transition: all 0.2s ease; }
-        button { cursor: pointer; font-weight: bold; } button:hover { transform: translateY(-2px); } button:active { transform: translateY(1px); } button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        
-        #talk-btn { background: linear-gradient(135deg, #ff758c, #ff7eb3); color: white; box-shadow: 0 4px 15px rgba(255, 117, 140, 0.4); flex-shrink: 0; transition: all 0.3s; }
-        #chat-input { flex-grow: 1; border: 1px solid #ff7eb3; background: rgba(0,0,0,0.6); color: white; backdrop-filter: blur(5px); transition: opacity 0.5s; }
-        #send-btn { background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4); flex-shrink: 0; min-width: 70px; transition: opacity 0.5s; }
-        
-        /* === アバターモード用のCSS === */
-        body.avatar-mode #chat-log,
-        body.avatar-mode #chat-input,
-        body.avatar-mode #send-btn { opacity: 0; pointer-events: none; }
-        body.avatar-mode .controls { justify-content: center; transform: translateY(100px); }
-        body.avatar-mode #talk-btn { transform: scale(1.5); }
-        body.avatar-mode #avatar-container { filter: brightness(1.2); } /* アバターを少し明るく */
-
-        /* === 以下既存のモーダル・ログインCSS === */
-        #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: #161823; border: 1px solid #ff7eb3; border-radius: 16px; width: 85%; max-width: 420px; padding: 20px; box-shadow: 0 0 30px rgba(255, 126, 179, 0.3); max-height: 90vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 15px; }
-        .modal-title { font-size: 16px; font-weight: bold; color: #ff7eb3; }
-        .close-btn { background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer; padding: 0; }
-        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; }
-        .modal-btn { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid #4facfe; color: #4facfe; padding: 10px; border-radius: 8px; margin-top: 8px; font-size: 13px; }
-        .section-title { font-size: 12px; color: #88c0d0; margin-top: 20px; margin-bottom: 5px; border-bottom: 1px dashed #88c0d0; padding-bottom: 3px; }
-        .sync-box { background: rgba(241, 196, 15, 0.1); border: 1px solid #f1c40f; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
-        #sync-id-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); color: #f1c40f; border: 1px solid #f1c40f; text-align: center; font-weight: bold; letter-spacing: 2px; border-radius: 5px; padding: 8px; margin-bottom: 8px; }
-        .sync-btn { background: #f1c40f; color: #000; width: 100%; border-radius: 5px; padding: 8px; border: none; font-weight: bold; cursor: pointer; }
-        
-        #login-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #0b0c10; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .login-title { color: #ff7eb3; font-size: 24px; font-weight: bold; margin-bottom: 10px; letter-spacing: 2px; }
-        .login-desc { color: #ccc; font-size: 14px; margin-bottom: 30px; }
-        #login-id-input { width: 80%; max-width: 300px; background: rgba(255,255,255,0.1); color: #fff; border: 2px solid #ff7eb3; text-align: center; font-weight: bold; letter-spacing: 2px; padding: 15px; border-radius: 30px; margin-bottom: 20px; font-size: 16px; }
-        #execute-login-btn { background: linear-gradient(135deg, #ff758c, #ff7eb3); color: white; width: 80%; max-width: 300px; padding: 15px; border-radius: 30px; font-size: 16px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(255, 117, 140, 0.4); }
-        #forgot-login-btn { background: transparent; border: 1px solid #88c0d0; color: #88c0d0; padding: 10px 20px; border-radius: 20px; font-size: 12px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ライト OS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Firebase v9 compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <style>
+    body { background-color: #0d0d12; color: #ffffff; font-family: sans-serif; }
+    .neon-btn {
+      background: linear-gradient(135deg, #ff6584, #ff8da1);
+      box-shadow: 0 0 15px rgba(255, 101, 132, 0.4);
+    }
+    .neon-btn:hover {
+      box-shadow: 0 0 25px rgba(255, 101, 132, 0.7);
+    }
+    /* アバター呼吸アニメーション */
+    @keyframes breathe {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-6px) scale(1.02); }
+    }
+    .avatar-breathe { animation: breathe 3.5s ease-in-out infinite; }
+    /* 発話中の身振り */
+    @keyframes talking {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      25% { transform: translateY(-4px) rotate(1deg); }
+      75% { transform: translateY(-2px) rotate(-1deg); }
+    }
+    .avatar-talking { animation: talking 0.6s ease-in-out infinite; }
+  </style>
 </head>
-<body>
+<body class="h-screen w-screen overflow-hidden flex flex-col justify-center items-center">
 
-    <div id="avatar-container"></div>
+  <!-- 1. ログイン画面（初期表示） -->
+  <div id="login-screen" class="flex flex-col items-center justify-center space-y-6 z-10">
+    <div class="text-3xl font-bold flex items-center gap-2">
+      <span class="text-yellow-300">✨</span> ライト OS
+    </div>
+    <p class="text-gray-400 text-sm">合言葉（パスワード）を入力</p>
+    
+    <input id="passcode-input" type="password" value="shout" class="w-80 bg-[#1e1e26] border border-pink-500/40 rounded-full px-6 py-3 text-center text-white focus:outline-none focus:border-pink-500 transition">
+    
+    <button onclick="handleLogin()" class="w-80 neon-btn text-white font-bold py-3 rounded-full transition transform active:scale-95">
+      起動
+    </button>
 
-    <div id="login-screen">
-        <div class="login-title">✨ ライト OS</div>
-        <div class="login-desc">合言葉（パスワード）を入力 </div>
-        <input type="text" id="login-id-input" placeholder="合言葉を入力">
-        <button id="execute-login-btn">起動</button>
-        <div style="margin-bottom: 10px; color: #666; font-size: 12px;">または</div>
-        <button id="forgot-login-btn">自分専用の合言葉を作る（新規）</button>
+    <div class="text-xs text-gray-500 pt-4">または</div>
+    <button class="border border-cyan-500/40 text-cyan-300 text-xs px-6 py-2 rounded-full hover:bg-cyan-500/10 transition">
+      自分専用の合言葉を作る（新規）
+    </button>
+  </div>
+
+  <!-- 2. チャット＆アバター画面（ログイン後表示） -->
+  <div id="chat-screen" class="hidden w-full h-full flex flex-col md:flex-row bg-[#0d0d12]">
+    
+    <!-- 左側 / アバター表示エリア (コピペ可能エリア) -->
+    <div class="w-full md:w-1/2 h-1/2 md:h-full flex flex-col items-center justify-center relative border-b md:border-b-0 md:border-r border-gray-800 bg-[#12121a]">
+      <!-- アバターコンテナ -->
+      <div id="avatar-container" class="relative w-64 h-80 flex items-center justify-center avatar-breathe transition-transform duration-300">
+        <!-- ベース立ち絵 -->
+        <img id="avatar-img" src="https://via.placeholder.com/300x400/1e1e26/ff6584?text=Light+Avatar" alt="Avatar" class="max-h-full object-contain filter drop-shadow-[0_0_15px_rgba(255,101,132,0.3)]">
+      </div>
+      <div id="avatar-status" class="absolute bottom-4 text-xs text-gray-400 bg-black/40 px-3 py-1 rounded-full border border-gray-700">
+        待機中...
+      </div>
     </div>
 
-    <div id="main-app">
-        <div id="header-bar">
-            <div class="app-title">✨ ライト</div>
-            <div>
-                <!-- ★モード切替ボタンを追加 -->
-                <button id="toggle-mode-btn" class="icon-btn" style="margin-right: 5px;">🔄 アバター</button>
-                <button id="open-settings-btn" class="icon-btn">⚙️ 設定</button>
-            </div>
-        </div>
+    <!-- 右側 / チャットエリア -->
+    <div class="w-full md:w-1/2 h-1/2 md:h-full flex flex-col justify-between p-4 bg-[#0d0d12]">
+      <!-- ヘッダー -->
+      <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+        <span class="font-bold flex items-center gap-2"><span class="text-yellow-300">✨</span> ライト OS</span>
+        <button onclick="location.reload()" class="text-xs text-gray-400 hover:text-white">切断</button>
+      </div>
 
-        <div id="chat-log">
-            <div class="msg-sys"><strong>システム:</strong> クラウド連携待機中...</div>
-        </div>
+      <!-- ログ表示 -->
+      <div id="chat-logs" class="flex-1 overflow-y-auto my-4 space-y-4 pr-2"></div>
 
-        <div class="controls">
-            <button id="talk-btn">🔴</button>
-            <input type="text" id="chat-input" placeholder="ライトに話しかける...">
-            <button id="send-btn">送信</button>
-        </div>
+      <!-- 画像プレビュー -->
+      <div id="image-preview-container" class="hidden relative mb-2 w-20 h-20">
+        <img id="image-preview" src="" class="w-full h-full object-cover rounded-lg border border-pink-500">
+        <button onclick="removeImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center">×</button>
+      </div>
+
+      <!-- 入力フォーム -->
+      <div class="flex items-center gap-2 bg-[#181822] border border-gray-700 rounded-xl p-2">
+        <label class="cursor-pointer text-gray-400 hover:text-pink-400 px-2">
+          📷
+          <input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+        </label>
+        <input id="user-msg" type="text" placeholder="メッセージを入力..." class="flex-1 bg-transparent text-white focus:outline-none text-sm" onkeydown="if(event.key==='Enter') sendMsg()">
+        <button onclick="sendMsg()" class="neon-btn text-white px-4 py-2 rounded-lg text-sm font-bold">送信</button>
+      </div>
     </div>
+  </div>
 
-    <div id="settings-modal">
-        <!-- 中身は既存と同じなので省略せずに記載 -->
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">⚙️ システム設定</div>
-                <button class="close-btn" id="close-settings-btn">✖</button>
-            </div>
-            <div class="setting-row">
-                <span>ボイス再生（音声）</span>
-                <button id="mute-toggle-btn" class="icon-btn" style="border-color: #bf616a;">🔇 音声 OFF</button>
-            </div>
-            <div class="section-title">☁️ クラウド記憶同期 (合言葉)</div>
-            <div class="sync-box">
-                <input type="text" id="sync-id-input" placeholder="合言葉を入力">
-                <button id="sync-execute-btn" class="sync-btn">手動で同期する</button>
-            </div>
-            <div class="section-title">【現在の学習ステータス】</div>
-            <div class="setting-row" style="flex-direction: column; align-items: flex-start; margin-bottom: 5px;">
-                <span id="brain-status-text" style="font-size: 13px;">自己改善: 0 | 個人記憶: 0 | 部活共有: 0</span>
-            </div>
-            <button id="view-brain-btn" class="modal-btn">🧠 記憶データの中身を確認 / リセット</button>
-            <div class="section-title">【拡張知識】</div>
-            <button id="pdf-btn" class="modal-btn">📄 説明書(PDF)を一時記憶させる</button>
-            <input type="file" id="pdf-upload" accept="application/pdf" style="display: none;">
-        </div>
-    </div>
+  <script>
+    // --- Firebase 設定（環境に合わせてキーを入力） ---
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        // ★ collection, addDoc, serverTimestamp を追加
-        import { getFirestore, doc, getDoc, setDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import * as THREE from 'three';
-        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-        import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
+    // --- Gemini API & 設定 ---
+    const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY";
+    let base64Image = null;
+    let systemPrompt = "あなたは横浜清陵高校軽音楽部のサポーター「ライト」です。明るく元気に部員をサポートしてください。返答の先頭に [normal], [smile], [think] のいずれかの感情タグを必ず付けてください。";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
-            authDomain: "light-65413.firebaseapp.com",
-            projectId: "light-65413",
-            storageBucket: "light-65413.firebasestorage.app",
-            messagingSenderId: "116819261632",
-            appId: "1:116819261632:web:9d9144aa125a55371d5525"
-        };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const API_KEY = "AQ.Ab8RN6LFpA-TEL3AGVk6l5KQe7Pgi9w455ROTO2txXm5m6SeTg"; 
+    // --- アバター画像設定 (コピペで差し替え可能) ---
+    const AVATAR_IMAGES = {
+      normal: "https://via.placeholder.com/300x400/1e1e26/ff6584?text=Normal",
+      smile: "https://via.placeholder.com/300x400/1e1e26/ff6584?text=Smile",
+      think: "https://via.placeholder.com/300x400/1e1e26/ff6584?text=Thinking"
+    };
 
-        window.isMuted = true;
-        window.selfReflections = []; window.userFacts = []; window.globalFacts = [];
-        window.pdfKnowledge = ""; window.conversationHistory = []; 
-        let myUserId = "";
-        const GLOBAL_CLUB_ID = "shout_club_global_space";
+    // 共有知識（ルール）の取得
+    async function loadSystemKnowledge() {
+      try {
+        const snap = await db.collection("settings").doc("sharedKnowledge").get();
+        if (snap.exists && snap.data().items) {
+          const rules = snap.data().items.join("\n・");
+          systemPrompt += "\n\n【部活全体共有知識】\n・" + rules;
+        }
+      } catch (e) { console.error("Rule load error:", e); }
+    }
 
-        const chatLog = document.getElementById('chat-log');
-        const chatInput = document.getElementById('chat-input');
-        const sendBtn = document.getElementById('send-btn');
-        const talkBtn = document.getElementById('talk-btn');
-        const settingsModal = document.getElementById('settings-modal');
-        const loginScreen = document.getElementById('login-screen');
-        const mainApp = document.getElementById('main-app');
+    // ログイン処理
+    async function handleLogin() {
+      const pass = document.getElementById("passcode-input").value;
+      if (pass === "shout") {
+        await loadSystemKnowledge();
+        document.getElementById("login-screen").classList.add("hidden");
+        document.getElementById("chat-screen").classList.remove("hidden");
+      } else {
+        alert("合言葉が違います");
+      }
+    }
 
-        // ★ モード切替の処理
-        const toggleModeBtn = document.getElementById('toggle-mode-btn');
-        let isAvatarMode = false;
-        toggleModeBtn.addEventListener('click', () => {
-            isAvatarMode = !isAvatarMode;
-            document.body.classList.toggle('avatar-mode', isAvatarMode);
-            toggleModeBtn.textContent = isAvatarMode ? "💬 チャット" : "🔄 アバター";
+    // 画像選択処理
+    function handleImageSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        base64Image = evt.target.result.split(',')[1];
+        document.getElementById("image-preview").src = evt.target.result;
+        document.getElementById("image-preview-container").classList.remove("hidden");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeImage() {
+      base64Image = null;
+      document.getElementById("image-input").value = "";
+      document.getElementById("image-preview-container").classList.add("hidden");
+    }
+
+    // アバター状態更新
+    function updateAvatar(emotion, isSpeaking = false) {
+      const imgEl = document.getElementById("avatar-img");
+      const container = document.getElementById("avatar-container");
+      const statusEl = document.getElementById("avatar-status");
+
+      if (AVATAR_IMAGES[emotion]) {
+        imgEl.src = AVATAR_IMAGES[emotion];
+      }
+
+      if (isSpeaking) {
+        container.classList.add("avatar-talking");
+        statusEl.innerText = "話しています...";
+        statusEl.classList.replace("text-gray-400", "text-pink-400");
+      } else {
+        container.classList.remove("avatar-talking");
+        statusEl.innerText = "待機中...";
+        statusEl.classList.replace("text-pink-400", "text-gray-400");
+      }
+    }
+
+    // 音声読み上げ（Web Speech API / 高音質枠）
+    function speakText(text, emotion) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+
+      const uttr = new SpeechSynthesisUtterance(text);
+      uttr.lang = 'ja-JP';
+      uttr.pitch = 1.2; // 少し高めのトーン
+      uttr.rate = 1.0;
+
+      uttr.onstart = () => updateAvatar(emotion, true);
+      uttr.onend = () => updateAvatar('normal', false);
+
+      window.speechSynthesis.speak(uttr);
+    }
+
+    // メッセージ送信
+    async function sendMsg() {
+      const input = document.getElementById("user-msg");
+      const text = input.value.trim();
+      if (!text && !base64Image) return;
+
+      appendLog("user", text, base64Image ? document.getElementById("image-preview").src : null);
+      input.value = "";
+      const tempImg = base64Image;
+      removeImage();
+
+      updateAvatar('think', false);
+
+      // Gemini API 呼び出し
+      try {
+        const contents = [{
+          role: "user",
+          parts: [
+            ...(tempImg ? [{ inline_data: { mime_type: "image/jpeg", data: tempImg } }] : []),
+            { text: text }
+          ]
+        }];
+
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: systemPrompt }] },
+            contents: contents
+          })
         });
 
-        const savedId = localStorage.getItem('light_sync_id');
-        if (savedId) { document.getElementById('login-id-input').value = savedId; } 
-        else { document.getElementById('login-id-input').value = "shout"; }
+        const data = await res.json();
+        let reply = data.candidates[0].content.parts[0].text;
 
-        function unlockAudio() {
-            if ('speechSynthesis' in window) {
-                const dummy = new SpeechSynthesisUtterance(''); dummy.volume = 0;
-                window.speechSynthesis.speak(dummy);
-            }
+        // 感情タグの解析 [smile], [think], [normal]
+        let emotion = 'normal';
+        const match = reply.match(/^\[(normal|smile|think)\]/);
+        if (match) {
+          emotion = match[1];
+          reply = reply.replace(/^\[(normal|smile|think)\]\s*/, '');
         }
 
-        document.getElementById('execute-login-btn').addEventListener('click', () => {
-            const inputId = document.getElementById('login-id-input').value.trim();
-            if (!inputId) { alert("合言葉を入力してね！"); return; }
-            myUserId = inputId;
-            localStorage.setItem('light_sync_id', myUserId);
-            document.getElementById('sync-id-input').value = myUserId;
-            unlockAudio();
-            loginScreen.style.display = 'none';
-            mainApp.style.display = 'flex';
-            loadAllData(myUserId);
+        appendLog("light", reply);
+        speakText(reply, emotion);
+
+        // Firestoreにログ保存
+        db.collection("chatLogs").add({
+          userText: text,
+          lightReply: reply,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // クラウドへチャットログを保存する関数 ★追加
-        async function saveChatLogToCloud(role, text) {
-            try {
-                await addDoc(collection(db, "light_chat_logs"), {
-                    userId: myUserId,
-                    role: role, // 'user' または 'ai'
-                    text: text,
-                    timestamp: serverTimestamp()
-                });
-            } catch (e) { console.error("ログ保存エラー:", e); }
-        }
+      } catch (e) {
+        console.error(e);
+        appendLog("light", "エラーが発生しました。");
+        updateAvatar('normal', false);
+      }
+    }
 
-        function addLog(name, text, type = 'user') {
-            const div = document.createElement('div');
-            if(type === 'sys') div.className = 'msg-sys';
-            else if(type === 'ai') div.className = 'msg-ai';
-            else if(type === 'error') div.className = 'msg-error';
-            else div.className = 'msg-user';
-            div.innerHTML = `<strong>${name}:</strong> ${text}`;
-            chatLog.appendChild(div);
-            div.scrollIntoView({ behavior: 'smooth', block: 'end' });
-
-            // ユーザーとAIの発言のみクラウドに記録（システムメッセージは記録しない）
-            if (type === 'user' || type === 'ai') {
-                saveChatLogToCloud(type, text);
-            }
-        }
-
-        /* データロード・クラウド同期処理（既存コードをそのまま利用） */
-        async function loadAllData(userId) {
-            try {
-                const userDocSnap = await getDoc(doc(db, "light_memories", userId));
-                if (userDocSnap.exists()) {
-                    const data = userDocSnap.data();
-                    window.selfReflections = data.reflections || []; window.userFacts = data.facts || [];
-                }
-                const globalDocSnap = await getDoc(doc(db, "light_memories", GLOBAL_CLUB_ID));
-                if (globalDocSnap.exists()) { window.globalFacts = globalDocSnap.data().globalFacts || []; }
-                
-                chatLog.innerHTML = ""; // 起動時にシステムログをクリア
-                const msg = "よっ！";
-                addLog("ライト", msg, "ai");
-                window.speak(msg);
-                document.getElementById('brain-status-text').textContent = `自己改善: ${window.selfReflections.length} | 個人記憶: ${window.userFacts.length} | 部活共有: ${window.globalFacts.length}`;
-            } catch (e) { addLog("エラー", "通信失敗", "error"); }
-        }
-
-        async function saveUserToCloud() { await setDoc(doc(db, "light_memories", myUserId), { reflections: window.selfReflections, facts: window.userFacts, updatedAt: new Date() }); }
-        async function saveGlobalToCloud() { await setDoc(doc(db, "light_memories", GLOBAL_CLUB_ID), { globalFacts: window.globalFacts, updatedAt: new Date() }); }
-
-        /* （設定モーダル系の処理は省略せず既存通り） */
-        document.getElementById('open-settings-btn').addEventListener('click', () => settingsModal.style.display = 'flex');
-        document.getElementById('close-settings-btn').addEventListener('click', () => settingsModal.style.display = 'none');
-        document.getElementById('mute-toggle-btn').addEventListener('click', (e) => {
-            window.isMuted = !window.isMuted;
-            if(window.isMuted) { e.target.textContent = "🔇 音声 OFF"; e.target.style.borderColor = "#bf616a"; } 
-            else { e.target.textContent = "🔊 音声 ON"; e.target.style.borderColor = "#ff7eb3"; }
-        });
-
-        window.currentAudio = null; 
-        window.speak = function(text) {
-            if (window.isMuted) return;
-            if (window.currentAudio) { window.currentAudio.pause(); window.currentAudio = null; }
-            window.speechSynthesis.cancel();
-            const cleanText = text.replace(/[#*「」『』（）()【】_~〜]/g, '').trim();
-            if (!cleanText) return;
-
-            const url = `https://api.tts.quest/v3/voicevox/synthesis?text=${encodeURIComponent(cleanText)}&speaker=8`;
-            const audio = new Audio(url);
-            window.currentAudio = audio;
-            
-            const fallback = () => {
-                window.speechSynthesis.cancel();
-                const uttr = new SpeechSynthesisUtterance(cleanText);
-                uttr.lang = 'ja-JP'; uttr.rate = 1.1; uttr.pitch = 1.3; 
-                window.speechSynthesis.speak(uttr);
-            }
-            audio.play().catch(fallback); audio.onerror = fallback;
-        };
-
-        async function callGemini(userText) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`;
-            const rulesContext = window.selfReflections.length > 0 ? "\n【過去の反省】\n・" + window.selfReflections.join("\n・") : "";
-            const factsContext = window.userFacts.length > 0 ? "\n【個人記憶】\n・" + window.userFacts.join("\n・") : "";
-            const globalContext = window.globalFacts.length > 0 ? "\n【部活共有ルール】\n・" + window.globalFacts.join("\n・") : "";
-            
-            const systemInstruction = `あなたはユーザーの相棒「電キャ」の「ライト」です。
-            性別：女子 一人称：「あたし」 口調：「〜っしょ！」「〜だぜ！」
-            ${rulesContext} ${factsContext} ${globalContext} ${window.pdfKnowledge}
-            【ルール】誤字脱字に注意。絵文字は使わない。
-            【メタタグ】個人の情報は [FACT: 内容]、部活全体に関わることは [GLOBAL: 内容] として文章の最後に出力。`;
-
-            window.conversationHistory.push({ role: "user", parts: [{ text: userText }] });
-
-            const payload = {
-                system_instruction: { parts: [{ text: systemInstruction }] },
-                contents: window.conversationHistory,
-                generationConfig: { temperature: 0.7 }
-            };
-
-            const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            const data = await response.json();
-            let aiReply = data.candidates[0].content.parts[0].text;
-            
-            let userChanged = false, globalChanged = false;
-
-            [...aiReply.matchAll(/\[REFLECT:\s*(.*?)\]/g)].forEach(m => { if (!window.selfReflections.includes(m[1])) { window.selfReflections.push(m[1]); userChanged = true; }});
-            [...aiReply.matchAll(/\[FACT:\s*(.*?)\]/g)].forEach(m => { if (!window.userFacts.includes(m[1])) { window.userFacts.push(m[1]); userChanged = true; }});
-            [...aiReply.matchAll(/\[GLOBAL:\s*(.*?)\]/g)].forEach(m => { if (!window.globalFacts.includes(m[1])) { window.globalFacts.push(m[1]); globalChanged = true; }});
-
-            aiReply = aiReply.replace(/【?\s*\[(REFLECT|FACT|GLOBAL):\s*.*?\]\s*】?/g, '').trim();
-
-            if (userChanged) saveUserToCloud();
-            if (globalChanged) saveGlobalToCloud(); 
-
-            window.conversationHistory.push({ role: "model", parts: [{ text: aiReply }] });
-            if (window.conversationHistory.length > 20) window.conversationHistory.splice(0, 2); 
-            
-            return aiReply;
-        }
-
-        async function processUserInput(text) {
-            if (!text || !text.trim()) return;
-            addLog("あなた", text, 'user');
-            sendBtn.disabled = true; chatInput.disabled = true; talkBtn.disabled = true;
-            try {
-                const reply = await callGemini(text);
-                addLog("ライト", reply, 'ai');
-                window.speak(reply);
-            } catch (error) {
-                addLog("システムエラー", error.message, 'error');
-            } finally {
-                sendBtn.disabled = false; chatInput.disabled = false; talkBtn.disabled = false;
-                chatInput.focus();
-            }
-        }
-
-        sendBtn.addEventListener('click', () => { const text = chatInput.value; chatInput.value = ''; processUserInput(text); });
-        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendBtn.click(); });
-
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'ja-JP';
-            talkBtn.addEventListener('click', () => { try { recognition.start(); talkBtn.innerHTML = "👂"; } catch(e){} });
-            recognition.onresult = (e) => { talkBtn.innerHTML = "🔴"; processUserInput(e.results[0][0].transcript); };
-            recognition.onend = () => { talkBtn.innerHTML = "🔴"; };
-        } else { talkBtn.style.display = 'none'; }
-
-        /* === Three.js & VRM 処理 === */
-        const container = document.getElementById('avatar-container');
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 20.0);
-        camera.position.set(0, 1.4, 2.5);
-        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        container.appendChild(renderer.domElement);
-
-        const light = new THREE.DirectionalLight(0xffffff, Math.PI);
-        light.position.set(1.0, 1.0, 1.0).normalize();
-        scene.add(light);
-        scene.add(new THREE.AmbientLight(0xffffff, Math.PI * 0.5));
-
-        let currentVrm = undefined;
-        const loader = new GLTFLoader();
-        loader.register((parser) => new VRMLoaderPlugin(parser));
-
-        loader.load(
-            'light.vrm', // アバターのファイル名
-            (gltf) => {
-                const vrm = gltf.userData.vrm;
-                VRMUtils.removeUnnecessaryVertices(gltf.scene);
-                currentVrm = vrm;
-                scene.add(vrm.scene);
-                VRMUtils.rotateVRM0(vrm);
-            },
-            () => {},
-            (error) => console.error(error)
-        );
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
-        const clock = new THREE.Clock();
-        function animate() {
-            requestAnimationFrame(animate);
-            if (currentVrm) currentVrm.update(clock.getDelta());
-            renderer.render(scene, camera);
-        }
-        animate();
-    </script>
+    function appendLog(role, text, imgSrc = null) {
+      const container = document.getElementById("chat-logs");
+      const div = document.createElement("div");
+      div.className = `flex flex-col ${role === 'user' ? 'items-end' : 'items-start'}`;
+      
+      let html = `<div class="max-w-[80%] rounded-2xl px-4 py-2 text-sm ${role === 'user' ? 'bg-pink-500/20 text-pink-100 border border-pink-500/30' : 'bg-[#1a1a24] text-gray-200 border border-gray-800'}">`;
+      if (imgSrc) html += `<img src="${imgSrc}" class="w-32 h-32 object-cover rounded-lg mb-2">`;
+      html += `${text}</div>`;
+      
+      div.innerHTML = html;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+  </script>
 </body>
 </html>
