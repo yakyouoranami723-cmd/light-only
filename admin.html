@@ -1,182 +1,220 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ライト 管理者ダッシュボード</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <style>
-    body { background-color: #0b0b10; color: #ffffff; font-family: sans-serif; }
-    .card-border { border-left: 4px solid #f59e0b; background-color: #161620; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理者メニュー</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #1a1a24; color: #ffffff; font-family: 'Helvetica Neue', sans-serif; }
+        .sidebar { background-color: #0d0d12; border-right: 1px solid #2a2a35; }
+        .tab-active { background-color: #88c0d0; color: #0d0d12; font-weight: bold; }
+        .tab-inactive { border: 1px solid #88c0d0; color: #ffffff; }
+        .rule-card { background-color: #2a2a35; border-left: 4px solid #f1c40f; }
+        .delete-btn { background-color: #bf616a; transition: all 0.2s; }
+        .delete-btn:hover { background-color: #a5535b; }
+    </style>
 </head>
-<body class="h-screen w-screen flex">
+<body class="h-screen w-screen flex overflow-hidden">
 
-  <!-- 左側サイドバー -->
-  <div class="w-64 bg-[#07070a] border-r border-gray-900 flex flex-col p-4 space-y-6">
-    <div class="text-sm font-bold text-pink-400 flex items-center gap-2 px-2"><span>✨</span> 管理者メニュー</div>
-    <nav class="space-y-2">
-      <button onclick="switchTab('knowledge')" id="btn-tab-knowledge" class="w-full text-left bg-cyan-500/20 text-cyan-300 font-bold px-4 py-3 rounded-lg text-xs flex items-center gap-2 border border-cyan-500/30">
-        🧠 共有知識の管理
-      </button>
-      <button onclick="switchTab('avatar')" id="btn-tab-avatar" class="w-full text-left text-gray-400 hover:bg-gray-900 px-4 py-3 rounded-lg text-xs flex items-center gap-2 border border-transparent">
-        🖼️ アバター管理
-      </button>
-      <button onclick="switchTab('logs')" id="btn-tab-logs" class="w-full text-left text-gray-400 hover:bg-gray-900 px-4 py-3 rounded-lg text-xs flex items-center gap-2 border border-transparent">
-        💬 トーク履歴閲覧
-      </button>
-    </nav>
-  </div>
-
-  <!-- 右側メインコンテンツ -->
-  <div class="flex-1 h-full overflow-y-auto p-8 bg-[#0b0b10]">
-    
-    <!-- Tab 1: 共有知識 (省略なし) -->
-    <div id="tab-knowledge" class="space-y-6">
-      <div>
-        <h1 class="text-xl font-bold text-white">部活全体 共有知識（ライトの記憶）</h1>
-        <p class="text-xs text-gray-500 mt-1">部員全員のライトに共通して反映されるルール</p>
-      </div>
-      <div class="flex gap-2">
-        <input id="new-rule-input" type="text" placeholder="新しい共有知識を入力..." class="flex-1 bg-[#161620] border border-gray-800 rounded-lg px-4 py-2 text-sm">
-        <button onclick="addRule()" class="bg-amber-600 hover:bg-amber-500 text-white font-bold px-6 py-2 rounded-lg text-sm">追加</button>
-      </div>
-      <div id="rules-container" class="space-y-3"></div>
+    <!-- サイドバー -->
+    <div class="sidebar w-64 h-full flex flex-col p-6 space-y-6 shrink-0">
+        <div class="text-xl font-bold text-[#ff7eb3] flex items-center gap-2 justify-center mb-4">
+            <span>✨</span> 管理者メニュー
+        </div>
+        
+        <nav class="flex flex-col space-y-4">
+            <button onclick="switchTab('knowledge')" id="btn-knowledge" class="tab-active py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition">
+                🧠 共有知識の管理
+            </button>
+            <button onclick="switchTab('avatar')" id="btn-avatar" class="tab-inactive py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition">
+                🖼️ アバター表示設定
+            </button>
+            <button onclick="switchTab('logs')" id="btn-logs" class="tab-inactive py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition">
+                💬 トーク履歴閲覧
+            </button>
+        </nav>
     </div>
 
-    <!-- 🌟 Tab 2: アバター管理 (新規追加) -->
-    <div id="tab-avatar" class="hidden space-y-6">
-      <div>
-        <h1 class="text-xl font-bold text-white">アバター画像の管理 (URL設定)</h1>
-        <p class="text-xs text-gray-500 mt-1">ここに画像のURLをコピペして保存すると、即座にメインアプリの見た目が変わります。</p>
-      </div>
-      
-      <div class="bg-[#161620] p-6 rounded-xl border border-gray-800 space-y-4 max-w-2xl">
-        <div>
-          <label class="block text-sm text-gray-400 mb-1">通常状態 (normal)</label>
-          <input id="url-normal" type="text" class="w-full bg-[#0b0b10] border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:border-pink-500 outline-none">
+    <!-- メインコンテンツ -->
+    <div class="flex-1 h-full overflow-y-auto p-10 bg-[#1a1a24]">
+        
+        <!-- タブ1: 共有知識 -->
+        <div id="tab-knowledge" class="max-w-4xl mx-auto space-y-6">
+            <div class="border-b border-gray-600 pb-2 mb-6">
+                <h1 class="text-2xl font-bold text-white">部活全体 共有知識（ライトの記憶）</h1>
+                <p class="text-sm text-gray-400 mt-2">部員全員のライトに共通して反映されるルールや事実です。</p>
+            </div>
+            
+            <div class="flex gap-4 mb-6">
+                <input id="new-rule-input" type="text" placeholder="新しいルールを入力..." class="flex-1 bg-[#2a2a35] text-white border border-gray-600 rounded-lg px-4 py-3 outline-none focus:border-[#ff7eb3]">
+                <button onclick="addRule()" class="bg-[#88c0d0] text-[#0d0d12] font-bold px-8 py-3 rounded-lg hover:brightness-110 transition">追加</button>
+            </div>
+
+            <div id="rules-container" class="space-y-3">
+                <!-- JSで動的に追加されます -->
+            </div>
         </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-1">笑顔 (smile)</label>
-          <input id="url-smile" type="text" class="w-full bg-[#0b0b10] border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:border-pink-500 outline-none">
+
+        <!-- タブ2: アバター設定 (NEW) -->
+        <div id="tab-avatar" class="hidden max-w-4xl mx-auto space-y-6">
+            <div class="border-b border-gray-600 pb-2 mb-6">
+                <h1 class="text-2xl font-bold text-white">アバター表示設定（リアルタイム反映）</h1>
+                <p class="text-sm text-gray-400 mt-2">生徒の画面のアバター表示を管理します。変更はリロードなしで即座に生徒側に反映されます。</p>
+            </div>
+
+            <div class="bg-[#2a2a35] p-6 rounded-lg space-y-6 border border-gray-600">
+                <!-- ON/OFF切替 -->
+                <div>
+                    <label class="block text-gray-300 mb-2 font-bold">アバターの表示状態</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="avatar-enabled" value="true" class="w-5 h-5 accent-[#ff7eb3]"> <span>表示する (ON)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="avatar-enabled" value="false" class="w-5 h-5 accent-[#ff7eb3]"> <span>非表示にする (OFF)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 3D/2D切替 -->
+                <div>
+                    <label class="block text-gray-300 mb-2 font-bold">アバターのモード (3D / 2D)</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="avatar-mode" value="3d" class="w-5 h-5 accent-[#ff7eb3]"> <span>3Dモデル (VRM)</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="avatar-mode" value="2d" class="w-5 h-5 accent-[#ff7eb3]"> <span>2D画像 (一枚絵)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 2D画像のURL -->
+                <div>
+                    <label class="block text-gray-300 mb-2 font-bold">2D画像URL (2Dモード時のみ有効)</label>
+                    <input id="url-2d" type="text" placeholder="https://..." class="w-full bg-[#1a1a24] text-white border border-gray-600 rounded-lg px-4 py-2 outline-none focus:border-[#ff7eb3]">
+                </div>
+
+                <div class="pt-4 border-t border-gray-600 flex items-center gap-4">
+                    <button onclick="saveDisplayConfig()" class="bg-[#ff7eb3] text-white font-bold px-8 py-3 rounded-lg hover:brightness-110 transition shadow-[0_0_15px_rgba(255,126,179,0.4)]">
+                        設定をクラウドに反映
+                    </button>
+                    <span id="save-msg" class="text-sm text-[#a3be8c] opacity-0 transition-opacity">✅ 反映しました！</span>
+                </div>
+            </div>
         </div>
-        <div>
-          <label class="block text-sm text-gray-400 mb-1">考える・悩む (think)</label>
-          <input id="url-think" type="text" class="w-full bg-[#0b0b10] border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:border-pink-500 outline-none">
+
+        <!-- タブ3: 履歴 (仮置き) -->
+        <div id="tab-logs" class="hidden max-w-4xl mx-auto space-y-6">
+            <h1 class="text-2xl font-bold text-white">トーク履歴（近日実装）</h1>
+            <p class="text-gray-400">※ここにFirebaseの `light_chat_logs` が流れます。</p>
         </div>
-        <div class="pt-4 flex items-center gap-4">
-          <button onclick="saveAvatarConfig()" class="bg-pink-600 hover:bg-pink-500 text-white font-bold px-8 py-2 rounded-lg transition shadow-[0_0_10px_rgba(255,101,132,0.4)]">
-            アバターを更新して反映
-          </button>
-          <span id="avatar-save-msg" class="text-sm text-cyan-400 opacity-0 transition-opacity">✅ 反映しました！</span>
-        </div>
-      </div>
+
     </div>
 
-    <!-- Tab 3: トーク履歴 -->
-    <div id="tab-logs" class="hidden space-y-6">
-      <h1 class="text-xl font-bold text-white">生徒のトーク履歴（リアルタイム）</h1>
-      <div id="logs-container" class="space-y-4"></div>
-    </div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  </div>
+        // ★ 生徒用と同じFirebase設定を入れてね
+        const firebaseConfig = {
+            apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
+            authDomain: "light-65413.firebaseapp.com",
+            projectId: "light-65413",
+            storageBucket: "light-65413.firebasestorage.app",
+            messagingSenderId: "116819261632",
+            appId: "1:116819261632:web:9d9144aa125a55371d5525"
+        };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        const GLOBAL_CLUB_ID = "shout_club_global_space";
+        let currentRules = [];
 
-  <script>
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT.appspot.com"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+        // 起動時のデータ取得
+        window.onload = () => {
+            // 共有知識のリアルタイム監視
+            onSnapshot(doc(db, "light_memories", GLOBAL_CLUB_ID), (docSnap) => {
+                if (docSnap.exists() && docSnap.data().globalFacts) {
+                    currentRules = docSnap.data().globalFacts;
+                    renderRules();
+                }
+            });
 
-    let currentRules = [];
+            // アバター設定の取得
+            getDoc(doc(db, "settings", "displayConfig")).then(docSnap => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.querySelector(`input[name="avatar-enabled"][value="${data.enabled !== false}"]`).checked = true;
+                    document.querySelector(`input[name="avatar-mode"][value="${data.mode || '3d'}"]`).checked = true;
+                    if(data.url2d) document.getElementById("url-2d").value = data.url2d;
+                } else {
+                    // デフォルトチェック
+                    document.querySelector(`input[name="avatar-enabled"][value="true"]`).checked = true;
+                    document.querySelector(`input[name="avatar-mode"][value="3d"]`).checked = true;
+                }
+            });
+        };
 
-    window.onload = () => {
-      // 共有知識ロード
-      db.collection("settings").doc("sharedKnowledge").onSnapshot(doc => {
-        currentRules = (doc.exists && doc.data().items) ? doc.data().items : [];
-        renderRules();
-      });
+        // --- タブ切替 ---
+        window.switchTab = function(tab) {
+            ['knowledge', 'avatar', 'logs'].forEach(t => {
+                document.getElementById(`tab-${t}`).style.display = (t === tab) ? 'block' : 'none';
+                const btn = document.getElementById(`btn-${t}`);
+                if (t === tab) {
+                    btn.className = "tab-active py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition";
+                } else {
+                    btn.className = "tab-inactive py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition";
+                }
+            });
+        };
 
-      // アバター設定ロード (画面表示用)
-      db.collection("settings").doc("avatarConfig").get().then(doc => {
-        if (doc.exists) {
-          document.getElementById("url-normal").value = doc.data().normal || "";
-          document.getElementById("url-smile").value = doc.data().smile || "";
-          document.getElementById("url-think").value = doc.data().think || "";
+        // --- 共有知識の処理 ---
+        function renderRules() {
+            const container = document.getElementById("rules-container");
+            container.innerHTML = "";
+            currentRules.forEach((rule, index) => {
+                container.innerHTML += `
+                    <div class="rule-card p-4 rounded-r-lg flex justify-between items-center text-sm shadow-md">
+                        <span class="text-gray-200">${rule}</span>
+                        <button onclick="deleteRule(${index})" class="delete-btn text-white text-xs px-4 py-2 rounded font-bold shadow">削除</button>
+                    </div>
+                `;
+            });
         }
-      });
+        
+        window.addRule = async function() {
+            const input = document.getElementById("new-rule-input");
+            const text = input.value.trim();
+            if (!text) return;
+            currentRules.push(text);
+            await setDoc(doc(db, "light_memories", GLOBAL_CLUB_ID), { globalFacts: currentRules, updatedAt: new Date() }, { merge: true });
+            input.value = "";
+        };
 
-      // ログロード
-      db.collection("chatLogs").orderBy("timestamp", "desc").onSnapshot(snap => {
-        const container = document.getElementById("logs-container");
-        container.innerHTML = "";
-        snap.forEach(d => {
-          const data = d.data();
-          container.innerHTML += `
-            <div class="bg-[#161620] p-4 rounded-xl border border-gray-800 space-y-1 text-xs">
-              <div class="text-gray-500">${data.timestamp ? data.timestamp.toDate().toLocaleString() : '...'}</div>
-              <div class="text-pink-300">生徒: ${data.userText}</div>
-              <div class="text-gray-300">ライト: ${data.lightReply}</div>
-            </div>`;
-        });
-      });
-    };
+        window.deleteRule = async function(index) {
+            currentRules.splice(index, 1);
+            await setDoc(doc(db, "light_memories", GLOBAL_CLUB_ID), { globalFacts: currentRules, updatedAt: new Date() }, { merge: true });
+        };
 
-    // --- アバター保存処理 ---
-    async function saveAvatarConfig() {
-      const normal = document.getElementById("url-normal").value.trim();
-      const smile = document.getElementById("url-smile").value.trim();
-      const think = document.getElementById("url-think").value.trim();
-      
-      await db.collection("settings").doc("avatarConfig").set({ normal, smile, think });
-      
-      // 保存完了メッセージのアニメーション
-      const msg = document.getElementById("avatar-save-msg");
-      msg.classList.remove("opacity-0");
-      setTimeout(() => msg.classList.add("opacity-0"), 2000);
-    }
+        // --- アバター設定の保存 (NEW) ---
+        window.saveDisplayConfig = async function() {
+            const enabled = document.querySelector('input[name="avatar-enabled"]:checked').value === 'true';
+            const mode = document.querySelector('input[name="avatar-mode"]:checked').value;
+            const url2d = document.getElementById("url-2d").value.trim();
 
-    // --- 共有知識周り (変更なし) ---
-    function renderRules() {
-      const container = document.getElementById("rules-container");
-      container.innerHTML = "";
-      currentRules.forEach((rule, index) => {
-        container.innerHTML += `
-          <div class="card-border p-4 rounded-r-xl flex justify-between items-center text-sm text-gray-200">
-            <span>${rule}</span>
-            <button onclick="deleteRule(${index})" class="bg-[#d97706] hover:bg-[#b45309] text-white text-xs px-3 py-1.5 rounded transition">削除</button>
-          </div>`;
-      });
-    }
-    async function addRule() {
-      const input = document.getElementById("new-rule-input");
-      if (!input.value.trim()) return;
-      currentRules.push(input.value.trim());
-      await db.collection("settings").doc("sharedKnowledge").set({ items: currentRules });
-      input.value = "";
-    }
-    async function deleteRule(index) {
-      currentRules.splice(index, 1);
-      await db.collection("settings").doc("sharedKnowledge").set({ items: currentRules });
-    }
+            await setDoc(doc(db, "settings", "displayConfig"), {
+                enabled: enabled,
+                mode: mode,
+                url2d: url2d,
+                updatedAt: new Date()
+            });
 
-    // --- タブ切り替え処理 ---
-    function switchTab(tabName) {
-      ['knowledge', 'avatar', 'logs'].forEach(t => {
-        document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tabName);
-        const btn = document.getElementById(`btn-tab-${t}`);
-        if (t === tabName) {
-          btn.className = "w-full text-left bg-cyan-500/20 text-cyan-300 font-bold px-4 py-3 rounded-lg text-xs flex items-center gap-2 border border-cyan-500/30";
-        } else {
-          btn.className = "w-full text-left text-gray-400 hover:bg-gray-900 px-4 py-3 rounded-lg text-xs flex items-center gap-2 border border-transparent";
-        }
-      });
-    }
-  </script>
+            const msg = document.getElementById("save-msg");
+            msg.style.opacity = "1";
+            setTimeout(() => msg.style.opacity = "0", 2000);
+        };
+    </script>
 </body>
 </html>
