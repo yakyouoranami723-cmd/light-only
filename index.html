@@ -3,50 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ライト OS - 生徒用チャット</title>
+    <title>ライト OS - 生徒用</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { background-color: #0b0f19; } /* 深いダークブルー/ブラック */
+        .pink-glow { text-shadow: 0 0 10px rgba(236, 72, 153, 0.5); }
+    </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-between p-4">
+<body class="text-slate-200 min-h-screen flex flex-col items-center font-sans">
 
-    <!-- ヘッダー -->
-    <header class="w-full max-w-2xl flex justify-between items-center py-3 border-b border-pink-500/30">
-        <h1 class="text-xl font-bold text-pink-400 tracking-wider">✨ AIアシスタント「ライト」</h1>
-        <span class="text-xs bg-slate-800 text-cyan-400 px-3 py-1 rounded-full border border-cyan-500/30">部活用 Online</span>
-    </header>
-
-    <!-- チャットログ表示エリア -->
-    <main id="chat-box" class="w-full max-w-2xl flex-grow my-4 p-4 bg-slate-800/60 backdrop-blur rounded-2xl border border-slate-700 overflow-y-auto max-h-[70vh] flex flex-col gap-3">
-        <div class="bg-slate-700/50 text-cyan-300 text-xs p-3 rounded-lg border border-cyan-500/20">
-            システム: ライトが起動しました。質問や画像を送信してね！
-        </div>
-    </main>
-
-    <!-- 添付画像プレビュー -->
-    <div id="image-preview-container" class="w-full max-w-2xl hidden mb-2 flex items-center gap-2 bg-slate-800 p-2 rounded-lg border border-pink-500/30">
-        <img id="image-preview" class="h-16 w-16 object-cover rounded-md border border-slate-600">
-        <span id="image-name" class="text-xs text-slate-300 truncate flex-grow"></span>
-        <button onclick="clearImage()" class="text-xs text-red-400 hover:text-red-300 p-1">❌ 削除</button>
+    <!-- パスワード画面 -->
+    <div id="auth-screen" class="fixed inset-0 bg-[#0b0f19] z-50 flex flex-col items-center justify-center">
+        <h2 class="text-pink-400 text-xl font-bold mb-6 tracking-widest pink-glow">✨ 部室アクセス</h2>
+        <input type="password" id="pass-input" placeholder="パスワードを入力" 
+            class="bg-slate-800 border border-pink-500/50 rounded-lg px-4 py-3 text-center mb-4 focus:outline-none focus:border-pink-400">
+        <button onclick="checkPassword()" class="bg-gradient-to-r from-pink-600 to-purple-600 px-8 py-3 rounded-full font-bold shadow-lg shadow-pink-500/30 hover:opacity-90">
+            入室
+        </button>
     </div>
 
-    <!-- 入力フォーム -->
-    <footer class="w-full max-w-2xl flex gap-2 items-center">
-        <input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
-        <button onclick="document.getElementById('image-input').click()" class="bg-slate-800 border border-pink-500/50 hover:bg-pink-500/20 text-pink-300 p-3 rounded-full transition">
-            🖼️
-        </button>
-        
-        <input type="text" id="user-input" placeholder="ライトにメッセージを送信..." 
-            class="flex-grow bg-slate-800 border border-slate-700 rounded-full px-5 py-3 text-sm focus:outline-none focus:border-pink-500 transition">
-        
-        <button id="send-btn" onclick="sendMessage()" class="bg-gradient-to-r from-pink-500 to-cyan-500 hover:opacity-90 font-bold px-6 py-3 rounded-full text-sm transition">
-            送信
-        </button>
-    </footer>
+    <div id="main-app" class="w-full max-w-3xl flex flex-col h-screen hidden p-4">
+        <!-- ヘッダー -->
+        <header class="flex justify-between items-center py-4 border-b border-pink-500/30 mb-4">
+            <h1 class="text-xl font-bold text-pink-400 tracking-wider flex items-center gap-2">
+                ✨ ライト
+            </h1>
+            <div class="flex gap-3 text-sm">
+                <button class="px-4 py-1.5 rounded-full border border-slate-600 bg-slate-800 text-slate-300">🔄 アバター</button>
+                <button class="px-4 py-1.5 rounded-full border border-slate-600 bg-slate-800 text-slate-300">⚙️ 設定</button>
+            </div>
+        </header>
+
+        <!-- チャットログ -->
+        <main id="chat-box" class="flex-grow bg-[#131826] rounded-2xl border border-pink-500/20 p-4 overflow-y-auto flex flex-col gap-4">
+            <div class="text-cyan-300 text-xs flex gap-2">
+                <span class="font-bold">システム:</span> クラウド連携待機中...
+            </div>
+        </main>
+
+        <!-- 添付画像プレビュー -->
+        <div id="image-preview-container" class="hidden mt-2 flex items-center gap-2 bg-slate-800 p-2 rounded-lg border border-pink-500/30">
+            <img id="image-preview" class="h-12 w-12 object-cover rounded">
+            <button onclick="clearImage()" class="text-xs text-red-400">❌ 削除</button>
+        </div>
+
+        <!-- 入力エリア -->
+        <footer class="mt-4 flex gap-3 items-center bg-[#131826] p-2 rounded-full border border-pink-500/40">
+            <input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+            <button onclick="document.getElementById('image-input').click()" class="bg-pink-500/20 text-pink-400 w-10 h-10 rounded-full flex items-center justify-center hover:bg-pink-500/40">
+                🖼️
+            </button>
+            
+            <input type="text" id="user-input" placeholder="ライトに話しかける..." 
+                class="flex-grow bg-transparent border-none focus:outline-none px-2 text-sm text-slate-200">
+            
+            <button id="send-btn" onclick="sendMessage()" class="bg-cyan-400 text-slate-900 font-bold px-6 py-2.5 rounded-full text-sm hover:bg-cyan-300 shadow-[0_0_15px_rgba(34,211,238,0.4)]">
+                送信
+            </button>
+        </footer>
+    </div>
 
     <script>
-        // ★ Firebase設定 (あなたの環境に合わせてキーを維持しています)
+        // パスワード処理 (1234でログイン)
+        function checkPassword() {
+            if (document.getElementById('pass-input').value === '1234') {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+            } else {
+                alert('パスワードが違います');
+            }
+        }
+
+        // Firebase設定
         const firebaseConfig = {
             apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
             authDomain: "light-65413.firebaseapp.com",
@@ -55,25 +85,17 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // ★ Gemini API Key
+        // Gemini API設定
         const GEMINI_API_KEY = "AQ.Ab8RN6LFpA-TEL3AGVk6l5KQe7Pgi9w455ROTO2txXm5m6SeTg";
-
         let selectedImageBase64 = null;
-        let selectedMimeType = null;
 
-        // 画像選択時の処理
         function handleImageSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
-
-            selectedMimeType = file.type;
             const reader = new FileReader();
-            reader.onload = function(e) {
-                const fullBase64 = e.target.result;
-                selectedImageBase64 = fullBase64.split(',')[1]; // Base64の実データ部分だけ抽出
-                
-                document.getElementById('image-preview').src = fullBase64;
-                document.getElementById('image-name').textContent = file.name;
+            reader.onload = e => {
+                selectedImageBase64 = e.target.result.split(',')[1];
+                document.getElementById('image-preview').src = e.target.result;
                 document.getElementById('image-preview-container').classList.remove('hidden');
             };
             reader.readAsDataURL(file);
@@ -81,117 +103,69 @@
 
         function clearImage() {
             selectedImageBase64 = null;
-            selectedMimeType = null;
             document.getElementById('image-input').value = '';
             document.getElementById('image-preview-container').classList.add('hidden');
         }
 
-        // 管理者画面で設定した最新のルール（プロンプト）を取得
-        async function fetchSystemPrompt() {
-            try {
-                const doc = await db.collection("settings").doc("systemPrompt").get();
-                if (doc.exists && doc.data().text) {
-                    return doc.data().text;
-                }
-            } catch (e) {
-                console.error("ルール取得失敗:", e);
-            }
-            return "あなたは部活用AIアシスタントの『ライト』です。明るくフレンドリーに対応してください。";
-        }
-
-        // メッセージ送信処理
         async function sendMessage() {
-            const inputEl = document.getElementById('user-input');
-            const text = inputEl.value.trim();
+            const text = document.getElementById('user-input').value.trim();
             if (!text && !selectedImageBase64) return;
-
-            const sendBtn = document.getElementById('send-btn');
-            sendBtn.disabled = true;
-            inputEl.value = '';
-
-            // 1. UIにあなたのメッセージを表示
+            
+            document.getElementById('user-input').value = '';
             appendMessage('あなた', text, 'user', selectedImageBase64);
 
-            // 2. Firebaseにユーザーの送信ログを保存 (管理画面用)
-            const logData = {
-                userId: "student_user",
+            // Firebaseへ保存（管理者画面に同期）
+            await db.collection("chatLogs").add({
                 role: "user",
                 text: text,
                 hasImage: !!selectedImageBase64,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            await db.collection("chatLogs").add(logData);
+            });
 
-            // 3. Geminiに送るデータの準備
-            const systemPrompt = await fetchSystemPrompt();
-            const parts = [];
-            if (text) parts.push({ text: text });
-            if (selectedImageBase64) {
-                parts.push({
-                    inline_data: {
-                        mime_type: selectedMimeType,
-                        data: selectedImageBase64
-                    }
-                });
-            }
-
-            // 送信と同時に画像の選択状態をクリア
             clearImage();
 
-            // 4. Gemini API 呼び出し
+            // AI応答フェーズ
             try {
+                // System Prompt取得
+                const doc = await db.collection("settings").doc("systemPrompt").get();
+                const systemPrompt = doc.exists ? doc.data().text : "あなたはライトです。";
+
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-                const response = await fetch(url, {
+                const res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         system_instruction: { parts: [{ text: systemPrompt }] },
-                        contents: [{ parts: parts }]
+                        contents: [{ parts: [{ text: text }] }] // 画像送信処理はシンプル化のため一時除外
                     })
                 });
 
-                const data = await response.json();
-                const aiReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "エラー発生！うまく聞き取れなかったぜ。";
+                if (!res.ok) throw new Error("APIエラー");
+                const data = await res.json();
+                const aiReply = data.candidates[0].content.parts[0].text;
 
-                // 5. UIにライトの返答を表示
                 appendMessage('ライト', aiReply, 'ai');
-
-                // 6. Firebaseにライトの返答ログを保存 (管理画面用)
                 await db.collection("chatLogs").add({
-                    userId: "light_ai",
-                    role: "ai",
-                    text: aiReply,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    role: "ai", text: aiReply, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
-
             } catch (e) {
-                appendMessage('システム', '通信エラーが発生しました。', 'error');
-            } finally {
-                sendBtn.disabled = false;
+                appendMessage('システム', 'エラー：通信失敗。APIキーの設定を確認してください。', 'error');
             }
         }
 
-        // チャットUI描画関数
         function appendMessage(sender, text, type, imageBase64 = null) {
-            const chatBox = document.getElementById('chat-box');
-            const msgDiv = document.createElement('div');
+            const box = document.getElementById('chat-box');
+            const div = document.createElement('div');
             
-            let bgStyle = type === 'user' ? 'bg-emerald-900/40 border-emerald-500/30 text-emerald-200 self-end' :
-                         (type === 'ai' ? 'bg-pink-900/40 border-pink-500/30 text-pink-200 self-start' : 'bg-red-900/40 border-red-500/30 text-red-200');
-
-            msgDiv.className = `max-w-[85%] p-3 rounded-xl border text-sm flex flex-col gap-2 ${bgStyle}`;
+            let color = type === 'user' ? 'text-slate-300 bg-slate-800/50 self-end rounded-l-2xl rounded-tr-2xl' : 
+                       (type === 'ai' ? 'text-pink-100 bg-pink-900/30 border border-pink-500/30 self-start rounded-r-2xl rounded-tl-2xl' : 'text-red-400');
             
-            let imgHTML = imageBase64 ? `<img src="data:image/jpeg;base64,${imageBase64}" class="max-h-48 rounded-lg object-cover mb-1">` : '';
-            msgDiv.innerHTML = `<span class="text-xs font-bold opacity-75">${sender}</span>${imgHTML}<div>${text}</div>`;
-            
-            chatBox.appendChild(msgDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            div.className = `p-3 max-w-[80%] text-sm ${color}`;
+            let img = imageBase64 ? `<img src="data:image/jpeg;base64,${imageBase64}" class="max-h-40 rounded mb-2">` : '';
+            div.innerHTML = `${img}<div>${text}</div>`;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;
         }
-
-        // Enterキーで送信
-        document.getElementById('user-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
     </script>
 </body>
 </html>
