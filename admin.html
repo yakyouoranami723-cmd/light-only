@@ -3,218 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理者メニュー</title>
+    <title>ライト OS - 管理者ダッシュボード</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #1a1a24; color: #ffffff; font-family: 'Helvetica Neue', sans-serif; }
-        .sidebar { background-color: #0d0d12; border-right: 1px solid #2a2a35; }
-        .tab-active { background-color: #88c0d0; color: #0d0d12; font-weight: bold; }
-        .tab-inactive { border: 1px solid #88c0d0; color: #ffffff; }
-        .rule-card { background-color: #2a2a35; border-left: 4px solid #f1c40f; }
-        .delete-btn { background-color: #bf616a; transition: all 0.2s; }
-        .delete-btn:hover { background-color: #a5535b; }
-    </style>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
-<body class="h-screen w-screen flex overflow-hidden">
+<body class="bg-slate-900 text-slate-100 min-h-screen p-6">
 
-    <!-- サイドバー -->
-    <div class="sidebar w-64 h-full flex flex-col p-6 space-y-6 shrink-0">
-        <div class="text-xl font-bold text-[#ff7eb3] flex items-center gap-2 justify-center mb-4">
-            <span>✨</span> 管理者メニュー
-        </div>
-        
-        <nav class="flex flex-col space-y-4">
-            <button onclick="switchTab('knowledge')" id="btn-knowledge" class="tab-active py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition">
-                🧠 共有知識の管理
-            </button>
-            <button onclick="switchTab('avatar')" id="btn-avatar" class="tab-inactive py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition">
-                🖼️ アバター表示設定
-            </button>
-            <button onclick="switchTab('logs')" id="btn-logs" class="tab-inactive py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition">
-                💬 トーク履歴閲覧
-            </button>
-        </nav>
-    </div>
+    <header class="max-w-6xl mx-auto mb-6 pb-4 border-b border-pink-500/30 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-pink-400">⚙️ ライト 管理者ダッシュボード</h1>
+        <span class="text-xs bg-slate-800 text-slate-400 px-3 py-1 rounded-full border border-slate-700">管理者モード</span>
+    </header>
 
-    <!-- メインコンテンツ -->
-    <div class="flex-1 h-full overflow-y-auto p-10 bg-[#1a1a24]">
-        
-        <!-- タブ1: 共有知識 -->
-        <div id="tab-knowledge" class="max-w-4xl mx-auto space-y-6">
-            <div class="border-b border-gray-600 pb-2 mb-6">
-                <h1 class="text-2xl font-bold text-white">部活全体 共有知識（ライトの記憶）</h1>
-                <p class="text-sm text-gray-400 mt-2">部員全員のライトに共通して反映されるルールや事実です。</p>
-            </div>
+    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- 左カラム：システムプロンプト設定 ＆ 履歴復元 -->
+        <section class="flex flex-col gap-6">
             
-            <div class="flex gap-4 mb-6">
-                <input id="new-rule-input" type="text" placeholder="新しいルールを入力..." class="flex-1 bg-[#2a2a35] text-white border border-gray-600 rounded-lg px-4 py-3 outline-none focus:border-[#ff7eb3]">
-                <button onclick="addRule()" class="bg-[#88c0d0] text-[#0d0d12] font-bold px-8 py-3 rounded-lg hover:brightness-110 transition">追加</button>
+            <!-- プロンプト編集 -->
+            <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 shadow-lg">
+                <h2 class="text-lg font-bold text-cyan-400 mb-3 flex items-center gap-2">🧠 全体ルールの編集 (System Prompt)</h2>
+                <textarea id="prompt-input" rows="6" 
+                    class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-cyan-500 transition" 
+                    placeholder="ライトのキャラクター設定や全体ルールを入力..."></textarea>
+                <button onclick="saveSystemPrompt()" class="mt-3 w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:opacity-90 font-bold py-2.5 rounded-xl text-sm transition">
+                    ☁️ ルールを更新して保存
+                </button>
             </div>
 
-            <div id="rules-container" class="space-y-3">
-                <!-- JSで動的に追加されます -->
-            </div>
-        </div>
-
-        <!-- タブ2: アバター設定 (NEW) -->
-        <div id="tab-avatar" class="hidden max-w-4xl mx-auto space-y-6">
-            <div class="border-b border-gray-600 pb-2 mb-6">
-                <h1 class="text-2xl font-bold text-white">アバター表示設定（リアルタイム反映）</h1>
-                <p class="text-sm text-gray-400 mt-2">生徒の画面のアバター表示を管理します。変更はリロードなしで即座に生徒側に反映されます。</p>
-            </div>
-
-            <div class="bg-[#2a2a35] p-6 rounded-lg space-y-6 border border-gray-600">
-                <!-- ON/OFF切替 -->
-                <div>
-                    <label class="block text-gray-300 mb-2 font-bold">アバターの表示状態</label>
-                    <div class="flex gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="avatar-enabled" value="true" class="w-5 h-5 accent-[#ff7eb3]"> <span>表示する (ON)</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="avatar-enabled" value="false" class="w-5 h-5 accent-[#ff7eb3]"> <span>非表示にする (OFF)</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- 3D/2D切替 -->
-                <div>
-                    <label class="block text-gray-300 mb-2 font-bold">アバターのモード (3D / 2D)</label>
-                    <div class="flex gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="avatar-mode" value="3d" class="w-5 h-5 accent-[#ff7eb3]"> <span>3Dモデル (VRM)</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="avatar-mode" value="2d" class="w-5 h-5 accent-[#ff7eb3]"> <span>2D画像 (一枚絵)</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- 2D画像のURL -->
-                <div>
-                    <label class="block text-gray-300 mb-2 font-bold">2D画像URL (2Dモード時のみ有効)</label>
-                    <input id="url-2d" type="text" placeholder="https://..." class="w-full bg-[#1a1a24] text-white border border-gray-600 rounded-lg px-4 py-2 outline-none focus:border-[#ff7eb3]">
-                </div>
-
-                <div class="pt-4 border-t border-gray-600 flex items-center gap-4">
-                    <button onclick="saveDisplayConfig()" class="bg-[#ff7eb3] text-white font-bold px-8 py-3 rounded-lg hover:brightness-110 transition shadow-[0_0_15px_rgba(255,126,179,0.4)]">
-                        設定をクラウドに反映
-                    </button>
-                    <span id="save-msg" class="text-sm text-[#a3be8c] opacity-0 transition-opacity">✅ 反映しました！</span>
+            <!-- プロンプト履歴 ＆ ワンタップ復元 -->
+            <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 shadow-lg flex-grow">
+                <h2 class="text-lg font-bold text-amber-400 mb-3">📜 ルール変更履歴 (ワンタップ復元)</h2>
+                <div id="history-list" class="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1">
+                    <span class="text-xs text-slate-500">履歴を読み込み中...</span>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <!-- タブ3: 履歴 (仮置き) -->
-        <div id="tab-logs" class="hidden max-w-4xl mx-auto space-y-6">
-            <h1 class="text-2xl font-bold text-white">トーク履歴（近日実装）</h1>
-            <p class="text-gray-400">※ここにFirebaseの `light_chat_logs` が流れます。</p>
-        </div>
+        <!-- 右カラム：リアルタイム会話ログ -->
+        <section class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 shadow-lg flex flex-col h-[650px]">
+            <h2 class="text-lg font-bold text-pink-400 mb-3 flex justify-between items-center">
+                <span>💬 生徒の会話ログ (リアルタイム)</span>
+                <span class="text-xs font-normal text-emerald-400 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Live</span>
+            </h2>
+            <div id="logs-container" class="flex-grow overflow-y-auto flex flex-col gap-2 p-2 bg-slate-900/80 rounded-xl border border-slate-800">
+                <span class="text-xs text-slate-500">ログを受信中...</span>
+            </div>
+        </section>
 
-    </div>
+    </main>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // ★ 生徒用と同じFirebase設定を入れてね
+    <script>
+        // Firebase初期化 (v9 compat)
         const firebaseConfig = {
             apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
             authDomain: "light-65413.firebaseapp.com",
-            projectId: "light-65413",
-            storageBucket: "light-65413.firebasestorage.app",
-            messagingSenderId: "116819261632",
-            appId: "1:116819261632:web:9d9144aa125a55371d5525"
+            projectId: "light-65413"
         };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        const GLOBAL_CLUB_ID = "shout_club_global_space";
-        let currentRules = [];
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
 
-        // 起動時のデータ取得
-        window.onload = () => {
-            // 共有知識のリアルタイム監視
-            onSnapshot(doc(db, "light_memories", GLOBAL_CLUB_ID), (docSnap) => {
-                if (docSnap.exists() && docSnap.data().globalFacts) {
-                    currentRules = docSnap.data().globalFacts;
-                    renderRules();
-                }
-            });
-
-            // アバター設定の取得
-            getDoc(doc(db, "settings", "displayConfig")).then(docSnap => {
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    document.querySelector(`input[name="avatar-enabled"][value="${data.enabled !== false}"]`).checked = true;
-                    document.querySelector(`input[name="avatar-mode"][value="${data.mode || '3d'}"]`).checked = true;
-                    if(data.url2d) document.getElementById("url-2d").value = data.url2d;
-                } else {
-                    // デフォルトチェック
-                    document.querySelector(`input[name="avatar-enabled"][value="true"]`).checked = true;
-                    document.querySelector(`input[name="avatar-mode"][value="3d"]`).checked = true;
-                }
-            });
-        };
-
-        // --- タブ切替 ---
-        window.switchTab = function(tab) {
-            ['knowledge', 'avatar', 'logs'].forEach(t => {
-                document.getElementById(`tab-${t}`).style.display = (t === tab) ? 'block' : 'none';
-                const btn = document.getElementById(`btn-${t}`);
-                if (t === tab) {
-                    btn.className = "tab-active py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition";
-                } else {
-                    btn.className = "tab-inactive py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition";
-                }
-            });
-        };
-
-        // --- 共有知識の処理 ---
-        function renderRules() {
-            const container = document.getElementById("rules-container");
-            container.innerHTML = "";
-            currentRules.forEach((rule, index) => {
-                container.innerHTML += `
-                    <div class="rule-card p-4 rounded-r-lg flex justify-between items-center text-sm shadow-md">
-                        <span class="text-gray-200">${rule}</span>
-                        <button onclick="deleteRule(${index})" class="delete-btn text-white text-xs px-4 py-2 rounded font-bold shadow">削除</button>
-                    </div>
-                `;
-            });
+        // 1. 現在のプロンプト取得
+        async function loadCurrentPrompt() {
+            const doc = await db.collection("settings").doc("systemPrompt").get();
+            if (doc.exists) {
+                document.getElementById('prompt-input').value = doc.data().text || '';
+            }
         }
-        
-        window.addRule = async function() {
-            const input = document.getElementById("new-rule-input");
-            const text = input.value.trim();
-            if (!text) return;
-            currentRules.push(text);
-            await setDoc(doc(db, "light_memories", GLOBAL_CLUB_ID), { globalFacts: currentRules, updatedAt: new Date() }, { merge: true });
-            input.value = "";
+
+        // 2. プロンプト保存 & 履歴追加
+        async function saveSystemPrompt() {
+            const text = document.getElementById('prompt-input').value.trim();
+            if (!text) return alert("ルールを入力してください");
+
+            try {
+                // 設定を更新
+                await db.collection("settings").doc("systemPrompt").set({
+                    text: text,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // 履歴に追加
+                await db.collection("promptHistory").add({
+                    text: text,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                alert("全体ルールを保存・適用しました！");
+                loadPromptHistory(); // 履歴リストを更新
+            } catch (e) {
+                alert("保存失敗: " + e.message);
+            }
+        }
+
+        // 3. 履歴の読み込み
+        function loadPromptHistory() {
+            db.collection("promptHistory")
+              .orderBy("timestamp", "desc")
+              .limit(10)
+              .get()
+              .then(snapshot => {
+                  const historyList = document.getElementById('history-list');
+                  historyList.innerHTML = '';
+
+                  if (snapshot.empty) {
+                      historyList.innerHTML = '<span class="text-xs text-slate-500">過去の履歴はありません</span>';
+                      return;
+                  }
+
+                  snapshot.forEach(doc => {
+                      const data = doc.data();
+                      const timeStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString('ja-JP') : '直近';
+                      
+                      const item = document.createElement('div');
+                      item.className = "bg-slate-900/60 p-3 rounded-lg border border-slate-700 flex justify-between items-center text-xs gap-3";
+                      // テキストをエンコードして関数に渡す（改行等でのバグを防ぐため）
+                      item.innerHTML = `
+                          <div class="overflow-hidden">
+                              <div class="text-slate-400 font-bold mb-0.5">${timeStr}</div>
+                              <div class="text-slate-300 truncate max-w-xs">${data.text}</div>
+                          </div>
+                          <button onclick="restorePrompt('${encodeURIComponent(data.text)}')" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1.5 rounded-md font-bold transition flex-shrink-0">
+                              復元
+                          </button>
+                      `;
+                      historyList.appendChild(item);
+                  });
+              });
+        }
+
+        // 4. ワンタップ復元
+        window.restorePrompt = function(encodedText) {
+            const text = decodeURIComponent(encodedText);
+            document.getElementById('prompt-input').value = text;
+            saveSystemPrompt(); // 復元後、即座に保存・適用
         };
 
-        window.deleteRule = async function(index) {
-            currentRules.splice(index, 1);
-            await setDoc(doc(db, "light_memories", GLOBAL_CLUB_ID), { globalFacts: currentRules, updatedAt: new Date() }, { merge: true });
-        };
+        // 5. 会話ログのリアルタイム監視
+        function listenToChatLogs() {
+            db.collection("chatLogs")
+              .orderBy("timestamp", "desc")
+              .limit(50)
+              .onSnapshot(snapshot => {
+                  const container = document.getElementById('logs-container');
+                  container.innerHTML = '';
 
-        // --- アバター設定の保存 (NEW) ---
-        window.saveDisplayConfig = async function() {
-            const enabled = document.querySelector('input[name="avatar-enabled"]:checked').value === 'true';
-            const mode = document.querySelector('input[name="avatar-mode"]:checked').value;
-            const url2d = document.getElementById("url-2d").value.trim();
+                  if (snapshot.empty) {
+                      container.innerHTML = '<span class="text-xs text-slate-500">会話ログはまだありません</span>';
+                      return;
+                  }
 
-            await setDoc(doc(db, "settings", "displayConfig"), {
-                enabled: enabled,
-                mode: mode,
-                url2d: url2d,
-                updatedAt: new Date()
-            });
+                  snapshot.forEach(doc => {
+                      const data = doc.data();
+                      const timeStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'}) : '送信中...';
+                      
+                      const isAi = data.role === 'ai';
+                      const roleTag = isAi ? '<span class="text-pink-400 font-bold">ライト</span>' : `<span class="text-emerald-400 font-bold">生徒</span>`;
+                      const imgTag = data.hasImage ? '<span class="bg-blue-900/50 text-blue-300 px-1.5 py-0.5 rounded text-[10px] border border-blue-500/30">画像あり</span>' : '';
 
-            const msg = document.getElementById("save-msg");
-            msg.style.opacity = "1";
-            setTimeout(() => msg.style.opacity = "0", 2000);
-        };
+                      const div = document.createElement('div');
+                      div.className = "bg-slate-800/50 p-2.5 rounded-lg border border-slate-700/50 text-xs flex flex-col gap-1";
+                      div.innerHTML = `
+                          <div class="flex justify-between items-center">
+                              <div class="flex items-center gap-2">${roleTag} ${imgTag}</div>
+                              <span class="text-[10px] text-slate-500">${timeStr}</span>
+                          </div>
+                          <div class="text-slate-200 whitespace-pre-wrap">${data.text || '(画像のみ送信)'}</div>
+                      `;
+                      container.appendChild(div);
+                  });
+              });
+        }
+
+        // 初期化処理の実行
+        loadCurrentPrompt();
+        loadPromptHistory();
+        listenToChatLogs();
     </script>
 </body>
 </html>
