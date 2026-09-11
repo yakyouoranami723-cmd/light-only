@@ -2,122 +2,149 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理者メニュー</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ライト OS v8.7 Cloud</title>
+    <!-- Three.js & @pixiv/three-vrm (ES Modules) -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/",
+                "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js"
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <style>
-        body { background-color: #1a1a24; color: #ffffff; font-family: 'Helvetica Neue', sans-serif; }
-        .sidebar { background-color: #0d0d12; border-right: 1px solid #2a2a35; }
-        .tab-active { background-color: #88c0d0; color: #0d0d12; font-weight: bold; }
-        .tab-inactive { border: 1px solid #88c0d0; color: #ffffff; }
-        .rule-card { background-color: #2a2a35; border-left: 4px solid #f1c40f; }
-        .delete-btn { background-color: #bf616a; transition: all 0.2s; }
-        .delete-btn:hover { background-color: #a5535b; }
+        body { background-color: #0b0c10; color: #fff; font-family: 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100dvh; margin: 0; overflow: hidden; transition: all 0.5s; }
+        
+        #avatar-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; pointer-events: none; transition: all 0.5s; display: flex; justify-content: center; align-items: center; }
+        
+        /* 2Dアバター用の画像スタイル */
+        #avatar-2d-img { display: none; height: 85vh; object-fit: contain; filter: drop-shadow(0 0 15px rgba(255,255,255,0.1)); }
+
+        #main-app { display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; position: relative; z-index: 10; transition: all 0.5s; }
+        #header-bar { width: 90%; max-width: 650px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; z-index: 20; }
+        .app-title { font-weight: bold; font-size: 16px; color: #ff7eb3; letter-spacing: 1px; text-shadow: 0 0 10px rgba(255,126,179,0.5); }
+        
+        .icon-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid #ff7eb3; color: #fff; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s; backdrop-filter: blur(5px); }
+        .icon-btn:hover { background: rgba(255, 126, 179, 0.3); }
+        
+        #chat-log { width: 90%; max-width: 650px; height: 350px; background: rgba(20, 20, 30, 0.65); padding: 15px; border-radius: 16px; overflow-y: auto; margin-bottom: 15px; border: 1px solid rgba(255, 126, 179, 0.4); box-shadow: 0 0 25px rgba(255, 126, 179, 0.15); font-size: 15px; line-height: 1.6; box-sizing: border-box; backdrop-filter: blur(8px); scroll-behavior: smooth; transition: opacity 0.5s; }
+        
+        #chat-log::-webkit-scrollbar { width: 6px; }
+        #chat-log::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 3px; }
+        #chat-log::-webkit-scrollbar-thumb { background: rgba(255, 126, 179, 0.5); border-radius: 3px; }
+
+        .msg-sys { color: #88c0d0; font-size: 13px; } .msg-user { color: #a3be8c; margin-top: 6px; } .msg-ai { color: #b48ead; margin-top: 6px; } .msg-error { color: #bf616a; font-weight: bold; background: rgba(191, 97, 106, 0.1); padding: 5px; border-radius: 5px; margin-top: 6px; }
+        
+        .controls { display: flex; gap: 10px; align-items: center; width: 90%; max-width: 650px; transition: all 0.5s; z-index: 20; }
+        button, input[type="text"] { padding: 12px 18px; font-size: 14px; border-radius: 30px; border: none; outline: none; transition: all 0.2s ease; }
+        button { cursor: pointer; font-weight: bold; } button:hover { transform: translateY(-2px); } button:active { transform: translateY(1px); } button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        
+        #talk-btn { background: linear-gradient(135deg, #ff758c, #ff7eb3); color: white; box-shadow: 0 4px 15px rgba(255, 117, 140, 0.4); flex-shrink: 0; transition: all 0.3s; }
+        #chat-input { flex-grow: 1; border: 1px solid #ff7eb3; background: rgba(0,0,0,0.6); color: white; backdrop-filter: blur(5px); transition: opacity 0.5s; }
+        #send-btn { background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4); flex-shrink: 0; min-width: 70px; transition: opacity 0.5s; }
+        
+        /* === アバターモード用のCSS === */
+        body.avatar-mode #chat-log,
+        body.avatar-mode #chat-input,
+        body.avatar-mode #send-btn { opacity: 0; pointer-events: none; }
+        body.avatar-mode .controls { justify-content: center; transform: translateY(100px); }
+        body.avatar-mode #talk-btn { transform: scale(1.5); }
+        body.avatar-mode #avatar-container { filter: brightness(1.2); }
+
+        /* === 以下既存のモーダル・ログインCSS === */
+        #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #161823; border: 1px solid #ff7eb3; border-radius: 16px; width: 85%; max-width: 420px; padding: 20px; box-shadow: 0 0 30px rgba(255, 126, 179, 0.3); max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 15px; }
+        .modal-title { font-size: 16px; font-weight: bold; color: #ff7eb3; }
+        .close-btn { background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer; padding: 0; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; }
+        .modal-btn { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid #4facfe; color: #4facfe; padding: 10px; border-radius: 8px; margin-top: 8px; font-size: 13px; }
+        .section-title { font-size: 12px; color: #88c0d0; margin-top: 20px; margin-bottom: 5px; border-bottom: 1px dashed #88c0d0; padding-bottom: 3px; }
+        .sync-box { background: rgba(241, 196, 15, 0.1); border: 1px solid #f1c40f; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+        #sync-id-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); color: #f1c40f; border: 1px solid #f1c40f; text-align: center; font-weight: bold; letter-spacing: 2px; border-radius: 5px; padding: 8px; margin-bottom: 8px; }
+        .sync-btn { background: #f1c40f; color: #000; width: 100%; border-radius: 5px; padding: 8px; border: none; font-weight: bold; cursor: pointer; }
+        
+        #login-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #0b0c10; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .login-title { color: #ff7eb3; font-size: 24px; font-weight: bold; margin-bottom: 10px; letter-spacing: 2px; }
+        .login-desc { color: #ccc; font-size: 14px; margin-bottom: 30px; }
+        #login-id-input { width: 80%; max-width: 300px; background: rgba(255,255,255,0.1); color: #fff; border: 2px solid #ff7eb3; text-align: center; font-weight: bold; letter-spacing: 2px; padding: 15px; border-radius: 30px; margin-bottom: 20px; font-size: 16px; }
+        #execute-login-btn { background: linear-gradient(135deg, #ff758c, #ff7eb3); color: white; width: 80%; max-width: 300px; padding: 15px; border-radius: 30px; font-size: 16px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(255, 117, 140, 0.4); }
+        #forgot-login-btn { background: transparent; border: 1px solid #88c0d0; color: #88c0d0; padding: 10px 20px; border-radius: 20px; font-size: 12px; }
     </style>
 </head>
-<body class="h-screen w-screen flex overflow-hidden">
+<body>
 
-    <!-- サイドバー -->
-    <div class="sidebar w-64 h-full flex flex-col p-6 space-y-6 shrink-0">
-        <div class="text-xl font-bold text-[#ff7eb3] flex items-center gap-2 justify-center mb-4">
-            <span>✨</span> 管理者メニュー
-        </div>
-        
-        <nav class="flex flex-col space-y-4">
-            <button onclick="switchTab('knowledge')" id="btn-knowledge" class="tab-active py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition">
-                🧠 共有知識の管理
-            </button>
-            <button onclick="switchTab('avatar')" id="btn-avatar" class="tab-inactive py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition">
-                🖼️ アバター表示設定
-            </button>
-            <button onclick="switchTab('logs')" id="btn-logs" class="tab-inactive py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition">
-                💬 トーク履歴閲覧
-            </button>
-        </nav>
+    <div id="avatar-container">
+        <!-- 2D表示用の画像（3D canvasはJSでこのコンテナに生成されます） -->
+        <img id="avatar-2d-img" src="https://via.placeholder.com/400x800/000000/ff6584?text=2D+Avatar" alt="2D Avatar">
     </div>
 
-    <!-- メインコンテンツ -->
-    <div class="flex-1 h-full overflow-y-auto p-10 bg-[#1a1a24]">
-        
-        <!-- タブ1: 共有知識 -->
-        <div id="tab-knowledge" class="max-w-4xl mx-auto space-y-6">
-            <div class="border-b border-gray-600 pb-2 mb-6">
-                <h1 class="text-2xl font-bold text-white">部活全体 共有知識（ライトの記憶）</h1>
-                <p class="text-sm text-gray-400 mt-2">部員全員のライトに共通して反映されるルールや事実です。</p>
-            </div>
-            
-            <div class="flex gap-4 mb-6">
-                <input id="new-rule-input" type="text" placeholder="新しいルールを入力..." class="flex-1 bg-[#2a2a35] text-white border border-gray-600 rounded-lg px-4 py-3 outline-none focus:border-[#ff7eb3]">
-                <button onclick="addRule()" class="bg-[#88c0d0] text-[#0d0d12] font-bold px-8 py-3 rounded-lg hover:brightness-110 transition">追加</button>
-            </div>
+    <div id="login-screen">
+        <div class="login-title">✨ ライト OS</div>
+        <div class="login-desc">合言葉（パスワード）を入力 </div>
+        <input type="text" id="login-id-input" placeholder="合言葉を入力">
+        <button id="execute-login-btn">起動</button>
+        <div style="margin-bottom: 10px; color: #666; font-size: 12px;">または</div>
+        <button id="forgot-login-btn">自分専用の合言葉を作る（新規）</button>
+    </div>
 
-            <div id="rules-container" class="space-y-3">
-                <!-- JSで動的に追加されます -->
+    <div id="main-app">
+        <div id="header-bar">
+            <div class="app-title">✨ ライト</div>
+            <div>
+                <button id="toggle-mode-btn" class="icon-btn" style="margin-right: 5px;">🔄 アバター</button>
+                <button id="open-settings-btn" class="icon-btn">⚙️ 設定</button>
             </div>
         </div>
 
-        <!-- タブ2: アバター設定 (NEW) -->
-        <div id="tab-avatar" class="hidden max-w-4xl mx-auto space-y-6">
-            <div class="border-b border-gray-600 pb-2 mb-6">
-                <h1 class="text-2xl font-bold text-white">アバター表示設定（リアルタイム反映）</h1>
-                <p class="text-sm text-gray-400 mt-2">生徒の画面のアバター表示を管理します。変更はリロードなしで即座に生徒側に反映されます。</p>
-            </div>
-
-            <div class="bg-[#2a2a35] p-6 rounded-lg space-y-6 border border-gray-600">
-                <!-- ON/OFF切替 -->
-                <div>
-                    <label class="block text-gray-300 mb-2 font-bold">アバターの表示状態</label>
-                    <div class="flex gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="avatar-enabled" value="true" class="w-5 h-5 accent-[#ff7eb3]"> <span>表示する (ON)</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="avatar-enabled" value="false" class="w-5 h-5 accent-[#ff7eb3]"> <span>非表示にする (OFF)</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- 3D/2D切替 -->
-                <div>
-                    <label class="block text-gray-300 mb-2 font-bold">アバターのモード (3D / 2D)</label>
-                    <div class="flex gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="avatar-mode" value="3d" class="w-5 h-5 accent-[#ff7eb3]"> <span>3Dモデル (VRM)</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="avatar-mode" value="2d" class="w-5 h-5 accent-[#ff7eb3]"> <span>2D画像 (一枚絵)</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- 2D画像のURL -->
-                <div>
-                    <label class="block text-gray-300 mb-2 font-bold">2D画像URL (2Dモード時のみ有効)</label>
-                    <input id="url-2d" type="text" placeholder="https://..." class="w-full bg-[#1a1a24] text-white border border-gray-600 rounded-lg px-4 py-2 outline-none focus:border-[#ff7eb3]">
-                </div>
-
-                <div class="pt-4 border-t border-gray-600 flex items-center gap-4">
-                    <button onclick="saveDisplayConfig()" class="bg-[#ff7eb3] text-white font-bold px-8 py-3 rounded-lg hover:brightness-110 transition shadow-[0_0_15px_rgba(255,126,179,0.4)]">
-                        設定をクラウドに反映
-                    </button>
-                    <span id="save-msg" class="text-sm text-[#a3be8c] opacity-0 transition-opacity">✅ 反映しました！</span>
-                </div>
-            </div>
+        <div id="chat-log">
+            <div class="msg-sys"><strong>システム:</strong> クラウド連携待機中...</div>
         </div>
 
-        <!-- タブ3: 履歴 (仮置き) -->
-        <div id="tab-logs" class="hidden max-w-4xl mx-auto space-y-6">
-            <h1 class="text-2xl font-bold text-white">トーク履歴（近日実装）</h1>
-            <p class="text-gray-400">※ここにFirebaseの `light_chat_logs` が流れます。</p>
+        <div class="controls">
+            <button id="talk-btn">🔴</button>
+            <input type="text" id="chat-input" placeholder="ライトに話しかける...">
+            <button id="send-btn">送信</button>
         </div>
+    </div>
 
+    <div id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">⚙️ システム設定</div>
+                <button class="close-btn" id="close-settings-btn">✖</button>
+            </div>
+            <div class="setting-row">
+                <span>ボイス再生（音声）</span>
+                <button id="mute-toggle-btn" class="icon-btn" style="border-color: #bf616a;">🔇 音声 OFF</button>
+            </div>
+            <div class="section-title">☁️ クラウド記憶同期 (合言葉)</div>
+            <div class="sync-box">
+                <input type="text" id="sync-id-input" placeholder="合言葉を入力">
+                <button id="sync-execute-btn" class="sync-btn">手動で同期する</button>
+            </div>
+            <div class="section-title">【現在の学習ステータス】</div>
+            <div class="setting-row" style="flex-direction: column; align-items: flex-start; margin-bottom: 5px;">
+                <span id="brain-status-text" style="font-size: 13px;">自己改善: 0 | 個人記憶: 0 | 部活共有: 0</span>
+            </div>
+            <button id="view-brain-btn" class="modal-btn">🧠 記憶データの中身を確認 / リセット</button>
+            <div class="section-title">【拡張知識】</div>
+            <button id="pdf-btn" class="modal-btn">📄 説明書(PDF)を一時記憶させる</button>
+            <input type="file" id="pdf-upload" accept="application/pdf" style="display: none;">
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        // ★ onSnapshot を追加インポート
+        import { getFirestore, doc, getDoc, setDoc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm';
 
-        // ★ 生徒用と同じFirebase設定を入れてね
         const firebaseConfig = {
             apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
             authDomain: "light-65413.firebaseapp.com",
@@ -128,93 +155,293 @@
         };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        
+        const API_KEY = "AQ.Ab8RN6LFpA-TEL3AGVk6l5KQe7Pgi9w455ROTO2txXm5m6SeTg"; 
+
+        window.isMuted = true;
+        window.selfReflections = []; window.userFacts = []; window.globalFacts = [];
+        window.pdfKnowledge = ""; window.conversationHistory = []; 
+        let myUserId = "";
         const GLOBAL_CLUB_ID = "shout_club_global_space";
-        let currentRules = [];
 
-        // 起動時のデータ取得
-        window.onload = () => {
-            // 共有知識のリアルタイム監視
-            onSnapshot(doc(db, "light_memories", GLOBAL_CLUB_ID), (docSnap) => {
-                if (docSnap.exists() && docSnap.data().globalFacts) {
-                    currentRules = docSnap.data().globalFacts;
-                    renderRules();
+        const chatLog = document.getElementById('chat-log');
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const talkBtn = document.getElementById('talk-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const loginScreen = document.getElementById('login-screen');
+        const mainApp = document.getElementById('main-app');
+
+        // ★ 新規合言葉作成機能（復旧）
+        document.getElementById('forgot-login-btn').addEventListener('click', () => {
+            const newId = prompt("自分専用の新しい合言葉（パスワード）を入力してください:");
+            if (newId && newId.trim() !== "") {
+                document.getElementById('login-id-input').value = newId.trim();
+                alert(`「${newId.trim()}」をセットしました！「起動」を押してください。`);
+            }
+        });
+
+        // モード切替の処理
+        const toggleModeBtn = document.getElementById('toggle-mode-btn');
+        let isAvatarMode = false;
+        toggleModeBtn.addEventListener('click', () => {
+            isAvatarMode = !isAvatarMode;
+            document.body.classList.toggle('avatar-mode', isAvatarMode);
+            toggleModeBtn.textContent = isAvatarMode ? "💬 チャット" : "🔄 アバター";
+        });
+
+        const savedId = localStorage.getItem('light_sync_id');
+        if (savedId) { document.getElementById('login-id-input').value = savedId; } 
+        else { document.getElementById('login-id-input').value = "shout"; }
+
+        function unlockAudio() {
+            if ('speechSynthesis' in window) {
+                const dummy = new SpeechSynthesisUtterance(''); dummy.volume = 0;
+                window.speechSynthesis.speak(dummy);
+            }
+        }
+
+        document.getElementById('execute-login-btn').addEventListener('click', () => {
+            const inputId = document.getElementById('login-id-input').value.trim();
+            if (!inputId) { alert("合言葉を入力してね！"); return; }
+            myUserId = inputId;
+            localStorage.setItem('light_sync_id', myUserId);
+            document.getElementById('sync-id-input').value = myUserId;
+            unlockAudio();
+            loginScreen.style.display = 'none';
+            mainApp.style.display = 'flex';
+            loadAllData(myUserId);
+            listenToDisplayConfig(); // ★ 管理者のアバター設定を監視開始
+        });
+
+        async function saveChatLogToCloud(role, text) {
+            try {
+                await addDoc(collection(db, "light_chat_logs"), {
+                    userId: myUserId,
+                    role: role,
+                    text: text,
+                    timestamp: serverTimestamp()
+                });
+            } catch (e) { console.error("ログ保存エラー:", e); }
+        }
+
+        function addLog(name, text, type = 'user') {
+            const div = document.createElement('div');
+            if(type === 'sys') div.className = 'msg-sys';
+            else if(type === 'ai') div.className = 'msg-ai';
+            else if(type === 'error') div.className = 'msg-error';
+            else div.className = 'msg-user';
+            div.innerHTML = `<strong>${name}:</strong> ${text}`;
+            chatLog.appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+            if (type === 'user' || type === 'ai') {
+                saveChatLogToCloud(type, text);
+            }
+        }
+
+        async function loadAllData(userId) {
+            try {
+                const userDocSnap = await getDoc(doc(db, "light_memories", userId));
+                if (userDocSnap.exists()) {
+                    const data = userDocSnap.data();
+                    window.selfReflections = data.reflections || []; window.userFacts = data.facts || [];
                 }
-            });
+                const globalDocSnap = await getDoc(doc(db, "light_memories", GLOBAL_CLUB_ID));
+                if (globalDocSnap.exists()) { window.globalFacts = globalDocSnap.data().globalFacts || []; }
+                
+                chatLog.innerHTML = ""; 
+                const msg = "よっ！";
+                addLog("ライト", msg, "ai");
+                window.speak(msg);
+                document.getElementById('brain-status-text').textContent = `自己改善: ${window.selfReflections.length} | 個人記憶: ${window.userFacts.length} | 部活共有: ${window.globalFacts.length}`;
+            } catch (e) { addLog("エラー", "通信失敗", "error"); }
+        }
 
-            // アバター設定の取得
-            getDoc(doc(db, "settings", "displayConfig")).then(docSnap => {
+        // ★ 管理者サイトからのアバター表示状態をリアルタイム監視
+        function listenToDisplayConfig() {
+            onSnapshot(doc(db, "settings", "displayConfig"), (docSnap) => {
+                const container = document.getElementById('avatar-container');
+                const canvas = container.querySelector('canvas');
+                const img2d = document.getElementById('avatar-2d-img');
+                
                 if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    document.querySelector(`input[name="avatar-enabled"][value="${data.enabled !== false}"]`).checked = true;
-                    document.querySelector(`input[name="avatar-mode"][value="${data.mode || '3d'}"]`).checked = true;
-                    if(data.url2d) document.getElementById("url-2d").value = data.url2d;
-                } else {
-                    // デフォルトチェック
-                    document.querySelector(`input[name="avatar-enabled"][value="true"]`).checked = true;
-                    document.querySelector(`input[name="avatar-mode"][value="3d"]`).checked = true;
-                }
-            });
-        };
+                    const config = docSnap.data();
+                    
+                    // ON/OFF 切替
+                    if (config.enabled === false) {
+                        container.style.opacity = '0'; // ふんわり消える
+                    } else {
+                        container.style.opacity = '1';
+                    }
 
-        // --- タブ切替 ---
-        window.switchTab = function(tab) {
-            ['knowledge', 'avatar', 'logs'].forEach(t => {
-                document.getElementById(`tab-${t}`).style.display = (t === tab) ? 'block' : 'none';
-                const btn = document.getElementById(`btn-${t}`);
-                if (t === tab) {
-                    btn.className = "tab-active py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition";
-                } else {
-                    btn.className = "tab-inactive py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition";
+                    // 3D / 2D 切替
+                    if (config.mode === '2d') {
+                        if (canvas) canvas.style.display = 'none';
+                        if (config.url2d) img2d.src = config.url2d; // URL指定があれば反映
+                        img2d.style.display = 'block';
+                    } else {
+                        img2d.style.display = 'none';
+                        if (canvas) canvas.style.display = 'block';
+                    }
                 }
-            });
-        };
-
-        // --- 共有知識の処理 ---
-        function renderRules() {
-            const container = document.getElementById("rules-container");
-            container.innerHTML = "";
-            currentRules.forEach((rule, index) => {
-                container.innerHTML += `
-                    <div class="rule-card p-4 rounded-r-lg flex justify-between items-center text-sm shadow-md">
-                        <span class="text-gray-200">${rule}</span>
-                        <button onclick="deleteRule(${index})" class="delete-btn text-white text-xs px-4 py-2 rounded font-bold shadow">削除</button>
-                    </div>
-                `;
             });
         }
-        
-        window.addRule = async function() {
-            const input = document.getElementById("new-rule-input");
-            const text = input.value.trim();
-            if (!text) return;
-            currentRules.push(text);
-            await setDoc(doc(db, "light_memories", GLOBAL_CLUB_ID), { globalFacts: currentRules, updatedAt: new Date() }, { merge: true });
-            input.value = "";
+
+        async function saveUserToCloud() { await setDoc(doc(db, "light_memories", myUserId), { reflections: window.selfReflections, facts: window.userFacts, updatedAt: new Date() }); }
+        async function saveGlobalToCloud() { await setDoc(doc(db, "light_memories", GLOBAL_CLUB_ID), { globalFacts: window.globalFacts, updatedAt: new Date() }); }
+
+        document.getElementById('open-settings-btn').addEventListener('click', () => settingsModal.style.display = 'flex');
+        document.getElementById('close-settings-btn').addEventListener('click', () => settingsModal.style.display = 'none');
+        document.getElementById('mute-toggle-btn').addEventListener('click', (e) => {
+            window.isMuted = !window.isMuted;
+            if(window.isMuted) { e.target.textContent = "🔇 音声 OFF"; e.target.style.borderColor = "#bf616a"; } 
+            else { e.target.textContent = "🔊 音声 ON"; e.target.style.borderColor = "#ff7eb3"; }
+        });
+
+        // 究極リアル音声（VoiceVox）
+        window.currentAudio = null; 
+        window.speak = function(text) {
+            if (window.isMuted) return;
+            if (window.currentAudio) { window.currentAudio.pause(); window.currentAudio = null; }
+            window.speechSynthesis.cancel();
+            const cleanText = text.replace(/[#*「」『』（）()【】_~〜]/g, '').trim();
+            if (!cleanText) return;
+
+            const url = `https://api.tts.quest/v3/voicevox/synthesis?text=${encodeURIComponent(cleanText)}&speaker=8`;
+            const audio = new Audio(url);
+            window.currentAudio = audio;
+            
+            const fallback = () => {
+                window.speechSynthesis.cancel();
+                const uttr = new SpeechSynthesisUtterance(cleanText);
+                uttr.lang = 'ja-JP'; uttr.rate = 1.1; uttr.pitch = 1.3; 
+                window.speechSynthesis.speak(uttr);
+            }
+            audio.play().catch(fallback); audio.onerror = fallback;
         };
 
-        window.deleteRule = async function(index) {
-            currentRules.splice(index, 1);
-            await setDoc(doc(db, "light_memories", GLOBAL_CLUB_ID), { globalFacts: currentRules, updatedAt: new Date() }, { merge: true });
-        };
+        async function callGemini(userText) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+            const rulesContext = window.selfReflections.length > 0 ? "\n【過去の反省】\n・" + window.selfReflections.join("\n・") : "";
+            const factsContext = window.userFacts.length > 0 ? "\n【個人記憶】\n・" + window.userFacts.join("\n・") : "";
+            const globalContext = window.globalFacts.length > 0 ? "\n【部活共有ルール】\n・" + window.globalFacts.join("\n・") : "";
+            
+            const systemInstruction = `あなたはユーザーの相棒「電キャ」の「ライト」です。
+            性別：女子 一人称：「あたし」 口調：「〜っしょ！」「〜だぜ！」
+            ${rulesContext} ${factsContext} ${globalContext} ${window.pdfKnowledge}
+            【ルール】誤字脱字に注意。絵文字は使わない。
+            【メタタグ】個人の情報は [FACT: 内容]、部活全体に関わることは [GLOBAL: 内容] として文章の最後に出力。`;
 
-        // --- アバター設定の保存 (NEW) ---
-        window.saveDisplayConfig = async function() {
-            const enabled = document.querySelector('input[name="avatar-enabled"]:checked').value === 'true';
-            const mode = document.querySelector('input[name="avatar-mode"]:checked').value;
-            const url2d = document.getElementById("url-2d").value.trim();
+            window.conversationHistory.push({ role: "user", parts: [{ text: userText }] });
 
-            await setDoc(doc(db, "settings", "displayConfig"), {
-                enabled: enabled,
-                mode: mode,
-                url2d: url2d,
-                updatedAt: new Date()
+            const payload = {
+                system_instruction: { parts: [{ text: systemInstruction }] },
+                contents: window.conversationHistory,
+                generationConfig: { temperature: 0.7 }
+            };
+
+            const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const data = await response.json();
+            let aiReply = data.candidates[0].content.parts[0].text;
+            
+            let userChanged = false, globalChanged = false;
+
+            [...aiReply.matchAll(/\[REFLECT:\s*(.*?)\]/g)].forEach(m => { if (!window.selfReflections.includes(m[1])) { window.selfReflections.push(m[1]); userChanged = true; }});
+            [...aiReply.matchAll(/\[FACT:\s*(.*?)\]/g)].forEach(m => { if (!window.userFacts.includes(m[1])) { window.userFacts.push(m[1]); userChanged = true; }});
+            [...aiReply.matchAll(/\[GLOBAL:\s*(.*?)\]/g)].forEach(m => { if (!window.globalFacts.includes(m[1])) { window.globalFacts.push(m[1]); globalChanged = true; }});
+
+            aiReply = aiReply.replace(/【?\s*\[(REFLECT|FACT|GLOBAL):\s*.*?\]\s*】?/g, '').trim();
+
+            if (userChanged) saveUserToCloud();
+            if (globalChanged) saveGlobalToCloud(); 
+
+            window.conversationHistory.push({ role: "model", parts: [{ text: aiReply }] });
+            if (window.conversationHistory.length > 20) window.conversationHistory.splice(0, 2); 
+            
+            return aiReply;
+        }
+
+        async function processUserInput(text) {
+            if (!text || !text.trim()) return;
+            addLog("あなた", text, 'user');
+            sendBtn.disabled = true; chatInput.disabled = true; talkBtn.disabled = true;
+            try {
+                const reply = await callGemini(text);
+                addLog("ライト", reply, 'ai');
+                window.speak(reply);
+            } catch (error) {
+                addLog("システムエラー", error.message, 'error');
+            } finally {
+                sendBtn.disabled = false; chatInput.disabled = false; talkBtn.disabled = false;
+                chatInput.focus();
+            }
+        }
+
+        sendBtn.addEventListener('click', () => { const text = chatInput.value; chatInput.value = ''; processUserInput(text); });
+        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendBtn.click(); });
+
+        // ★ 音声入力（マイク）復旧
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'ja-JP';
+            talkBtn.addEventListener('click', () => { 
+                try { recognition.start(); talkBtn.innerHTML = "👂"; } catch(e){} 
             });
+            recognition.onresult = (e) => { 
+                talkBtn.innerHTML = "🔴"; 
+                processUserInput(e.results[0][0].transcript); 
+            };
+            recognition.onend = () => { talkBtn.innerHTML = "🔴"; };
+        } else { 
+            talkBtn.style.display = 'none'; 
+        }
 
-            const msg = document.getElementById("save-msg");
-            msg.style.opacity = "1";
-            setTimeout(() => msg.style.opacity = "0", 2000);
-        };
+        /* === Three.js & VRM 処理 === */
+        const container = document.getElementById('avatar-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 20.0);
+        camera.position.set(0, 1.4, 2.5);
+        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement); // canvasが追加される
+
+        const light = new THREE.DirectionalLight(0xffffff, Math.PI);
+        light.position.set(1.0, 1.0, 1.0).normalize();
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0xffffff, Math.PI * 0.5));
+
+        let currentVrm = undefined;
+        const loader = new GLTFLoader();
+        loader.register((parser) => new VRMLoaderPlugin(parser));
+
+        loader.load(
+            'light.vrm', // アバターのファイル名
+            (gltf) => {
+                const vrm = gltf.userData.vrm;
+                VRMUtils.removeUnnecessaryVertices(gltf.scene);
+                currentVrm = vrm;
+                scene.add(vrm.scene);
+                VRMUtils.rotateVRM0(vrm);
+            },
+            () => {},
+            (error) => console.error(error)
+        );
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            if (currentVrm) currentVrm.update(clock.getDelta());
+            renderer.render(scene, camera);
+        }
+        animate();
     </script>
 </body>
 </html>
