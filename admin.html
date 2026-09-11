@@ -3,182 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ライト OS - 管理者ダッシュボード</title>
+    <title>ライト OS - 管理者</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <style>
+        body { background-color: #121520; }
+    </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen p-6">
+<body class="text-slate-200 h-screen flex font-sans">
 
-    <header class="max-w-6xl mx-auto mb-6 pb-4 border-b border-pink-500/30 flex justify-between items-center">
-        <h1 class="text-2xl font-bold text-pink-400">⚙️ ライト 管理者ダッシュボード</h1>
-        <span class="text-xs bg-slate-800 text-slate-400 px-3 py-1 rounded-full border border-slate-700">管理者モード</span>
-    </header>
+    <!-- パスワード画面 -->
+    <div id="auth-screen" class="fixed inset-0 bg-[#121520] z-50 flex flex-col items-center justify-center">
+        <h2 class="text-pink-400 text-xl font-bold mb-6">⚙️ 管理者ログイン</h2>
+        <input type="password" id="pass-input" placeholder="管理者パスワード" class="bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-center mb-4">
+        <button onclick="checkAdminPassword()" class="bg-cyan-600 px-8 py-3 rounded-full font-bold">ログイン</button>
+    </div>
 
-    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- 左サイドバー -->
+    <aside id="sidebar" class="w-64 bg-[#0d1017] border-r border-slate-800 flex flex-col p-4 hidden">
+        <h1 class="text-lg font-bold text-pink-400 tracking-wider mb-8 flex items-center gap-2">
+            ✨ 管理者メニュー
+        </h1>
+        <nav class="flex flex-col gap-3">
+            <button onclick="switchTab('knowledge')" id="tab-knowledge" class="bg-cyan-500/20 text-cyan-300 font-bold px-4 py-3 rounded-lg border border-cyan-500/30 text-left flex items-center gap-2">
+                🧠 共有知識の管理
+            </button>
+            <button class="text-slate-400 px-4 py-3 rounded-lg border border-slate-700 text-left flex items-center gap-2 hover:bg-slate-800">
+                🖼️ アバター表示設定
+            </button>
+            <button onclick="switchTab('history')" id="tab-history" class="text-slate-400 px-4 py-3 rounded-lg border border-slate-700 text-left flex items-center gap-2 hover:bg-slate-800">
+                💬 トーク履歴閲覧
+            </button>
+        </nav>
+    </aside>
 
-        <!-- 左カラム：システムプロンプト設定 ＆ 履歴復元 -->
-        <section class="flex flex-col gap-6">
+    <!-- メインコンテンツ -->
+    <main id="main-content" class="flex-grow p-8 hidden flex-col">
+        
+        <!-- 共有知識タブ -->
+        <section id="sec-knowledge" class="w-full max-w-4xl">
+            <h2 class="text-xl font-bold mb-2">部活全体 共有知識（ライトの記憶）</h2>
+            <p class="text-xs text-slate-500 mb-6">部員全員のライトに共通して反映されるルールや事実です。</p>
             
-            <!-- プロンプト編集 -->
-            <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 shadow-lg">
-                <h2 class="text-lg font-bold text-cyan-400 mb-3 flex items-center gap-2">🧠 全体ルールの編集 (System Prompt)</h2>
-                <textarea id="prompt-input" rows="6" 
-                    class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:border-cyan-500 transition" 
-                    placeholder="ライトのキャラクター設定や全体ルールを入力..."></textarea>
-                <button onclick="saveSystemPrompt()" class="mt-3 w-full bg-gradient-to-r from-cyan-500 to-blue-500 hover:opacity-90 font-bold py-2.5 rounded-xl text-sm transition">
-                    ☁️ ルールを更新して保存
+            <div class="flex flex-col gap-4 bg-[#1a1f2e] p-6 rounded-xl border border-slate-700">
+                <textarea id="prompt-input" rows="4" placeholder="新しいルールを入力..." class="bg-slate-800 border border-slate-700 rounded-lg p-3 text-sm focus:border-cyan-500 outline-none w-full"></textarea>
+                <button onclick="saveRule()" class="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold px-6 py-2 rounded-lg self-end">
+                    追加 / 更新
                 </button>
-            </div>
-
-            <!-- プロンプト履歴 ＆ ワンタップ復元 -->
-            <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 shadow-lg flex-grow">
-                <h2 class="text-lg font-bold text-amber-400 mb-3">📜 ルール変更履歴 (ワンタップ復元)</h2>
-                <div id="history-list" class="flex flex-col gap-2 max-h-72 overflow-y-auto pr-1">
-                    <span class="text-xs text-slate-500">履歴を読み込み中...</span>
-                </div>
             </div>
         </section>
 
-        <!-- 右カラム：リアルタイム会話ログ -->
-        <section class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 shadow-lg flex flex-col h-[650px]">
-            <h2 class="text-lg font-bold text-pink-400 mb-3 flex justify-between items-center">
-                <span>💬 生徒の会話ログ (リアルタイム)</span>
-                <span class="text-xs font-normal text-emerald-400 flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Live</span>
+        <!-- トーク履歴タブ -->
+        <section id="sec-history" class="w-full max-w-4xl hidden h-full flex-col">
+            <h2 class="text-xl font-bold mb-6 text-pink-300 flex justify-between items-center">
+                <span>💬 リアルタイム トーク履歴</span>
+                <span class="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded border border-red-500/30 animate-pulse">Live</span>
             </h2>
-            <div id="logs-container" class="flex-grow overflow-y-auto flex flex-col gap-2 p-2 bg-slate-900/80 rounded-xl border border-slate-800">
-                <span class="text-xs text-slate-500">ログを受信中...</span>
+            <div id="logs-container" class="flex-grow bg-[#1a1f2e] rounded-xl border border-slate-700 p-4 overflow-y-auto flex flex-col gap-3">
+                <span class="text-xs text-slate-500">ログを待機中...</span>
             </div>
         </section>
 
     </main>
 
     <script>
-        // Firebase初期化 (v9 compat)
-        const firebaseConfig = {
-            apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
-            authDomain: "light-65413.firebaseapp.com",
-            projectId: "light-65413"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        // 1. 現在のプロンプト取得
-        async function loadCurrentPrompt() {
-            const doc = await db.collection("settings").doc("systemPrompt").get();
-            if (doc.exists) {
-                document.getElementById('prompt-input').value = doc.data().text || '';
+        function checkAdminPassword() {
+            if (document.getElementById('pass-input').value === 'admin999') {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('sidebar').classList.remove('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                initFirebase();
+            } else {
+                alert('パスワードが違います');
             }
         }
 
-        // 2. プロンプト保存 & 履歴追加
-        async function saveSystemPrompt() {
-            const text = document.getElementById('prompt-input').value.trim();
-            if (!text) return alert("ルールを入力してください");
+        function switchTab(tabId) {
+            document.getElementById('sec-knowledge').classList.add('hidden');
+            document.getElementById('sec-history').classList.add('hidden');
+            
+            document.getElementById('tab-knowledge').className = "text-slate-400 px-4 py-3 rounded-lg border border-slate-700 text-left flex items-center gap-2 hover:bg-slate-800";
+            document.getElementById('tab-history').className = "text-slate-400 px-4 py-3 rounded-lg border border-slate-700 text-left flex items-center gap-2 hover:bg-slate-800";
 
-            try {
-                // 設定を更新
-                await db.collection("settings").doc("systemPrompt").set({
-                    text: text,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                // 履歴に追加
-                await db.collection("promptHistory").add({
-                    text: text,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                alert("全体ルールを保存・適用しました！");
-                loadPromptHistory(); // 履歴リストを更新
-            } catch (e) {
-                alert("保存失敗: " + e.message);
+            if (tabId === 'knowledge') {
+                document.getElementById('sec-knowledge').classList.remove('hidden');
+                document.getElementById('tab-knowledge').className = "bg-cyan-500/20 text-cyan-300 font-bold px-4 py-3 rounded-lg border border-cyan-500/30 text-left flex items-center gap-2";
+            } else {
+                document.getElementById('sec-history').classList.remove('hidden');
+                document.getElementById('sec-history').classList.add('flex');
+                document.getElementById('tab-history').className = "bg-cyan-500/20 text-cyan-300 font-bold px-4 py-3 rounded-lg border border-cyan-500/30 text-left flex items-center gap-2";
             }
         }
 
-        // 3. 履歴の読み込み
-        function loadPromptHistory() {
-            db.collection("promptHistory")
-              .orderBy("timestamp", "desc")
-              .limit(10)
-              .get()
-              .then(snapshot => {
-                  const historyList = document.getElementById('history-list');
-                  historyList.innerHTML = '';
+        // Firebase初期化とデータ連携
+        let db;
+        function initFirebase() {
+            const firebaseConfig = {
+                apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
+                authDomain: "light-65413.firebaseapp.com",
+                projectId: "light-65413"
+            };
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            db = firebase.firestore();
 
-                  if (snapshot.empty) {
-                      historyList.innerHTML = '<span class="text-xs text-slate-500">過去の履歴はありません</span>';
-                      return;
-                  }
+            // ルール読み込み
+            db.collection("settings").doc("systemPrompt").get().then(doc => {
+                if (doc.exists) document.getElementById('prompt-input').value = doc.data().text || '';
+            });
 
-                  snapshot.forEach(doc => {
-                      const data = doc.data();
-                      const timeStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString('ja-JP') : '直近';
-                      
-                      const item = document.createElement('div');
-                      item.className = "bg-slate-900/60 p-3 rounded-lg border border-slate-700 flex justify-between items-center text-xs gap-3";
-                      // テキストをエンコードして関数に渡す（改行等でのバグを防ぐため）
-                      item.innerHTML = `
-                          <div class="overflow-hidden">
-                              <div class="text-slate-400 font-bold mb-0.5">${timeStr}</div>
-                              <div class="text-slate-300 truncate max-w-xs">${data.text}</div>
-                          </div>
-                          <button onclick="restorePrompt('${encodeURIComponent(data.text)}')" class="bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1.5 rounded-md font-bold transition flex-shrink-0">
-                              復元
-                          </button>
-                      `;
-                      historyList.appendChild(item);
-                  });
-              });
+            // リアルタイムログ受信
+            db.collection("chatLogs").orderBy("timestamp", "desc").limit(30).onSnapshot(snapshot => {
+                const container = document.getElementById('logs-container');
+                container.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const isAi = data.role === 'ai';
+                    const name = isAi ? '<span class="text-pink-400 font-bold">ライト</span>' : '<span class="text-cyan-400 font-bold">生徒</span>';
+                    const div = document.createElement('div');
+                    div.className = "bg-slate-800/50 p-3 rounded-lg text-sm text-slate-300 border border-slate-700/50";
+                    div.innerHTML = `<div class="mb-1 text-xs">${name}</div><div>${data.text || '[画像送信]'}</div>`;
+                    container.appendChild(div);
+                });
+            });
         }
 
-        // 4. ワンタップ復元
-        window.restorePrompt = function(encodedText) {
-            const text = decodeURIComponent(encodedText);
-            document.getElementById('prompt-input').value = text;
-            saveSystemPrompt(); // 復元後、即座に保存・適用
-        };
-
-        // 5. 会話ログのリアルタイム監視
-        function listenToChatLogs() {
-            db.collection("chatLogs")
-              .orderBy("timestamp", "desc")
-              .limit(50)
-              .onSnapshot(snapshot => {
-                  const container = document.getElementById('logs-container');
-                  container.innerHTML = '';
-
-                  if (snapshot.empty) {
-                      container.innerHTML = '<span class="text-xs text-slate-500">会話ログはまだありません</span>';
-                      return;
-                  }
-
-                  snapshot.forEach(doc => {
-                      const data = doc.data();
-                      const timeStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'}) : '送信中...';
-                      
-                      const isAi = data.role === 'ai';
-                      const roleTag = isAi ? '<span class="text-pink-400 font-bold">ライト</span>' : `<span class="text-emerald-400 font-bold">生徒</span>`;
-                      const imgTag = data.hasImage ? '<span class="bg-blue-900/50 text-blue-300 px-1.5 py-0.5 rounded text-[10px] border border-blue-500/30">画像あり</span>' : '';
-
-                      const div = document.createElement('div');
-                      div.className = "bg-slate-800/50 p-2.5 rounded-lg border border-slate-700/50 text-xs flex flex-col gap-1";
-                      div.innerHTML = `
-                          <div class="flex justify-between items-center">
-                              <div class="flex items-center gap-2">${roleTag} ${imgTag}</div>
-                              <span class="text-[10px] text-slate-500">${timeStr}</span>
-                          </div>
-                          <div class="text-slate-200 whitespace-pre-wrap">${data.text || '(画像のみ送信)'}</div>
-                      `;
-                      container.appendChild(div);
-                  });
-              });
+        async function saveRule() {
+            const text = document.getElementById('prompt-input').value;
+            await db.collection("settings").doc("systemPrompt").set({
+                text: text, updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            alert("ルールを更新しました！");
         }
-
-        // 初期化処理の実行
-        loadCurrentPrompt();
-        loadPromptHistory();
-        listenToChatLogs();
     </script>
 </body>
 </html>
