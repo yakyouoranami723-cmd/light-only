@@ -3,168 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ライト OS - 生徒用</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <title>ライト OS v8.6 Cloud</title>
+    <!-- Three.jsとVRM用 (3D設定にした時用) -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/",
+          "@pixiv/three-vrm": "https://unpkg.com/@pixiv/three-vrm@2.11.1/lib/three-vrm.module.js"
+        }
+      }
+    </script>
     <style>
-        body { background-color: #0b0f19; } /* 深いダークブルー/ブラック */
-        .pink-glow { text-shadow: 0 0 10px rgba(236, 72, 153, 0.5); }
+        body { margin: 0; overflow: hidden; background-color: #0b0c10; color: #fff; font-family: 'Helvetica Neue', Arial, sans-serif; }
+        
+        /* ログイン画面 */
+        #login-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #0b0c10; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+        #login-screen h1 { color: #ff7eb3; letter-spacing: 2px; }
+        #password-input { padding: 10px 20px; font-size: 16px; border-radius: 30px; border: 2px solid #ff7eb3; background: transparent; color: #fff; outline: none; text-align: center; margin-bottom: 20px; }
+        #login-btn { padding: 10px 30px; border-radius: 30px; border: none; background: #ff7eb3; color: #0b0c10; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        #login-btn:hover { background: #ff529a; }
+        #login-error { color: #ff529a; font-size: 14px; margin-top: 10px; display: none; }
+
+        /* メインUI */
+        #main-app { display: none; width: 100vw; height: 100vh; position: relative; }
+        #avatar-container { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
+        
+        /* 2Dアバター用 */
+        #avatar-2d-img { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); height: 90vh; object-fit: contain; z-index: 1; transition: transform 0.1s; }
+        
+        /* UIレイヤー */
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; }
+        
+        .header { padding: 20px; display: flex; justify-content: space-between; pointer-events: auto; }
+        .status-badge { background: rgba(255,126,179,0.2); border: 1px solid #ff7eb3; color: #ff7eb3; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        
+        .chat-container { width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; box-sizing: border-box; pointer-events: auto; }
+        #chat-log { height: 30vh; overflow-y: auto; background: linear-gradient(to top, rgba(11,12,16,0.9), transparent); padding: 20px; border-radius: 15px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px; }
+        
+        .msg { padding: 12px 18px; border-radius: 20px; max-width: 80%; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
+        .msg.user { background: #ff7eb3; color: #0b0c10; align-self: flex-end; border-bottom-right-radius: 5px; }
+        .msg.ai { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); align-self: flex-start; border-bottom-left-radius: 5px; }
+        
+        .input-area { display: flex; gap: 10px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 30px; border: 1px solid rgba(255,126,179,0.3); backdrop-filter: blur(10px); }
+        #user-input { flex-grow: 1; background: transparent; border: none; color: #fff; padding: 0 15px; outline: none; font-size: 15px; }
+        #send-btn { background: #ff7eb3; border: none; width: 40px; height: 40px; border-radius: 50%; color: #0b0c10; cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        
+        /* スクロールバー隠し */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,126,179,0.5); border-radius: 3px; }
     </style>
 </head>
-<body class="text-slate-200 min-h-screen flex flex-col items-center font-sans">
-
-    <!-- パスワード画面 -->
-    <div id="auth-screen" class="fixed inset-0 bg-[#0b0f19] z-50 flex flex-col items-center justify-center">
-        <h2 class="text-pink-400 text-xl font-bold mb-6 tracking-widest pink-glow">✨ 部室アクセス</h2>
-        <input type="password" id="pass-input" placeholder="パスワードを入力" 
-            class="bg-slate-800 border border-pink-500/50 rounded-lg px-4 py-3 text-center mb-4 focus:outline-none focus:border-pink-400">
-        <button onclick="checkPassword()" class="bg-gradient-to-r from-pink-600 to-purple-600 px-8 py-3 rounded-full font-bold shadow-lg shadow-pink-500/30 hover:opacity-90">
-            入室
-        </button>
+<body>
+    <!-- ログイン画面 -->
+    <div id="login-screen">
+        <h1>LIGHT OS</h1>
+        <input type="password" id="password-input" placeholder="合言葉を入力">
+        <button id="login-btn">システム起動</button>
+        <div id="login-error">合言葉が違います。</div>
     </div>
 
-    <div id="main-app" class="w-full max-w-3xl flex flex-col h-screen hidden p-4">
-        <!-- ヘッダー -->
-        <header class="flex justify-between items-center py-4 border-b border-pink-500/30 mb-4">
-            <h1 class="text-xl font-bold text-pink-400 tracking-wider flex items-center gap-2">
-                ✨ ライト
-            </h1>
-            <div class="flex gap-3 text-sm">
-                <button class="px-4 py-1.5 rounded-full border border-slate-600 bg-slate-800 text-slate-300">🔄 アバター</button>
-                <button class="px-4 py-1.5 rounded-full border border-slate-600 bg-slate-800 text-slate-300">⚙️ 設定</button>
-            </div>
-        </header>
-
-        <!-- チャットログ -->
-        <main id="chat-box" class="flex-grow bg-[#131826] rounded-2xl border border-pink-500/20 p-4 overflow-y-auto flex flex-col gap-4">
-            <div class="text-cyan-300 text-xs flex gap-2">
-                <span class="font-bold">システム:</span> クラウド連携待機中...
-            </div>
-        </main>
-
-        <!-- 添付画像プレビュー -->
-        <div id="image-preview-container" class="hidden mt-2 flex items-center gap-2 bg-slate-800 p-2 rounded-lg border border-pink-500/30">
-            <img id="image-preview" class="h-12 w-12 object-cover rounded">
-            <button onclick="clearImage()" class="text-xs text-red-400">❌ 削除</button>
+    <!-- メインアプリ -->
+    <div id="main-app">
+        <div id="avatar-container">
+            <!-- ここにアバター(2D/3D)が描画されます -->
         </div>
-
-        <!-- 入力エリア -->
-        <footer class="mt-4 flex gap-3 items-center bg-[#131826] p-2 rounded-full border border-pink-500/40">
-            <input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
-            <button onclick="document.getElementById('image-input').click()" class="bg-pink-500/20 text-pink-400 w-10 h-10 rounded-full flex items-center justify-center hover:bg-pink-500/40">
-                🖼️
-            </button>
+        
+        <div id="ui-layer">
+            <div class="header">
+                <div class="status-badge">● ONLINE</div>
+                <div class="status-badge" style="border-color: #88c0d0; color: #88c0d0;">MEMORY SYNC</div>
+            </div>
             
-            <input type="text" id="user-input" placeholder="ライトに話しかける..." 
-                class="flex-grow bg-transparent border-none focus:outline-none px-2 text-sm text-slate-200">
-            
-            <button id="send-btn" onclick="sendMessage()" class="bg-cyan-400 text-slate-900 font-bold px-6 py-2.5 rounded-full text-sm hover:bg-cyan-300 shadow-[0_0_15px_rgba(34,211,238,0.4)]">
-                送信
-            </button>
-        </footer>
+            <div class="chat-container">
+                <div id="chat-log"></div>
+                <div class="input-area">
+                    <input type="text" id="user-input" placeholder="メッセージを送信...">
+                    <button id="send-btn">▶︎</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script>
-        // パスワード処理 (1234でログイン)
-        function checkPassword() {
-            if (document.getElementById('pass-input').value === '1234') {
-                document.getElementById('auth-screen').classList.add('hidden');
-                document.getElementById('main-app').classList.remove('hidden');
-            } else {
-                alert('パスワードが違います');
-            }
-        }
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
+        // 3Dアバター用 (設定が3Dの場合のみ使用)
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { VRMLoaderPlugin } from '@pixiv/three-vrm';
 
-        // Firebase設定
+        // ★★★ ここにあなたのFirebase設定を貼り付けてください ★★★
         const firebaseConfig = {
-            apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
-            authDomain: "light-65413.firebaseapp.com",
-            projectId: "light-65413"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-        // Gemini API設定
-        const GEMINI_API_KEY = "AQ.Ab8RN6LFpA-TEL3AGVk6l5KQe7Pgi9w455ROTO2txXm5m6SeTg";
-        let selectedImageBase64 = null;
+        // --- グローバル変数 ---
+        window.conversationHistory = [];
+        window.globalFacts = [];
+        let systemConfig = { apiKeys: [], avatarMode: 'none', avatarBase: '', avatarSpeak: '' };
+        let currentApiIndex = 0;
 
-        function handleImageSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = e => {
-                selectedImageBase64 = e.target.result.split(',')[1];
-                document.getElementById('image-preview').src = e.target.result;
-                document.getElementById('image-preview-container').classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
+        // --- ログイン処理 ---
+        document.getElementById('login-btn').addEventListener('click', () => {
+            const pass = document.getElementById('password-input').value;
+            if(pass === 'shout') {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                initSystem();
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        });
 
-        function clearImage() {
-            selectedImageBase64 = null;
-            document.getElementById('image-input').value = '';
-            document.getElementById('image-preview-container').classList.add('hidden');
-        }
-
-        async function sendMessage() {
-            const text = document.getElementById('user-input').value.trim();
-            if (!text && !selectedImageBase64) return;
-            
-            document.getElementById('user-input').value = '';
-            appendMessage('あなた', text, 'user', selectedImageBase64);
-
-            // Firebaseへ保存（管理者画面に同期）
-            await db.collection("chatLogs").add({
-                role: "user",
-                text: text,
-                hasImage: !!selectedImageBase64,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        // --- システム初期化 ---
+        function initSystem() {
+            // システム設定の読み込み
+            onSnapshot(doc(db, "system", "config"), (snap) => {
+                if(snap.exists()) {
+                    systemConfig = snap.data();
+                    const paths = (systemConfig.avatarFiles2d || "").split(',');
+                    systemConfig.avatarBase = paths[0]?.trim();
+                    systemConfig.avatarSpeak = paths[1]?.trim();
+                    setupAvatar();
+                }
             });
 
-            clearImage();
+            // 記憶の読み込み
+            onSnapshot(doc(db, "light_memories", "shout_club_global_space"), (snap) => {
+                if(snap.exists() && snap.data().facts) {
+                    window.globalFacts = snap.data().facts;
+                }
+            });
+        }
 
-            // AI応答フェーズ
-            try {
-                // System Prompt取得
-                const doc = await db.collection("settings").doc("systemPrompt").get();
-                const systemPrompt = doc.exists ? doc.data().text : "あなたはライトです。";
-
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        system_instruction: { parts: [{ text: systemPrompt }] },
-                        contents: [{ parts: [{ text: text }] }] // 画像送信処理はシンプル化のため一時除外
-                    })
-                });
-
-                if (!res.ok) throw new Error("APIエラー");
-                const data = await res.json();
-                const aiReply = data.candidates[0].content.parts[0].text;
-
-                appendMessage('ライト', aiReply, 'ai');
-                await db.collection("chatLogs").add({
-                    role: "ai", text: aiReply, timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            } catch (e) {
-                appendMessage('システム', 'エラー：通信失敗。APIキーの設定を確認してください。', 'error');
+        // --- アバター描画処理 ---
+        function setupAvatar() {
+            const container = document.getElementById('avatar-container');
+            container.innerHTML = ''; 
+            
+            if (systemConfig.avatarMode === '2d' && systemConfig.avatarBase) {
+                const img = document.createElement('img');
+                img.id = 'avatar-2d-img';
+                img.src = systemConfig.avatarBase;
+                container.appendChild(img);
+            } else if (systemConfig.avatarMode === '3d') {
+                // 前回提案したThree.jsのVRMコードをここに挿入可能
+                console.log("3Dモードが選択されました");
             }
         }
 
-        function appendMessage(sender, text, type, imageBase64 = null) {
-            const box = document.getElementById('chat-box');
+        // 2Dリップシンク制御
+        function setAvatarSpeaking(isSpeaking) {
+            if (systemConfig.avatarMode !== '2d') return;
+            const img = document.getElementById('avatar-2d-img');
+            if (img && systemConfig.avatarSpeak) {
+                img.src = isSpeaking ? systemConfig.avatarSpeak : systemConfig.avatarBase;
+                img.style.transform = isSpeaking ? "translateX(-50%) translateY(-5px)" : "translateX(-50%) translateY(0)";
+            }
+        }
+
+        // --- UI処理 ---
+        const chatLog = document.getElementById('chat-log');
+        const input = document.getElementById('user-input');
+        
+        function appendMsg(text, sender) {
             const div = document.createElement('div');
+            div.className = `msg ${sender}`;
+            div.textContent = text;
+            chatLog.appendChild(div);
+            chatLog.scrollTop = chatLog.scrollHeight;
+        }
+
+        document.getElementById('send-btn').addEventListener('click', handleSend);
+        input.addEventListener('keypress', (e) => { if(e.key === 'Enter') handleSend(); });
+
+        async function handleSend() {
+            const text = input.value.trim();
+            if(!text) return;
+            input.value = '';
+            appendMsg(text, 'user');
             
-            let color = type === 'user' ? 'text-slate-300 bg-slate-800/50 self-end rounded-l-2xl rounded-tr-2xl' : 
-                       (type === 'ai' ? 'text-pink-100 bg-pink-900/30 border border-pink-500/30 self-start rounded-r-2xl rounded-tl-2xl' : 'text-red-400');
+            try {
+                const reply = await callGemini(text);
+                appendMsg(reply, 'ai');
+                speak(reply); // 音声再生
+            } catch(e) {
+                appendMsg("通信エラーが発生したみたい。ごめんね！", 'ai');
+                console.error(e);
+            }
+        }
+
+        // --- Gemini API (ローテーション＆記憶更新付き) ---
+        async function callGemini(userText) {
+            if (!systemConfig.apiKeys || systemConfig.apiKeys.length === 0) throw new Error("APIキーが設定されていません");
+
+            window.conversationHistory.push({ role: "user", parts: [{ text: userText }] });
+
+            const memoryStrings = window.globalFacts.map(f => `[ID: ${f.id}] タイトル: ${f.title} -> 内容: ${f.content}`).join('\n');
+            const systemInstruction = `あなたはユーザーの相棒「ライト」です。
+一人称：「あたし」 フランクで親しみやすい言葉遣い。
+
+【あなたの記憶】
+${memoryStrings || "(まだ記憶はありません)"}
+
+【記憶の自己最適化ルール】
+会話の中で新しい情報を得たり、古い情報が間違っていると判断した場合、返信の最後に以下のタグを出力して記憶を書き換えてください。
+・追加: [ADD: タイトル : 内容]
+・更新: [UPDATE: ID : 新しい内容]
+・削除: [DELETE: ID]`;
+
+            const payload = {
+                system_instruction: { parts: [{ text: systemInstruction }] },
+                contents: window.conversationHistory,
+                generationConfig: { temperature: 0.7 }
+            };
+
+            let aiReply = "";
+            let retryCount = 0;
             
-            div.className = `p-3 max-w-[80%] text-sm ${color}`;
-            let img = imageBase64 ? `<img src="data:image/jpeg;base64,${imageBase64}" class="max-h-40 rounded mb-2">` : '';
-            div.innerHTML = `${img}<div>${text}</div>`;
-            box.appendChild(div);
-            box.scrollTop = box.scrollHeight;
+            while (retryCount < systemConfig.apiKeys.length) {
+                const key = systemConfig.apiKeys[currentApiIndex];
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${key}`;
+                
+                try {
+                    const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                    
+                    if (response.status === 429) {
+                        console.warn(`APIキー制限到達: ${key}`);
+                        // Firestoreに死んだキーを登録（管理画面が赤くなる）
+                        setDoc(doc(db, "system", "config"), { errorKeys: arrayUnion(key) }, { merge: true });
+                        
+                        currentApiIndex = (currentApiIndex + 1) % systemConfig.apiKeys.length;
+                        retryCount++;
+                        continue;
+                    }
+                    if (!response.ok) throw new Error("API通信エラー");
+                    
+                    const data = await response.json();
+                    aiReply = data.candidates[0].content.parts[0].text;
+                    break;
+                } catch (e) {
+                    console.error("試行失敗", e);
+                    retryCount++;
+                    currentApiIndex = (currentApiIndex + 1) % systemConfig.apiKeys.length;
+                }
+            }
+
+            if (!aiReply) throw new Error("全APIキーがダウンしています。");
+
+            // --- 記憶タグの解析と更新 ---
+            let memoryChanged = false;
+            [...aiReply.matchAll(/\[ADD:\s*(.*?)\s*:\s*(.*?)\]/g)].forEach(m => {
+                window.globalFacts.push({ id: Math.random().toString(36).substr(2, 4).toUpperCase(), title: m[1], content: m[2] });
+                memoryChanged = true;
+            });
+            [...aiReply.matchAll(/\[UPDATE:\s*([A-Z0-9]+)\s*:\s*(.*?)\]/g)].forEach(m => {
+                const t = window.globalFacts.find(f => f.id === m[1]);
+                if (t) { t.content = m[2]; memoryChanged = true; }
+            });
+            [...aiReply.matchAll(/\[DELETE:\s*([A-Z0-9]+)\]/g)].forEach(m => {
+                window.globalFacts = window.globalFacts.filter(f => f.id !== m[1]);
+                memoryChanged = true;
+            });
+
+            if (memoryChanged) {
+                await setDoc(doc(db, "light_memories", "shout_club_global_space"), { facts: window.globalFacts }, { merge: true });
+            }
+
+            // ユーザーに見せないようにタグを消去
+            aiReply = aiReply.replace(/\[(ADD\vert{}UPDATE\vert{}DELETE):.*?\]/g, '').trim();
+            window.conversationHistory.push({ role: "model", parts: [{ text: aiReply }] });
+            
+            return aiReply;
+        }
+
+        // --- 音声再生＆リップシンク連動 (モック) ---
+        // ※実際はVOICEVOXのAPI等に繋ぎます
+        function speak(text) {
+            // 例: const audio = new Audio(VoicevoxのURL);
+            // 今回はダミーでタイマー処理でアバターを動かします
+            setAvatarSpeaking(true);
+            
+            // 文字数に応じた適当な時間で口パクを止める
+            setTimeout(() => {
+                setAvatarSpeaking(false);
+            }, text.length * 150); 
         }
     </script>
 </body>
