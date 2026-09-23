@@ -1,197 +1,108 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理者メニュー - ライト OS</title>
-    <style>
-        body { background-color: #161823; color: #fff; font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; display: flex; height: 100vh; }
-        /* サイドバー */
-        #sidebar { width: 250px; background: #0b0c10; padding: 20px; border-right: 1px solid rgba(255,126,179,0.2); }
-        .menu-title { color: #ff7eb3; font-weight: bold; margin-bottom: 30px; letter-spacing: 1px; text-align: center; }
-        .menu-btn { width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #ccc; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; text-align: left; transition: 0.3s; }
-        .menu-btn.active { background: #88c0d0; color: #0b0c10; border-color: #88c0d0; font-weight: bold; }
-        
-        /* メインコンテンツ */
-        #main-content { flex-grow: 1; padding: 40px; overflow-y: auto; }
-        h2 { border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; font-size: 18px; margin-top: 30px; }
-        h2:first-child { margin-top: 0; }
-        
-        .section { background: rgba(0,0,0,0.3); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,126,179,0.2); }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 12px; color: #88c0d0; margin-bottom: 5px; }
-        input[type="text"], textarea, select { width: 100%; padding: 10px; background: #0b0c10; border: 1px solid #555; color: #fff; border-radius: 6px; box-sizing: border-box; }
-        button.save-btn { background: #ff7eb3; color: #000; padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        
-        /* エラー表示用CSS */
-        .error-input { border: 2px solid #bf616a !important; background-color: rgba(191, 97, 106, 0.1) !important; }
-        .warn-text { color: #bf616a; font-size: 12px; margin-top: 5px; display: none; font-weight: bold; }
-
-        /* 記憶リスト */
-        .memory-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; }
-        .memory-info strong { color: #ff7eb3; font-size: 12px; margin-right: 10px; }
-        .del-btn { background: #bf616a; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理者メニュー</title>
+<style>
+  :root { --bg: #121118; --sidebar: #0a0a0f; --pink: #ff6b9e; --blue: #89c4d9; --box: #1c1b22; }
+  body { margin: 0; background: var(--bg); color: #f0f0f0; display: flex; height: 100vh; font-family: sans-serif; }
+  .sidebar { width: 260px; background: var(--sidebar); padding: 20px; display: flex; flex-direction: column; gap: 15px; border-right: 1px solid #333;}
+  .nav-btn { padding: 12px; border-radius: 8px; border: 1px solid #555; background: transparent; color: #fff; cursor: pointer; text-align: left; }
+  .nav-btn.active { background: var(--blue); color: #000; font-weight: bold; border: none;}
+  .main { flex: 1; padding: 40px; overflow-y: auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+  .memory-item { background: var(--box); padding: 15px; margin-bottom: 10px; border-radius: 6px; display: flex; justify-content: space-between; }
+  .btn-del { background: #d9534f; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+  .form-group { margin-bottom: 20px; }
+  .form-group label { display: block; margin-bottom: 8px; color: #aaa; }
+  .form-group input, .form-group select { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #444; background: var(--box); color: #fff; }
+</style>
 </head>
 <body>
-    <div id="sidebar">
-        <div class="menu-title">✨ 管理者メニュー</div>
-        <button class="menu-btn active">⚙️ システム・API設定</button>
+
+<div class="sidebar">
+  <div style="color:var(--pink); font-weight:bold; margin-bottom:20px;">✨ 管理者メニュー</div>
+  <button class="nav-btn active" onclick="switchTab('knowledge')">🧠 Firebase記憶の管理</button>
+  <button class="nav-btn" onclick="switchTab('settings')">⚙️ システム・アバター設定</button>
+  <button class="nav-btn" onclick="location.href='index.html'">◀ チャットへ戻る</button>
+</div>
+
+<div class="main">
+  <!-- 記憶管理 -->
+  <div id="knowledge" class="section active">
+    <h2 style="border-bottom: 1px solid #333; padding-bottom:10px;">部活全体 共有知識（Firestore）</h2>
+    <div style="margin-bottom: 20px; display:flex; gap:10px;">
+      <input type="text" id="newMem" placeholder="新しいルールを追加..." style="flex:1; padding:10px; background:var(--box); color:#fff; border:1px solid #555; border-radius:4px;">
+      <button onclick="addMem()" style="padding:10px 20px; background:var(--blue); color:#000; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">追加</button>
     </div>
+    <div id="memList"></div>
+  </div>
 
-    <div id="main-content">
-        <h2>システム設定 (API & アバター)</h2>
-        <div class="section">
-            <div class="input-group" id="api-keys-container">
-                <label>Gemini APIキー (エラーや制限時に上から順に自動切り替え)</label>
-                <div style="margin-bottom: 10px;">
-                    <input type="text" id="api-key-1" placeholder="枠1 (メイン) AIzaSy...">
-                    <div id="warn-1" class="warn-text">⚠️ 制限上限、またはエラーが発生しています</div>
-                </div>
-                <div style="margin-bottom: 10px;">
-                    <input type="text" id="api-key-2" placeholder="枠2 (サブ1) AIzaSy...">
-                    <div id="warn-2" class="warn-text">⚠️ 制限上限、またはエラーが発生しています</div>
-                </div>
-                <div style="margin-bottom: 10px;">
-                    <input type="text" id="api-key-3" placeholder="枠3 (サブ2) AIzaSy...">
-                    <div id="warn-3" class="warn-text">⚠️ 制限上限、またはエラーが発生しています</div>
-                </div>
-            </div>
+  <!-- 設定 -->
+  <div id="settings" class="section">
+    <h2 style="border-bottom: 1px solid #333; padding-bottom:10px;">システム設定</h2>
+    <div class="form-group"><label>Gemini API キー</label><input type="password" id="apiKey"></div>
+    <div class="form-group"><label>アバター表示</label><select id="avaEn"><option value="true">ON</option><option value="false">OFF</option></select></div>
+    <div class="form-group"><label>モード</label><select id="avaMode"><option value="2d">2D (画像)</option><option value="3d">3D (VRM)</option></select></div>
+    <div class="form-group"><label>2Dパス (待機 / 喋る)</label><input type="text" id="idlePath" style="margin-bottom:5px;"><input type="text" id="speakPath"></div>
+    <div class="form-group"><label>3D VRMパス</label><input type="text" id="vrmPath"></div>
+    <button onclick="saveSet()" style="padding:10px 20px; background:var(--pink); color:#fff; border:none; border-radius:20px; width:100%; font-weight:bold; cursor:pointer;">保存</button>
+  </div>
+</div>
 
-            <div class="input-group">
-                <label>アバターモード設定</label>
-                <select id="avatar-mode">
-                    <option value="none">なし (UIのみ)</option>
-                    <option value="2d">2D (音声反応リップシンク)</option>
-                    <option value="3d">3D (VRM)</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <label>2Dアバター ファイルパス (カンマ区切り: [通常絵], [喋る絵])</label>
-                <input type="text" id="avatar-files-2d" placeholder="./base.png, ./speak.png">
-            </div>
-            <button class="save-btn" id="save-sys-btn">設定を保存してエラーリセット</button>
-        </div>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        <h2>部活全体 共有知識（ライトの記憶）</h2>
-        <div class="section">
-            <div style="font-size: 12px; margin-bottom: 15px; color:#ccc;">
-                ※ここで追加した知識は、AI自身が会話を通じて自動で更新・削除して最適化します。
-            </div>
-            <div class="input-group">
-                <label>新規タイトル</label>
-                <input type="text" id="new-mem-title" placeholder="例: 練習場所">
-            </div>
-            <div class="input-group">
-                <label>詳細内容</label>
-                <input type="text" id="new-mem-content" placeholder="例: 視聴覚室がメイン。">
-            </div>
-            <button class="save-btn" id="add-mem-btn" style="background: #88c0d0;">新規記憶を追加</button>
-        </div>
-        
-        <div id="memory-list"></div>
-    </div>
+  const firebaseConfig = {
+    apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
+    authDomain: "light-65413.firebaseapp.com",
+    projectId: "light-65413",
+    storageBucket: "light-65413.firebasestorage.app",
+    messagingSenderId: "116819261632",
+    appId: "1:116819261632:web:9d9144aa125a55371d5525"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  // 記憶のリアルタイム監視
+  onSnapshot(collection(db, "light_memories"), (snapshot) => {
+    const list = document.getElementById('memList');
+    list.innerHTML = '';
+    snapshot.forEach((d) => {
+      const div = document.createElement('div'); div.className = 'memory-item';
+      div.innerHTML = `<span>${d.data().text}</span> <button class="btn-del" onclick="delMem('${d.id}')">削除</button>`;
+      list.appendChild(div);
+    });
+  });
 
-        // ★★★ ここにあなたのFirebase設定を貼り付けてください ★★★
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+  window.addMem = async () => {
+    const val = document.getElementById('newMem').value;
+    if(val) { await addDoc(collection(db, "light_memories"), { text: val }); document.getElementById('newMem').value = ''; }
+  };
+  window.delMem = async (id) => await deleteDoc(doc(db, "light_memories", id));
 
-        // --- システム設定の読み込み ---
-        const sysDocRef = doc(db, "system", "config");
-        getDoc(sysDocRef).then(snap => {
-            if(snap.exists()) {
-                const data = snap.data();
-                document.getElementById('api-key-1').value = data.apiKeys[0] || "";
-                document.getElementById('api-key-2').value = data.apiKeys[1] || "";
-                document.getElementById('api-key-3').value = data.apiKeys[2] || "";
-                
-                const errorKeys = data.errorKeys || [];
-                [1, 2, 3].forEach(num => {
-                    const val = document.getElementById(`api-key-${num}`).value;
-                    const isError = val && errorKeys.includes(val);
-                    document.getElementById(`api-key-${num}`).classList.toggle('error-input', isError);
-                    document.getElementById(`warn-${num}`).style.display = isError ? 'block' : 'none';
-                });
-
-                document.getElementById('avatar-mode').value = data.avatarMode || "none";
-                document.getElementById('avatar-files-2d').value = data.avatarFiles2d || "./base.png, ./speak.png";
-            }
-        });
-
-        // --- システム設定の保存 ---
-        document.getElementById('save-sys-btn').addEventListener('click', async () => {
-            const keys = [
-                document.getElementById('api-key-1').value.trim(),
-                document.getElementById('api-key-2').value.trim(),
-                document.getElementById('api-key-3').value.trim()
-            ].filter(k => k !== "");
-
-            await setDoc(sysDocRef, {
-                apiKeys: keys,
-                errorKeys: [], // 保存時にエラー状態をリセット
-                avatarMode: document.getElementById('avatar-mode').value,
-                avatarFiles2d: document.getElementById('avatar-files-2d').value
-            }, { merge: true });
-            
-            alert("システム設定を保存しました。");
-            location.reload();
-        });
-
-        // --- 記憶データの同期と表示 ---
-        const memDocRef = doc(db, "light_memories", "shout_club_global_space");
-        let memories = [];
-
-        onSnapshot(memDocRef, (snap) => {
-            if(snap.exists() && snap.data().facts) {
-                memories = snap.data().facts;
-                renderMemories();
-            }
-        });
-
-        function renderMemories() {
-            const list = document.getElementById('memory-list');
-            list.innerHTML = '';
-            memories.forEach((m, index) => {
-                const div = document.createElement('div');
-                div.className = 'memory-item';
-                div.innerHTML = `
-                    <div class="memory-info"><strong>[ID:${m.id}] ${m.title}</strong> ${m.content}</div>
-                    <button class="del-btn" data-index="${index}">削除</button>
-                `;
-                list.appendChild(div);
-            });
-            document.querySelectorAll('.del-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    memories.splice(e.target.dataset.index, 1);
-                    await setDoc(memDocRef, { facts: memories }, { merge: true });
-                });
-            });
-        }
-
-        // --- 記憶の追加 ---
-        document.getElementById('add-mem-btn').addEventListener('click', async () => {
-            const title = document.getElementById('new-mem-title').value;
-            const content = document.getElementById('new-mem-content').value;
-            if(!title || !content) return;
-            
-            const id = Math.random().toString(36).substr(2, 4).toUpperCase();
-            memories.push({ id, title, content });
-            await setDoc(memDocRef, { facts: memories }, { merge: true });
-            document.getElementById('new-mem-title').value = '';
-            document.getElementById('new-mem-content').value = '';
-        });
-    </script>
+  // タブ・設定管理
+  window.switchTab = (id) => {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    event.target.classList.add('active');
+  };
+  
+  window.onload = () => {
+    document.getElementById('apiKey').value = localStorage.getItem('gemini_api_key') || '';
+    const s = JSON.parse(localStorage.getItem('avatarSettings')) || { enabled:"true", mode:"2d", idle:"./idle.png", speak:"./speak.png", vrm:"./light.vrm" };
+    document.getElementById('avaEn').value = s.enabled; document.getElementById('avaMode').value = s.mode;
+    document.getElementById('idlePath').value = s.idle; document.getElementById('speakPath').value = s.speak; document.getElementById('vrmPath').value = s.vrm;
+  };
+  window.saveSet = () => {
+    localStorage.setItem('gemini_api_key', document.getElementById('apiKey').value);
+    localStorage.setItem('avatarSettings', JSON.stringify({ enabled:document.getElementById('avaEn').value, mode:document.getElementById('avaMode').value, idle:document.getElementById('idlePath').value, speak:document.getElementById('speakPath').value, vrm:document.getElementById('vrmPath').value }));
+    alert('保存完了！');
+  };
+</script>
 </body>
 </html>
