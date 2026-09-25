@@ -48,6 +48,7 @@
     .login-title { color:#ff7eb3; font-size:24px; font-weight:bold; margin-bottom:10px; letter-spacing:2px; } .login-desc { color:#ccc; font-size:14px; margin-bottom:30px; }
     #login-id-input { width:80%; max-width:330px; background:rgba(255,255,255,0.1); color:#fff; border:2px solid #ff7eb3; text-align:center; font-weight:bold; letter-spacing:1px; padding:15px; border-radius:30px; margin-bottom:20px; font-size:16px; }
     #execute-login-btn { background:linear-gradient(135deg,#ff758c,#ff7eb3); color:white; width:80%; max-width:330px; padding:15px; border-radius:30px; font-size:16px; margin-bottom:10px; box-shadow:0 4px 15px rgba(255,117,140,0.4); }
+    .login-warning { width:80%; max-width:330px; box-sizing:border-box; margin-top:8px; padding:10px 12px; border:1px solid rgba(241,196,15,.65); background:rgba(241,196,15,.08); color:#f1c40f; border-radius:10px; font-size:11px; line-height:1.6; text-align:left; }
     .status-note { color:#aaa; font-size:11px; margin-top:8px; line-height:1.5; }
     .image-chat-card { margin-top:8px; padding:8px; border:1px solid rgba(255,126,179,.25); border-radius:10px; background:rgba(255,255,255,.03); }
     .image-chat-card img { max-width:180px; max-height:140px; border-radius:8px; display:block; }
@@ -61,6 +62,7 @@
     <input type="text" id="login-id-input" placeholder="例：ryusei0723#Why's" autocomplete="off" autocapitalize="none" spellcheck="false">
     <button id="execute-login-btn">起動する</button>
     <div class="status-note" style="max-width:330px;">初回は確認して登録します。次回から前回使った合言葉が自動で表示されます。<br>「#」はユーザー名とバンド名の区切りです。</div>
+    <div class="login-warning">⚠️ バンドが変わったら、新しい「ユーザー名#新しいバンド名」でログインし直してね。前回の合言葉をそのまま使わないでください。</div>
   </div>
 
   <div id="main-app">
@@ -122,7 +124,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, addDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, addDoc, collection, getDocs, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
@@ -221,9 +223,32 @@
       const userRef = doc(db, 'light_users', parsed.userKey);
       const userSnap = await getDoc(userRef);
       const isNew = !userSnap.exists();
-      if(isNew && askIfNew){
-        const ok = confirm(`「${parsed.username}#${parsed.bandName}」はまだ登録されていないぜ！\n\nこのユーザー名とバンド名で記憶を作成する？\n\n※入力を間違えると別ユーザーとして登録されます。`);
-        if(!ok) return false;
+
+      // 同じユーザー名（＝名前＋誕生日）で、別バンドの登録が既にあるか確認。
+      // 新しいバンドとして初回登録するときだけ、バンド変更かどうかを確認する。
+      if(isNew){
+        const sameUserQuery = query(collection(db, 'light_users'), where('username', '==', parsed.username));
+        const sameUserSnap = await getDocs(sameUserQuery);
+        const previousBands = [];
+        sameUserSnap.forEach(s => {
+          const d = s.data() || {};
+          const oldBand = String(d.bandName || '').trim();
+          if(oldBand && oldBand.toLowerCase() !== parsed.bandName.toLowerCase() && !previousBands.includes(oldBand)) previousBands.push(oldBand);
+        });
+
+        if(previousBands.length && askIfNew){
+          const okBandChange = confirm(
+            `同じユーザー名・誕生日「${parsed.username}」の登録が見つかったぜ！\n\n` +
+            `以前のバンド：${previousBands.join(' / ')}\n` +
+            `今回のバンド：${parsed.bandName}\n\n` +
+            `バンドが変わって、新しいバンド用の記憶を作る登録で合ってる？\n\n` +
+            `※バンド名が違うと、別バンドとして記憶領域を分けて扱います。`
+          );
+          if(!okBandChange) return false;
+        } else if(askIfNew){
+          const ok = confirm(`「${parsed.username}#${parsed.bandName}」はまだ登録されていないぜ！\n\nこのユーザー名とバンド名で記憶を作成する？\n\n※入力を間違えると別ユーザーとして登録されます。`);
+          if(!ok) return false;
+        }
       }
       const stamp = now();
       if(isNew){
