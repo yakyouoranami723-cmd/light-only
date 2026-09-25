@@ -1,494 +1,391 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>私の電キャ - ライト OS v8.5 Cloud</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-    <style>
-        body { background-color: #0b0c10; color: #fff; font-family: 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; }
-        
-        /* === メイン画面のスタイル === */
-        #main-app { display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; }
-        #avatar-container { width: 200px; height: 200px; margin-bottom: 10px; }
-        #header-bar { width: 90%; max-width: 650px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .app-title { font-weight: bold; font-size: 16px; color: #ff7eb3; letter-spacing: 1px; }
-        .icon-btn { background: rgba(255, 255, 255, 0.1); border: 1px solid #ff7eb3; color: #fff; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
-        .icon-btn:hover { background: rgba(255, 126, 179, 0.3); }
-        #chat-log { width: 90%; max-width: 650px; height: 240px; background: rgba(20, 20, 30, 0.85); padding: 15px; border-radius: 16px; overflow-y: auto; margin-bottom: 15px; border: 1px solid rgba(255, 126, 179, 0.4); box-shadow: 0 0 25px rgba(255, 126, 179, 0.15); font-size: 15px; line-height: 1.6; box-sizing: border-box; }
-        .msg-sys { color: #88c0d0; font-size: 13px; } .msg-user { color: #a3be8c; margin-top: 6px; } .msg-ai { color: #b48ead; margin-top: 6px; } .msg-error { color: #bf616a; font-weight: bold; background: rgba(191, 97, 106, 0.1); padding: 5px; border-radius: 5px; margin-top: 6px; }
-        .controls { display: flex; gap: 10px; align-items: center; width: 90%; max-width: 650px; }
-        button, input[type="text"] { padding: 12px 18px; font-size: 14px; border-radius: 30px; border: none; outline: none; transition: all 0.2s ease; }
-        button { cursor: pointer; font-weight: bold; } button:hover { transform: translateY(-2px); } button:active { transform: translateY(1px); } button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        #talk-btn { background: linear-gradient(135deg, #ff758c, #ff7eb3); color: white; box-shadow: 0 4px 15px rgba(255, 117, 140, 0.4); flex-shrink: 0; }
-        #chat-input { flex-grow: 1; border: 1px solid #ff7eb3; background: rgba(0,0,0,0.6); color: white; }
-        #send-btn { background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; box-shadow: 0 4px 15px rgba(79, 172, 254, 0.4); flex-shrink: 0; }
-        
-        #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(5px); justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: #161823; border: 1px solid #ff7eb3; border-radius: 16px; width: 85%; max-width: 420px; padding: 20px; box-shadow: 0 0 30px rgba(255, 126, 179, 0.3); max-height: 90vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 10px; margin-bottom: 15px; }
-        .modal-title { font-size: 16px; font-weight: bold; color: #ff7eb3; }
-        .close-btn { background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer; padding: 0; }
-        .setting-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 14px; }
-        .modal-btn { width: 100%; background: rgba(255, 255, 255, 0.05); border: 1px solid #4facfe; color: #4facfe; padding: 10px; border-radius: 8px; margin-top: 8px; font-size: 13px; }
-        .section-title { font-size: 12px; color: #88c0d0; margin-top: 20px; margin-bottom: 5px; border-bottom: 1px dashed #88c0d0; padding-bottom: 3px; }
-        
-        .sync-box { background: rgba(241, 196, 15, 0.1); border: 1px solid #f1c40f; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
-        #sync-id-input { width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); color: #f1c40f; border: 1px solid #f1c40f; text-align: center; font-weight: bold; letter-spacing: 2px; border-radius: 5px; padding: 8px; margin-bottom: 8px; }
-        .sync-btn { background: #f1c40f; color: #000; width: 100%; border-radius: 5px; padding: 8px; border: none; font-weight: bold; cursor: pointer; }
-
-        /* === ログイン画面のスタイル === */
-        #login-screen { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #0b0c10; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .login-title { color: #ff7eb3; font-size: 24px; font-weight: bold; margin-bottom: 10px; letter-spacing: 2px; }
-        .login-desc { color: #ccc; font-size: 14px; margin-bottom: 30px; }
-        #login-id-input { width: 80%; max-width: 300px; background: rgba(255,255,255,0.1); color: #fff; border: 2px solid #ff7eb3; text-align: center; font-weight: bold; letter-spacing: 2px; padding: 15px; border-radius: 30px; margin-bottom: 20px; font-size: 16px; }
-        #execute-login-btn { background: linear-gradient(135deg, #ff758c, #ff7eb3); color: white; width: 80%; max-width: 300px; padding: 15px; border-radius: 30px; font-size: 16px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(255, 117, 140, 0.4); }
-        #forgot-login-btn { background: transparent; border: 1px solid #88c0d0; color: #88c0d0; padding: 10px 20px; border-radius: 20px; font-size: 12px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ライト OS v8.6 Cloud</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <style>
+    body { background:#0b0c10; color:#fff; font-family:'Helvetica Neue',Arial,sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0; overflow:hidden; }
+    #main-app { display:none; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; }
+    #avatar-container { width:200px; height:200px; margin-bottom:10px; }
+    #header-bar { width:90%; max-width:650px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .app-title { font-weight:bold; font-size:16px; color:#ff7eb3; letter-spacing:1px; }
+    .icon-btn { background:rgba(255,255,255,.1); border:1px solid #ff7eb3; color:#fff; padding:6px 14px; border-radius:20px; cursor:pointer; font-size:13px; transition:all .2s; }
+    .icon-btn:hover { background:rgba(255,126,179,.3); }
+    #chat-log { width:90%; max-width:650px; height:240px; background:rgba(20,20,30,.85); padding:15px; border-radius:16px; overflow-y:auto; margin-bottom:15px; border:1px solid rgba(255,126,179,.4); box-shadow:0 0 25px rgba(255,126,179,.15); font-size:15px; line-height:1.6; box-sizing:border-box; }
+    .msg-sys { color:#88c0d0; font-size:13px; } .msg-user { color:#a3be8c; margin-top:6px; } .msg-ai { color:#b48ead; margin-top:6px; } .msg-error { color:#bf616a; font-weight:bold; background:rgba(191,97,106,.1); padding:5px; border-radius:5px; margin-top:6px; }
+    .controls { display:flex; gap:10px; align-items:center; width:90%; max-width:650px; }
+    button, input[type="text"] { padding:12px 18px; font-size:14px; border-radius:30px; border:none; outline:none; transition:all .2s ease; }
+    button { cursor:pointer; font-weight:bold; } button:hover { transform:translateY(-2px); } button:active { transform:translateY(1px); } button:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+    #talk-btn { background:linear-gradient(135deg,#ff758c,#ff7eb3); color:white; box-shadow:0 4px 15px rgba(255,117,140,.4); flex-shrink:0; }
+    #chat-input { flex-grow:1; border:1px solid #ff7eb3; background:rgba(0,0,0,.6); color:white; }
+    #send-btn { background:linear-gradient(135deg,#4facfe,#00f2fe); color:white; box-shadow:0 4px 15px rgba(79,172,254,.4); flex-shrink:0; }
+    #settings-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.75); backdrop-filter:blur(5px); justify-content:center; align-items:center; z-index:1000; }
+    .modal-content { background:#161823; border:1px solid #ff7eb3; border-radius:16px; width:85%; max-width:420px; padding:20px; box-shadow:0 0 30px rgba(255,126,179,.3); max-height:90vh; overflow-y:auto; }
+    .modal-header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.1); padding-bottom:10px; margin-bottom:15px; }
+    .modal-title { font-size:16px; font-weight:bold; color:#ff7eb3; } .close-btn { background:none; border:none; color:#aaa; font-size:20px; cursor:pointer; padding:0; }
+    .setting-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; font-size:14px; }
+    .modal-btn { width:100%; background:rgba(255,255,255,.05); border:1px solid #4facfe; color:#4facfe; padding:10px; border-radius:8px; margin-top:8px; font-size:13px; }
+    .section-title { font-size:12px; color:#88c0d0; margin-top:20px; margin-bottom:5px; border-bottom:1px dashed #88c0d0; padding-bottom:3px; }
+    .sync-box { background:rgba(241,196,15,.1); border:1px solid #f1c40f; padding:10px; border-radius:8px; margin-bottom:10px; }
+    #sync-id-input { width:100%; box-sizing:border-box; background:rgba(0,0,0,.5); color:#f1c40f; border:1px solid #f1c40f; text-align:center; font-weight:bold; letter-spacing:2px; border-radius:5px; padding:8px; margin-bottom:8px; }
+    .sync-btn { background:#f1c40f; color:#000; width:100%; border-radius:5px; padding:8px; border:none; font-weight:bold; cursor:pointer; }
+    #login-screen { position:absolute; top:0; left:0; width:100vw; height:100vh; background:#0b0c10; z-index:2000; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+    .login-title { color:#ff7eb3; font-size:24px; font-weight:bold; margin-bottom:10px; letter-spacing:2px; } .login-desc { color:#ccc; font-size:14px; margin-bottom:30px; }
+    #login-id-input { width:80%; max-width:300px; background:rgba(255,255,255,.1); color:#fff; border:2px solid #ff7eb3; text-align:center; font-weight:bold; letter-spacing:2px; padding:15px; border-radius:30px; margin-bottom:20px; font-size:16px; }
+    #execute-login-btn { background:linear-gradient(135deg,#ff758c,#ff7eb3); color:white; width:80%; max-width:300px; padding:15px; border-radius:30px; font-size:16px; margin-bottom:30px; box-shadow:0 4px 15px rgba(255,117,140,.4); }
+    #forgot-login-btn { background:transparent; border:1px solid #88c0d0; color:#88c0d0; padding:10px 20px; border-radius:20px; font-size:12px; }
+    .status-note { color:#aaa; font-size:11px; margin-top:8px; line-height:1.5; }
+  </style>
 </head>
 <body>
+<div id="login-screen">
+  <div class="login-title">✨ ライト OS</div>
+  <div class="login-desc">合言葉（パスワード）を入力してね！</div>
+  <input type="text" id="login-id-input" placeholder="合言葉を入力">
+  <button id="execute-login-btn">起動する</button>
+  <div style="margin-bottom:10px;color:#666;font-size:12px;">または</div>
+  <button id="forgot-login-btn">自分専用の合言葉を作る（新規）</button>
+</div>
 
-    <!-- 🌟 起動時のログイン画面 -->
-    <div id="login-screen">
-        <div class="login-title">✨ ライト OS</div>
-        <div class="login-desc">合言葉（パスワード）を入力してね！</div>
-        
-        <input type="text" id="login-id-input" placeholder="合言葉を入力">
-        <button id="execute-login-btn">起動する</button>
-        
-        <div style="margin-bottom: 10px; color: #666; font-size: 12px;">または</div>
-        
-        <button id="forgot-login-btn">自分専用の合言葉を作る（新規）</button>
-    </div>
+<div id="main-app">
+  <div id="header-bar"><div class="app-title">✨ ライト</div><button id="open-settings-btn" class="icon-btn">⚙️ 設定</button></div>
+  <div id="avatar-container"></div>
+  <div id="chat-log"><div class="msg-sys"><strong>システム:</strong> クラウド連携待機中...</div></div>
+  <div class="controls"><button id="talk-btn">🔴</button><input type="text" id="chat-input" placeholder="ライトに話しかける..."><button id="send-btn">送信</button></div>
+</div>
 
-    <!-- メインアプリ画面（ログインするまで隠しておく） -->
-    <div id="main-app">
-        <div id="header-bar">
-            <div class="app-title">✨ ライト</div>
-            <button id="open-settings-btn" class="icon-btn">⚙️ 設定</button>
-        </div>
+<div id="settings-modal">
+  <div class="modal-content">
+    <div class="modal-header"><div class="modal-title">⚙️ システム設定</div><button class="close-btn" id="close-settings-btn">✖</button></div>
+    <div class="setting-row"><span>ボイス再生（音声）</span><button id="mute-toggle-btn" class="icon-btn">🔊 音声 ON</button></div>
+    <div class="section-title">☁️ クラウド記憶同期 (合言葉)</div>
+    <div class="sync-box"><div style="font-size:11px;color:#ccc;margin-bottom:8px;">この合言葉を他の端末で入力すると、記憶を引き継ぎできます。</div><input type="text" id="sync-id-input" placeholder="合言葉を入力"><button id="sync-execute-btn" class="sync-btn">手動で同期する</button></div>
+    <div class="section-title">【現在の学習ステータス】</div>
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;margin-bottom:5px;"><span id="brain-status-text" style="font-size:13px;">自己改善ルール: 0件 | 事実記憶: 0件 | 記憶ファイル: 0件</span></div>
+    <button id="view-brain-btn" class="modal-btn">🧠 記憶データの中身を確認 / リセット</button>
+    <div class="section-title">【拡張知識】</div>
+    <button id="pdf-btn" class="modal-btn">📄 説明書(PDF)を一時記憶させる</button>
+    <input type="file" id="pdf-upload" accept="application/pdf" style="display:none;">
+    <div class="status-note">記憶ファイルは管理者サイトからタイトル＋詳細で追加できます。質問が記憶ファイルに明確に一致する場合は、AIを呼ばずにその記憶から回答します。</div>
+  </div>
+</div>
 
-        <div id="avatar-container"></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        <div id="chat-log">
-            <div class="msg-sys"><strong>システム:</strong> クラウド連携待機中...</div>
-        </div>
+const firebaseConfig = {
+  apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
+  authDomain: "light-65413.firebaseapp.com",
+  projectId: "light-65413",
+  storageBucket: "light-65413.firebasestorage.app",
+  messagingSenderId: "116819261632",
+  appId: "1:116819261632:web:9d9144aa125a55371d5525"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-        <div class="controls">
-            <button id="talk-btn">🔴</button>
-            <input type="text" id="chat-input" placeholder="ライトに話しかける...">
-            <button id="send-btn">送信</button>
-        </div>
-    </div>
+window.isMuted = false;
+window.selfReflections = [];
+window.userFacts = [];
+window.pdfKnowledge = "";
+window.conversationHistory = [];
+window.memoryFiles = [];
+window.apiConfig = { apiKeys: [], activeKeyId: "", model: "gemini-3.8-flash" };
+let myUserId = "";
 
-    <!-- 設定モーダル -->
-    <div id="settings-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">⚙️ システム設定</div>
-                <button class="close-btn" id="close-settings-btn">✖</button>
-            </div>
-            
-            <div class="setting-row">
-                <span>ボイス再生（音声）</span>
-                <button id="mute-toggle-btn" class="icon-btn">🔊 音声 ON</button>
-            </div>
+const chatLog = document.getElementById('chat-log');
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+const talkBtn = document.getElementById('talk-btn');
+const settingsModal = document.getElementById('settings-modal');
+const loginScreen = document.getElementById('login-screen');
+const mainApp = document.getElementById('main-app');
 
-            <div class="section-title">☁️ クラウド記憶同期 (合言葉)</div>
-            <div class="sync-box">
-                <div style="font-size: 11px; color: #ccc; margin-bottom: 8px;">
-                    この合言葉を他の端末で入力すると、記憶を引き継ぎできます。
-                </div>
-                <input type="text" id="sync-id-input" placeholder="合言葉を入力">
-                <button id="sync-execute-btn" class="sync-btn">手動で同期する</button>
-            </div>
+const savedId = localStorage.getItem('light_sync_id');
+document.getElementById('login-id-input').value = savedId || 'shout';
 
-            <div class="section-title">【現在の学習ステータス】</div>
-            <div class="setting-row" style="flex-direction: column; align-items: flex-start; margin-bottom: 5px;">
-                <span id="brain-status-text" style="font-size: 13px;">自己改善ルール: 0件 | 事実記憶: 0件</span>
-            </div>
-            <button id="view-brain-btn" class="modal-btn">🧠 記憶データの中身を確認 / リセット</button>
+document.getElementById('execute-login-btn').addEventListener('click', async () => {
+  const inputId = document.getElementById('login-id-input').value.trim();
+  if (!inputId) return alert('合言葉を入力してね！');
+  myUserId = inputId;
+  localStorage.setItem('light_sync_id', myUserId);
+  document.getElementById('sync-id-input').value = myUserId;
+  loginScreen.style.display = 'none';
+  mainApp.style.display = 'flex';
+  await bootCloud(myUserId);
+});
 
-            <div class="section-title">【拡張知識】</div>
-            <button id="pdf-btn" class="modal-btn">📄 説明書(PDF)を一時記憶させる</button>
-            <input type="file" id="pdf-upload" accept="application/pdf" style="display: none;">
-        </div>
-    </div>
+document.getElementById('forgot-login-btn').addEventListener('click', async () => {
+  myUserId = 'shout-' + Math.random().toString(36).slice(2, 8).toLowerCase();
+  localStorage.setItem('light_sync_id', myUserId);
+  document.getElementById('sync-id-input').value = myUserId;
+  alert(`あなた専用の秘密の合言葉を作成しました！\n\n【 ${myUserId} 】\n\n※他の端末で使うためにメモしておいてね。`);
+  loginScreen.style.display = 'none';
+  mainApp.style.display = 'flex';
+  await bootCloud(myUserId);
+});
 
-    <!-- Firebase v9 (Modular) のインポート -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
+}
+function addLog(name, text, type='user') {
+  const div = document.createElement('div');
+  div.className = type === 'sys' ? 'msg-sys' : type === 'ai' ? 'msg-ai' : type === 'error' ? 'msg-error' : 'msg-user';
+  div.innerHTML = `<strong>${escapeHtml(name)}:</strong> ${escapeHtml(text).replace(/\n/g,'<br>')}`;
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+function updateUI() {
+  document.getElementById('brain-status-text').textContent = `自己改善ルール: ${window.selfReflections.length}件 | 事実記憶: ${window.userFacts.length}件 | 記憶ファイル: ${window.memoryFiles.length}件`;
+}
 
-        // ==========================================
-        // Firebaseの設定
-        // ==========================================
-        const firebaseConfig = {
-            apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
-            authDomain: "light-65413.firebaseapp.com",
-            projectId: "light-65413",
-            storageBucket: "light-65413.firebasestorage.app",
-            messagingSenderId: "116819261632",
-            appId: "1:116819261632:web:9d9144aa125a55371d5525"
-        };
+async function loadLegacyMemory(userId) {
+  const snap = await getDoc(doc(db, 'light_memories', userId));
+  if (snap.exists()) {
+    const data = snap.data() || {};
+    window.selfReflections = Array.isArray(data.reflections) ? data.reflections : [];
+    window.userFacts = Array.isArray(data.facts) ? data.facts : [];
+    return true;
+  }
+  window.selfReflections = [];
+  window.userFacts = [];
+  return false;
+}
+async function loadMemoryFiles() {
+  const snap = await getDocs(collection(db, 'light_memory_files'));
+  window.memoryFiles = [];
+  snap.forEach(d => window.memoryFiles.push({ id:d.id, ...(d.data() || {}) }));
+  window.memoryFiles.sort((a,b) => String(a.title||'').localeCompare(String(b.title||''), 'ja'));
+}
+async function loadApiConfig() {
+  try {
+    const snap = await getDoc(doc(db, 'light_config', 'main'));
+    if (snap.exists()) {
+      const data = snap.data() || {};
+      window.apiConfig = {
+        apiKeys: Array.isArray(data.apiKeys) ? data.apiKeys.filter(k => k && k.key && k.enabled !== false) : [],
+        activeKeyId: data.activeKeyId || '',
+        model: data.model || 'gemini-3.8-flash'
+      };
+    }
+  } catch (e) {
+    console.warn('API設定の取得に失敗:', e);
+  }
+}
+async function bootCloud(userId) {
+  addLog('システム', `合言葉「${userId}」の記憶をクラウドから読み込み中...`, 'sys');
+  try {
+    const existed = await loadLegacyMemory(userId);
+    await loadMemoryFiles();
+    await loadApiConfig();
+    addLog('システム', existed ? 'クラウドからの記憶の読み込みが完了しました！' : '新しい合言葉です。記憶データを開始します。', 'sys');
+    updateUI();
+    if (existed) {
+      const msg = 'おっ！以前の記憶、バッチリ思い出したぜ！'; addLog('ライト', msg, 'ai'); window.speak(msg);
+    } else {
+      const msg = 'よろしくな！あたしはライトだぜ！'; addLog('ライト', msg, 'ai'); window.speak(msg);
+    }
+  } catch (e) {
+    console.error(e);
+    addLog('システムエラー', 'クラウドとの通信に失敗しました。Firestoreの設定を確認してください。', 'error');
+  }
+}
+async function saveToCloud() {
+  try {
+    await setDoc(doc(db, 'light_memories', myUserId), {
+      reflections: window.selfReflections,
+      facts: window.userFacts,
+      updatedAt: Date.now()
+    });
+  } catch (e) { console.error('クラウド保存エラー', e); }
+}
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+document.getElementById('sync-execute-btn').addEventListener('click', async () => {
+  const newId = document.getElementById('sync-id-input').value.trim();
+  if (!newId) return alert('合言葉を入力してください');
+  myUserId = newId;
+  localStorage.setItem('light_sync_id', myUserId);
+  settingsModal.style.display = 'none';
+  window.conversationHistory = [];
+  await bootCloud(myUserId);
+});
+document.getElementById('open-settings-btn').addEventListener('click', () => settingsModal.style.display='flex');
+document.getElementById('close-settings-btn').addEventListener('click', () => settingsModal.style.display='none');
+const muteBtn = document.getElementById('mute-toggle-btn');
+muteBtn.addEventListener('click', () => {
+  window.isMuted = !window.isMuted;
+  muteBtn.textContent = window.isMuted ? '🔇 音声 OFF' : '🔊 音声 ON';
+  muteBtn.style.borderColor = window.isMuted ? '#bf616a' : '#ff7eb3';
+  if (window.isMuted) { if (window.currentAudio) window.currentAudio.pause(); window.speechSynthesis.cancel(); }
+});
 
-        // ==========================================
-        // Gemini APIキー
-        // ==========================================
-        const API_KEY = "AQ.Ab8RN6LFpA-TEL3AGVk6l5KQe7Pgi9w455ROTO2txXm5m6SeTg"; 
+document.getElementById('view-brain-btn').addEventListener('click', async () => {
+  let msg = '【獲得した行動ルール】\n' + (window.selfReflections.length ? '・' + window.selfReflections.join('\n・') : '(なし)');
+  msg += '\n\n【記憶した事実データ】\n' + (window.userFacts.length ? '・' + window.userFacts.join('\n・') : '(なし)');
+  msg += `\n\n【記憶ファイル】\n${window.memoryFiles.length ? window.memoryFiles.map(x => '・' + x.title).join('\n') : '(なし)'}`;
+  if (confirm(msg + '\n\n※「OK」を押すと、この合言葉の従来型記憶を消去します。記憶ファイルは消えません。')) {
+    window.selfReflections = []; window.userFacts = []; await saveToCloud(); updateUI(); addLog('システム','従来型の記憶をクリアしました。','sys');
+  }
+});
 
-        // グローバル変数
-        window.isMuted = false;
-        window.selfReflections = [];
-        window.userFacts = [];
-        window.pdfKnowledge = ""; 
-        window.conversationHistory = []; 
-        let myUserId = "";
+window.currentAudio = null;
+window.speak = function(text) {
+  if (window.isMuted) return;
+  if (window.currentAudio) { window.currentAudio.pause(); window.currentAudio=null; }
+  window.speechSynthesis.cancel();
+  const cleanText = String(text||'').replace(/[#*「」『』（）()【】_~〜]/g,'').trim();
+  if (!cleanText) return;
+  const url = `https://api.tts.quest/v3/voicevox/synthesis?text=${encodeURIComponent(cleanText)}&speaker=8`;
+  const audio = new Audio(url); window.currentAudio=audio;
+  let fallbackFired=false;
+  const fallback=()=>{
+    if(fallbackFired || window.currentAudio!==audio) return;
+    fallbackFired=true; window.speechSynthesis.cancel();
+    const uttr=new SpeechSynthesisUtterance(cleanText); uttr.lang='ja-JP'; uttr.rate=1.1; uttr.pitch=1.3; window.speechSynthesis.speak(uttr);
+  };
+  audio.play().catch(fallback); audio.onerror=fallback;
+};
 
-        const chatLog = document.getElementById('chat-log');
-        const chatInput = document.getElementById('chat-input');
-        const sendBtn = document.getElementById('send-btn');
-        const talkBtn = document.getElementById('talk-btn');
-        const settingsModal = document.getElementById('settings-modal');
-        const loginScreen = document.getElementById('login-screen');
-        const mainApp = document.getElementById('main-app');
+function getApplicableMemoryFiles() {
+  return window.memoryFiles.filter(m => {
+    if (m.enabled === false) return false;
+    const scope = String(m.scope || '*');
+    return scope === '*' || scope === 'all' || scope === myUserId;
+  });
+}
+function findDirectMemoryAnswer(userText) {
+  const q = String(userText||'').toLowerCase().trim();
+  if (!q) return null;
+  for (const m of getApplicableMemoryFiles()) {
+    if (!m.directAnswer) continue;
+    const title = String(m.title||'').toLowerCase().trim();
+    const keywords = Array.isArray(m.keywords) ? m.keywords.map(x=>String(x).toLowerCase().trim()).filter(x=>x.length>=2) : [];
+    const titleHit = title && q.includes(title);
+    const keywordHits = keywords.filter(k => q.includes(k)).length;
+    if (titleHit || keywordHits >= Math.min(2, Math.max(1, keywords.length))) {
+      return String(m.details||'').trim();
+    }
+  }
+  return null;
+}
+function buildMemoryContext() {
+  const files = getApplicableMemoryFiles();
+  if (!files.length) return '';
+  let out = '\n\n【軽音楽部・ライトの記憶ファイル】\n';
+  for (const m of files) {
+    const block = `\n--- ${m.title || '無題'} ---\n${m.details || ''}`;
+    if ((out + block).length > 12000) break;
+    out += block;
+  }
+  return out;
+}
 
-        // ==========================================
-        // 🌟 ログイン画面の処理
-        // ==========================================
-        // ★ 前回使った合言葉があればそれを、無ければ初期値「shout」を入れる
-        const savedId = localStorage.getItem('light_sync_id');
-        if (savedId) {
-            document.getElementById('login-id-input').value = savedId;
-        } else {
-            // ★ 初期設定の合言葉を「shout」に固定！
-            document.getElementById('login-id-input').value = "shout";
-        }
+async function callGemini(userText) {
+  const direct = findDirectMemoryAnswer(userText);
+  if (direct) return { text: direct, fromMemory: true };
 
-        // 「起動する」ボタンを押した時
-        document.getElementById('execute-login-btn').addEventListener('click', () => {
-            const inputId = document.getElementById('login-id-input').value.trim();
-            if (!inputId) {
-                alert("合言葉を入力してね！");
-                return;
-            }
-            myUserId = inputId;
-            localStorage.setItem('light_sync_id', myUserId);
-            document.getElementById('sync-id-input').value = myUserId; // 設定画面の入力欄も更新
-            
-            // 画面を切り替えてクラウドから読み込み
-            loginScreen.style.display = 'none';
-            mainApp.style.display = 'flex';
-            loadFromCloud(myUserId);
-        });
+  await loadApiConfig();
+  const keys = [...window.apiConfig.apiKeys];
+  if (!keys.length) throw new Error('管理者サイトにGemini APIキーが設定されていません。');
+  keys.sort((a,b) => (a.id === window.apiConfig.activeKeyId ? -1 : 0) - (b.id === window.apiConfig.activeKeyId ? -1 : 0));
 
-        // 「自分専用の合言葉を作る」ボタンを押した時
-        document.getElementById('forgot-login-btn').addEventListener('click', () => {
-            // 新しいIDを生成
-            myUserId = 'shout-' + Math.random().toString(36).substr(2, 6).toLowerCase();
-            localStorage.setItem('light_sync_id', myUserId);
-            document.getElementById('sync-id-input').value = myUserId;
+  const rulesContext = window.selfReflections.length ? '\n【過去の反省・学習ルール】\n・' + window.selfReflections.join('\n・') : '';
+  const factsContext = window.userFacts.length ? '\n【記憶しているユーザー情報】\n・' + window.userFacts.join('\n・') : '';
+  const systemInstruction = `あなたはユーザーの相棒「電キャ」の「ライト」です。\n性別：女子。ボーイッシュで明るく元気な性格。一人称「あたし」。\n基本口調：「〜っしょ！」「〜だぜ！」「任せとけ！」など。\n${rulesContext}${factsContext}${buildMemoryContext()}${window.pdfKnowledge}\n\n【会話の絶対ルール】\n1. 誤字脱字に注意し、自然で人間らしい日本語で話してください。\n2. 絵文字・Markdown記号・過剰な記号は使わないでください。\n3. 記憶ファイルに書かれている内容を、重要な参考資料として扱ってください。\n4. 分からないことを勝手に作らないでください。\n\n【学習メタタグの絶対ルール】\n新しい好みや事実を記憶する場合だけ、会話文を完全に書き終えた最後に\n[REFLECT: 内容]\n[FACT: 内容]\nの形式で出力してください。`;
 
-            // アラートで新しい合言葉を教える
-            alert(`あなた専用の秘密の合言葉を作成しました！\n\n【 ${myUserId} 】\n\n※他の端末で使うためにスクショ等でメモしておいてね！（設定画面からも確認できます）`);
-            
-            // 画面を切り替えてクラウドから読み込み
-            loginScreen.style.display = 'none';
-            mainApp.style.display = 'flex';
-            loadFromCloud(myUserId);
-        });
+  window.conversationHistory.push({ role:'user', parts:[{text:userText}] });
+  let lastError = null;
+  for (const keyInfo of keys) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(window.apiConfig.model)}:generateContent`;
+    try {
+      const response = await fetch(url, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'x-goog-api-key':keyInfo.key },
+        body:JSON.stringify({ system_instruction:{parts:[{text:systemInstruction}]}, contents:window.conversationHistory, generationConfig:{temperature:.7, topP:.95, topK:100} })
+      });
+      const data = await response.json().catch(()=>({}));
+      if (response.status === 429) {
+        throw new Error('RATE_LIMIT');
+      }
+      if (response.status === 401 || response.status === 403) {
+        lastError = new Error('APIキー「' + (keyInfo.label || keyInfo.id) + '」が使用できません。別の登録キーを試します。');
+        continue;
+      }
+      if (!response.ok) throw new Error(data?.error?.message || `Gemini通信エラー (${response.status})`);
+      const aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!aiReply) throw new Error('AIから有効な回答が返ってきませんでした。');
+      let reply = aiReply;
+      let memoryChanged = false;
+      for (const match of [...reply.matchAll(/\[REFLECT:\s*(.*?)\]/g)]) {
+        const value = match[1].trim(); if (value && !window.selfReflections.includes(value)) { window.selfReflections.push(value); memoryChanged=true; }
+      }
+      for (const match of [...reply.matchAll(/\[FACT:\s*(.*?)\]/g)]) {
+        const value = match[1].trim(); if (value && !window.userFacts.includes(value)) { window.userFacts.push(value); memoryChanged=true; }
+      }
+      reply = reply.replace(/\[REFLECT:\s*.*?\]/g,'').replace(/\[FACT:\s*.*?\]/g,'').trim();
+      updateUI(); if (memoryChanged) await saveToCloud();
+      window.conversationHistory.push({role:'model',parts:[{text:reply}]});
+      if (window.conversationHistory.length>20) window.conversationHistory.splice(0,2);
+      return { text:reply, fromMemory:false };
+    } catch (e) {
+      window.conversationHistory.pop();
+      if (e.message === 'RATE_LIMIT') {
+        // 429では別キーへ自動切替しません。プロジェクト単位の制限だからです。
+        throw new Error('AIの利用上限に達した可能性があります。少し時間を置いてから試してね。');
+      }
+      lastError = e;
+    }
+  }
+  throw lastError || new Error('Gemini API通信に失敗しました。');
+}
 
-        // UI更新
-        function updateUI() {
-            document.getElementById('brain-status-text').textContent = 
-                `自己改善ルール: ${window.selfReflections.length}件 | 事実記憶: ${window.userFacts.length}件`;
-        }
+async function processUserInput(text) {
+  if (!text || !text.trim()) return;
+  addLog('あなた',text,'user');
+  sendBtn.disabled=true; chatInput.disabled=true; talkBtn.disabled=true; sendBtn.textContent='🧠';
+  try { const result=await callGemini(text); addLog('ライト',result.text,'ai'); window.speak(result.text); }
+  catch(error){ addLog('システムエラー',error.message,'error'); window.speak('ごめん！通信がおかしいみたいだぜ！'); }
+  finally { sendBtn.disabled=false; chatInput.disabled=false; talkBtn.disabled=false; sendBtn.textContent='送信'; chatInput.focus(); }
+}
+sendBtn.addEventListener('click',()=>{const t=chatInput.value;chatInput.value='';processUserInput(t);});
+chatInput.addEventListener('keypress',e=>{if(e.key==='Enter')sendBtn.click();});
 
-        function addLog(name, text, type = 'user') {
-            const div = document.createElement('div');
-            if(type === 'sys') div.className = 'msg-sys';
-            else if(type === 'ai') div.className = 'msg-ai';
-            else if(type === 'error') div.className = 'msg-error';
-            else div.className = 'msg-user';
-            div.innerHTML = `<strong>${name}:</strong> ${text}`;
-            chatLog.appendChild(div);
-            chatLog.scrollTop = chatLog.scrollHeight;
-        }
+const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SpeechRecognition){
+  const recognition=new SpeechRecognition(); recognition.lang='ja-JP';
+  talkBtn.addEventListener('click',()=>{try{recognition.start();talkBtn.textContent='👂';talkBtn.style.background='#f1c40f';}catch(e){}});
+  recognition.onresult=e=>{talkBtn.textContent='🔴';talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';processUserInput(e.results[0][0].transcript);};
+  recognition.onerror=()=>{talkBtn.textContent='🔴';talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';};
+} else talkBtn.style.display='none';
 
-        // ==========================================
-        // クラウド同期機能 (Firestore)
-        // ==========================================
-        async function loadFromCloud(userId) {
-            try {
-                addLog("システム", `合言葉「${userId}」の記憶をクラウドから検索中...`, "sys");
-                const docSnap = await getDoc(doc(db, "light_memories", userId));
-                
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    window.selfReflections = data.reflections || [];
-                    window.userFacts = data.facts || [];
-                    addLog("システム", "クラウドからの記憶のダウンロードが完了しました！", "sys");
-                    const msg = "おっ！以前の記憶バッチリ思い出したぜ！";
-                    addLog("ライト", msg, "ai");
-                    window.speak(msg);
-                } else {
-                    window.selfReflections = [];
-                    window.userFacts = [];
-                    addLog("システム", "新しい合言葉です。新しい記憶データベースを作成しました。", "sys");
-                    const msg = "よろしくな！あたしはライトだぜ！";
-                    addLog("ライト", msg, "ai");
-                    window.speak(msg);
-                }
-                updateUI();
-            } catch (e) {
-                console.error(e);
-                addLog("システムエラー", "クラウドとの通信に失敗しました。データベースが作成されているか確認してください。", "error");
-            }
-        }
+document.getElementById('pdf-btn').addEventListener('click',()=>document.getElementById('pdf-upload').click());
+document.getElementById('pdf-upload').addEventListener('change',async e=>{
+  const file=e.target.files[0]; if(!file)return;
+  addLog('システム',`PDF「${file.name}」を読み込み中...`,'sys');
+  try{
+    const arrayBuffer=await file.arrayBuffer(); const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise; let fullText='';
+    for(let i=1;i<=pdf.numPages;i++){const page=await pdf.getPage(i);fullText+=(await page.getTextContent()).items.map(x=>x.str).join(' ')+'\n';}
+    if(fullText.length>10000)fullText=fullText.slice(0,10000)+'...';
+    window.pdfKnowledge=`\n\n【追加知識】\n${fullText}`;
+    addLog('ライト','その資料、頭に入れたぜ！','ai'); window.speak('その資料、頭に入れたぜ！'); settingsModal.style.display='none'; e.target.value='';
+  }catch(err){addLog('システム','PDF読み込み失敗','error');}
+});
 
-        async function saveToCloud() {
-            try {
-                await setDoc(doc(db, "light_memories", myUserId), {
-                    reflections: window.selfReflections,
-                    facts: window.userFacts,
-                    updatedAt: new Date()
-                });
-                console.log("クラウド保存完了");
-            } catch (e) { console.error("クラウド保存エラー", e); }
-        }
-
-        // ==========================================
-        // UIイベント設定（設定画面など）
-        // ==========================================
-        document.getElementById('sync-execute-btn').addEventListener('click', () => {
-            const newId = document.getElementById('sync-id-input').value.trim();
-            if (!newId) { alert("合言葉を入力してください"); return; }
-            myUserId = newId;
-            localStorage.setItem('light_sync_id', myUserId);
-            loadFromCloud(myUserId);
-            settingsModal.style.display = 'none';
-        });
-
-        document.getElementById('open-settings-btn').addEventListener('click', () => settingsModal.style.display = 'flex');
-        document.getElementById('close-settings-btn').addEventListener('click', () => settingsModal.style.display = 'none');
-        
-        const muteBtn = document.getElementById('mute-toggle-btn');
-        muteBtn.addEventListener('click', () => {
-            window.isMuted = !window.isMuted;
-            if(window.isMuted) {
-                muteBtn.textContent = "🔇 音声 OFF";
-                muteBtn.style.borderColor = "#bf616a";
-                if (window.currentAudio) window.currentAudio.pause();
-                window.speechSynthesis.cancel();
-            } else {
-                muteBtn.textContent = "🔊 音声 ON";
-                muteBtn.style.borderColor = "#ff7eb3";
-            }
-        });
-
-        document.getElementById('view-brain-btn').addEventListener('click', async () => {
-            let msg = "【獲得した行動ルール】\n" + (window.selfReflections.length ? "・" + window.selfReflections.join("\n・") : "(なし)");
-            msg += "\n\n【記憶した事実データ】\n" + (window.userFacts.length ? "・" + window.userFacts.join("\n・") : "(なし)");
-            if(confirm(msg + "\n\n※「OK」を押すと記憶をすべて消去します。")) {
-                window.selfReflections = [];
-                window.userFacts = [];
-                await saveToCloud();
-                updateUI();
-                addLog("システム", "記憶をクリアしました。", "sys");
-            }
-        });
-
-        // ==========================================
-        // 音声読み上げ
-        // ==========================================
-        window.currentAudio = null; 
-        window.speak = function(text) {
-            if (window.isMuted) return;
-            if (window.currentAudio) { window.currentAudio.pause(); window.currentAudio = null; }
-            window.speechSynthesis.cancel();
-            const cleanText = text.replace(/[#*「」『』（）()【】_~〜]/g, '').trim();
-            if (!cleanText) return;
-
-            const url = `https://api.tts.quest/v3/voicevox/synthesis?text=${encodeURIComponent(cleanText)}&speaker=8`;
-            const audio = new Audio(url);
-            window.currentAudio = audio;
-            let hasFiredFallback = false;
-            
-            const fallback = () => {
-                if (!hasFiredFallback && window.currentAudio === audio) {
-                    hasFiredFallback = true;
-                    window.speechSynthesis.cancel();
-                    const uttr = new SpeechSynthesisUtterance(cleanText);
-                    uttr.lang = 'ja-JP'; uttr.rate = 1.1; uttr.pitch = 1.3; 
-                    window.speechSynthesis.speak(uttr);
-                }
-            }
-            audio.play().catch(fallback);
-            audio.onerror = fallback;
-        };
-
-        // ==========================================
-        // Gemini API 通信エンジン
-        // ==========================================
-        async function callGemini(userText) {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${API_KEY}`;
-            
-            const rulesContext = window.selfReflections.length > 0 ? "\n【過去の反省・学習ルール】\n・" + window.selfReflections.join("\n・") : "";
-            const factsContext = window.userFacts.length > 0 ? "\n【記憶しているユーザー情報】\n・" + window.userFacts.join("\n・") : "";
-            
-            const systemInstruction = `あなたはユーザーの相棒「電キャ」の「ライト」です。
-性別：女子（ボーイッシュで明るく元気な性格）
-一人称：「あたし」
-基本口調：「〜っしょ！」「〜だぜ！」「任せとけ！」など、フランクで親しみやすい言葉遣い。
-${rulesContext}
-${factsContext}
-${window.pdfKnowledge}
-
-【会話の絶対ルール】
-1. 誤字脱字に注意し、自然で人間らしい日本語で話してください。
-2. 句読点（、。）や感嘆符（！）は積極的に使ってOKです。絵文字（✨😊）や記号（* #）は使わないでください。
-
-【学習メタタグの絶対ルール】
-ユーザーからの要望や好み、事実を記憶・自己学習した場合は、必ず【すべての会話文を完全に書き終えた後、文章のいちばん最後の改行下】にのみ出力してください。会話文の途中や単語の中に挟み込むことは絶対に厳禁です。
-（例：[REFLECT: 行動ルール] や [FACT: ユーザーの事実]）`;
-
-            window.conversationHistory.push({ role: "user", parts: [{ text: userText }] });
-
-            const payload = {
-                system_instruction: { parts: [{ text: systemInstruction }] },
-                contents: window.conversationHistory,
-                generationConfig: { temperature: 0.7, topP: 0.95, topK: 100, stopSequences: ["あなた:", "ユーザー:"] }
-            };
-
-            const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if (!response.ok) throw new Error(`通信エラー`);
-
-            const data = await response.json();
-            let aiReply = data.candidates[0].content.parts[0].text;
-            
-            let memoryChanged = false;
-
-            const reflectMatches = [...aiReply.matchAll(/\[REFLECT:\s*(.*?)\]/g)];
-            for (const match of reflectMatches) {
-                const newRule = match[1].trim();
-                if (!window.selfReflections.includes(newRule)) {
-                    window.selfReflections.push(newRule);
-                    memoryChanged = true;
-                }
-            }
-
-            const factMatches = [...aiReply.matchAll(/\[FACT:\s*(.*?)\]/g)];
-            for (const match of factMatches) {
-                const newFact = match[1].trim();
-                if (!window.userFacts.includes(newFact)) {
-                    window.userFacts.push(newFact);
-                    memoryChanged = true;
-                }
-            }
-
-            aiReply = aiReply.replace(/\[REFLECT:\s*.*?\]/g, '').replace(/\[FACT:\s*.*?\]/g, '').trim();
-
-            updateUI();
-            
-            if (memoryChanged) { saveToCloud(); }
-
-            window.conversationHistory.push({ role: "model", parts: [{ text: aiReply }] });
-            if (window.conversationHistory.length > 20) window.conversationHistory.splice(0, 2); 
-            
-            return aiReply;
-        }
-
-        // ==========================================
-        // チャット & マイク & PDF イベント
-        // ==========================================
-        async function processUserInput(text) {
-            if (!text || !text.trim()) return;
-            addLog("あなた", text, 'user');
-            sendBtn.disabled = true; chatInput.disabled = true; talkBtn.disabled = true;
-            sendBtn.innerHTML = "🧠";
-            try {
-                const reply = await callGemini(text);
-                addLog("ライト", reply, 'ai');
-                window.speak(reply);
-            } catch (error) {
-                window.conversationHistory.pop(); 
-                addLog("システムエラー", error.message, 'error');
-                window.speak("ごめん！通信がおかしいみたいだぜ！");
-            } finally {
-                sendBtn.disabled = false; chatInput.disabled = false; talkBtn.disabled = false;
-                sendBtn.innerHTML = "送信";
-                chatInput.focus();
-            }
-        }
-
-        sendBtn.addEventListener('click', () => { const text = chatInput.value; chatInput.value = ''; processUserInput(text); });
-        chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendBtn.click(); });
-
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SpeechRecognition) {
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'ja-JP';
-            talkBtn.addEventListener('click', () => {
-                try { recognition.start(); talkBtn.innerHTML = "👂"; talkBtn.style.background = "#f1c40f"; } catch(e){}
-            });
-            recognition.onresult = (e) => {
-                talkBtn.innerHTML = "🔴"; talkBtn.style.background = "linear-gradient(135deg, #ff758c, #ff7eb3)";
-                processUserInput(e.results[0][0].transcript);
-            };
-            recognition.onerror = () => { talkBtn.innerHTML = "🔴"; talkBtn.style.background = "linear-gradient(135deg, #ff758c, #ff7eb3)"; };
-        } else { talkBtn.style.display = 'none'; }
-
-        document.getElementById('pdf-btn').addEventListener('click', () => document.getElementById('pdf-upload').click());
-        document.getElementById('pdf-upload').addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            addLog("システム", `PDF「${file.name}」を読み込み中...`, 'sys');
-            try {
-                const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
-                let fullText = "";
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    fullText += (await page.getTextContent()).items.map(item => item.str).join(" ") + "\n";
-                }
-                if (fullText.length > 10000) fullText = fullText.substring(0, 10000) + "...";
-                window.pdfKnowledge = `\n\n【追加知識】\n${fullText}`;
-                addLog("ライト", "その資料、頭に入れたぜ！", 'ai'); window.speak("その資料、頭に入れたぜ！");
-                settingsModal.style.display = 'none'; e.target.value = "";
-            } catch (err) { addLog("システム", "PDF読み込み失敗", 'error'); }
-        });
-
-        // ==========================================
-        // 3Dアバター描画
-        // ==========================================
-        const container = document.getElementById('avatar-container');
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-        renderer.setSize(200, 200);
-        container.appendChild(renderer.domElement);
-
-        const avatarGroup = new THREE.Group();
-        const mat = new THREE.MeshBasicMaterial({ color: 0xff7eb3, wireframe: true });
-        
-        const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.8, 1), mat); head.position.y = 1.0; avatarGroup.add(head);
-        const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.7, 1.5, 7, 1, true), mat); body.position.y = -0.5; avatarGroup.add(body);
-        const ring = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.02, 16, 100), mat); ring.rotation.x = Math.PI / 2; avatarGroup.add(ring);
-        scene.add(avatarGroup);
-        camera.position.z = 4;
-
-        function animate() {
-            requestAnimationFrame(animate);
-            avatarGroup.rotation.y += 0.01;
-            avatarGroup.position.y = Math.sin(Date.now() * 0.002) * 0.1; 
-            ring.rotation.x = Math.sin(Date.now() * 0.001) * 0.3 + 1.5;
-            renderer.render(scene, camera);
-        }
-        animate();
-    </script>
+const container=document.getElementById('avatar-container');
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(75,1,.1,1000);
+const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true}); renderer.setSize(200,200); container.appendChild(renderer.domElement);
+const avatarGroup=new THREE.Group();
+const mat=new THREE.MeshBasicMaterial({color:0xff7eb3,wireframe:true});
+const head=new THREE.Mesh(new THREE.IcosahedronGeometry(.8,1),mat);head.position.y=1.0;avatarGroup.add(head);
+const body=new THREE.Mesh(new THREE.CylinderGeometry(.4,.7,1.5,7,1,true),mat);body.position.y=-.5;avatarGroup.add(body);
+const ring=new THREE.Mesh(new THREE.TorusGeometry(1.5,.02,16,100),mat);ring.rotation.x=Math.PI/2;avatarGroup.add(ring);
+scene.add(avatarGroup); camera.position.z=4;
+function animate(){requestAnimationFrame(animate);avatarGroup.rotation.y+=.01;avatarGroup.position.y=Math.sin(Date.now()*.002)*.1;ring.rotation.x=Math.sin(Date.now()*.001)*.3+1.5;renderer.render(scene,camera);} animate();
+</script>
 </body>
 </html>
