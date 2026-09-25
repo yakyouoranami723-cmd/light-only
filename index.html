@@ -60,7 +60,7 @@
 <div id="settings-modal">
   <div class="modal-content">
     <div class="modal-header"><div class="modal-title">⚙️ システム設定</div><button class="close-btn" id="close-settings-btn">✖</button></div>
-    <div class="setting-row"><span>ボイス再生（音声）</span><button id="mute-toggle-btn" class="icon-btn">🔊 音声 ON</button></div>
+    <div class="setting-row"><span>ボイス再生（音声）</span><button id="mute-toggle-btn" class="icon-btn" style="border-color:#bf616a">🔇 音声 OFF</button></div>
     <div class="section-title">☁️ クラウド記憶同期 (合言葉)</div>
     <div class="sync-box"><div style="font-size:11px;color:#ccc;margin-bottom:8px;">この合言葉を他の端末で入力すると、記憶を引き継ぎできます。</div><input type="text" id="sync-id-input" placeholder="合言葉を入力"><button id="sync-execute-btn" class="sync-btn">手動で同期する</button></div>
     <div class="section-title">【現在の学習ステータス】</div>
@@ -69,7 +69,7 @@
     <div class="section-title">【拡張知識】</div>
     <button id="pdf-btn" class="modal-btn">📄 説明書(PDF)を一時記憶させる</button>
     <input type="file" id="pdf-upload" accept="application/pdf" style="display:none;">
-    <div class="status-note">記憶ファイルは管理者サイトからタイトル＋詳細で追加できます。質問が記憶ファイルに明確に一致する場合は、AIを呼ばずにその記憶から回答します。</div>
+    <div class="status-note">記憶ファイルは管理者サイトからタイトル＋詳細で追加できます。質問が記憶ファイルに明確に一致する場合は、AIを呼ばずにその記憶から回答します。AIは質問内容に応じてモデルを自動選択し、混雑時は下位モデルへ切り替えます。</div>
   </div>
 </div>
 
@@ -88,13 +88,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-window.isMuted = false;
+window.isMuted = true;
 window.selfReflections = [];
 window.userFacts = [];
 window.pdfKnowledge = "";
 window.conversationHistory = [];
 window.memoryFiles = [];
-window.apiConfig = { apiKeys: [], activeKeyId: "", model: "gemini-3.8-flash" };
+window.apiConfig = { apiKeys: [], activeKeyId: "", model: "gemini-3.8-flash", modelMode: "auto" };
 let myUserId = "";
 
 const chatLog = document.getElementById('chat-log');
@@ -169,7 +169,8 @@ async function loadApiConfig() {
       window.apiConfig = {
         apiKeys: Array.isArray(data.apiKeys) ? data.apiKeys.filter(k => k && k.key && k.enabled !== false) : [],
         activeKeyId: data.activeKeyId || '',
-        model: data.model || 'gemini-3.8-flash'
+        model: data.model || 'gemini-3.8-flash',
+        modelMode: data.modelMode || 'auto'
       };
     }
   } catch (e) {
@@ -293,54 +294,148 @@ async function callGemini(userText) {
   if (!keys.length) throw new Error('管理者サイトにGemini APIキーが設定されていません。');
   keys.sort((a,b) => (a.id === window.apiConfig.activeKeyId ? -1 : 0) - (b.id === window.apiConfig.activeKeyId ? -1 : 0));
 
+  const configuredModel = window.apiConfig.model || 'gemini-3.8-flash';
+  const modelMode = window.apiConfig.modelMode || 'auto';
+
+  // 質問内容に応じて、最初に使うモデルをローカル判定します。
+  // 追加のAI判定を行わないので、そのぶんAPI使用量を増やしません。
+  function chooseAdaptiveModelPlan(text) {
+    const q = String(text || '').toLowerCase().trim();
+    const length = q.length;
+
+    const verySimple = /^(こんにちは|こんばんは|おはよう|やあ|よろしく|ありがとう|ありがと|おやすみ|元気\?|元気？|はい|いいえ|うん|なるほど)[！!。？?\s]*$/i.test(q);
+    const lightWords = ['あいさつ', '一言', '短く', '要点だけ', '意味', '翻訳', '言い換え', '誤字', '文章を整え'];
+    const normalWords = ['どう思う', '教えて', 'おすすめ', '相談', '話して', '説明して', '質問'];
+    const hardWords = ['コード', 'プログラム', 'バグ', '設計', '実装', '分析', '比較', '計画', '手順', '整理して', '詳しく', '深く', '理由を考えて', '複数条件', 'アイデアを出して', '長文', 'まとめて', '要約して', '資料から'];
+    const complexWords = ['難しい', '複雑', '徹底的', '多角的', '論理的に検討', '何段階', '長期計画', '複数の案を比較'];
+
+    const has = list => list.some(w => q.includes(w));
+
+    if (verySimple || (length <= 35 && has(lightWords))) {
+      return ['gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.6-flash'];
+    }
+    if (has(complexWords) || length >= 650) {
+      return ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
+    }
+    if (has(hardWords) || window.pdfKnowledge || getApplicableMemoryFiles().length >= 5) {
+      return ['gemini-3.7-flash', 'gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
+    }
+    if (has(normalWords) || length >= 120) {
+      return ['gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
+    }
+    return ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'];
+  }
+
+  const models = modelMode === 'manual'
+    ? [configuredModel]
+    : chooseAdaptiveModelPlan(userText);
+
   const rulesContext = window.selfReflections.length ? '\n【過去の反省・学習ルール】\n・' + window.selfReflections.join('\n・') : '';
   const factsContext = window.userFacts.length ? '\n【記憶しているユーザー情報】\n・' + window.userFacts.join('\n・') : '';
   const systemInstruction = `あなたはユーザーの相棒「電キャ」の「ライト」です。\n性別：女子。ボーイッシュで明るく元気な性格。一人称「あたし」。\n基本口調：「〜っしょ！」「〜だぜ！」「任せとけ！」など。\n${rulesContext}${factsContext}${buildMemoryContext()}${window.pdfKnowledge}\n\n【会話の絶対ルール】\n1. 誤字脱字に注意し、自然で人間らしい日本語で話してください。\n2. 絵文字・Markdown記号・過剰な記号は使わないでください。\n3. 記憶ファイルに書かれている内容を、重要な参考資料として扱ってください。\n4. 分からないことを勝手に作らないでください。\n\n【学習メタタグの絶対ルール】\n新しい好みや事実を記憶する場合だけ、会話文を完全に書き終えた最後に\n[REFLECT: 内容]\n[FACT: 内容]\nの形式で出力してください。`;
 
-  window.conversationHistory.push({ role:'user', parts:[{text:userText}] });
+  const userMessage = { role:'user', parts:[{text:userText}] };
+  window.conversationHistory.push(userMessage);
   let lastError = null;
-  for (const keyInfo of keys) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(window.apiConfig.model)}:generateContent`;
-    try {
+
+  async function requestModel(model, keyInfo) {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+    const body = {
+      system_instruction:{parts:[{text:systemInstruction}]},
+      contents:window.conversationHistory,
+      generationConfig:{temperature:.7, topP:.95, topK:100}
+    };
+
+    for (let attempt = 0; attempt < 3; attempt++) {
       const response = await fetch(url, {
         method:'POST',
         headers:{ 'Content-Type':'application/json', 'x-goog-api-key':keyInfo.key },
-        body:JSON.stringify({ system_instruction:{parts:[{text:systemInstruction}]}, contents:window.conversationHistory, generationConfig:{temperature:.7, topP:.95, topK:100} })
+        body:JSON.stringify(body)
       });
       const data = await response.json().catch(()=>({}));
+
       if (response.status === 429) {
         throw new Error('RATE_LIMIT');
       }
       if (response.status === 401 || response.status === 403) {
-        lastError = new Error('APIキー「' + (keyInfo.label || keyInfo.id) + '」が使用できません。別の登録キーを試します。');
-        continue;
+        throw new Error('BAD_KEY');
+      }
+      if (response.status === 503 || data?.error?.status === 'UNAVAILABLE') {
+        lastError = new Error(data?.error?.message || 'This model is currently experiencing high demand.');
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+          continue;
+        }
+        throw new Error('MODEL_BUSY');
+      }
+      if (response.status >= 500) {
+        lastError = new Error(data?.error?.message || `Geminiサーバーエラー (${response.status})`);
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
+          continue;
+        }
+        throw lastError;
       }
       if (!response.ok) throw new Error(data?.error?.message || `Gemini通信エラー (${response.status})`);
+
       const aiReply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!aiReply) throw new Error('AIから有効な回答が返ってきませんでした。');
-      let reply = aiReply;
-      let memoryChanged = false;
-      for (const match of [...reply.matchAll(/\[REFLECT:\s*(.*?)\]/g)]) {
-        const value = match[1].trim(); if (value && !window.selfReflections.includes(value)) { window.selfReflections.push(value); memoryChanged=true; }
+      return aiReply;
+    }
+    throw lastError || new Error('Gemini API通信に失敗しました。');
+  }
+
+  try {
+    for (const model of models) {
+      for (const keyInfo of keys) {
+        try {
+          const aiReply = await requestModel(model, keyInfo);
+
+          let reply = aiReply;
+          let memoryChanged = false;
+          for (const match of [...reply.matchAll(/\[REFLECT:\s*(.*?)\]/g)]) {
+            const value = match[1].trim();
+            if (value && !window.selfReflections.includes(value)) {
+              window.selfReflections.push(value);
+              memoryChanged=true;
+            }
+          }
+          for (const match of [...reply.matchAll(/\[FACT:\s*(.*?)\]/g)]) {
+            const value = match[1].trim();
+            if (value && !window.userFacts.includes(value)) {
+              window.userFacts.push(value);
+              memoryChanged=true;
+            }
+          }
+          reply = reply.replace(/\[REFLECT:\s*.*?\]/g,'').replace(/\[FACT:\s*.*?\]/g,'').trim();
+
+          // 自動モードでは、今回の質問に最適と判断したモデルをそのまま使います。
+          // 成功モデルを固定保存すると、次回の適材適所判定を邪魔するため保存しません。
+          updateUI();
+          if (memoryChanged) await saveToCloud();
+          window.conversationHistory.push({role:'model',parts:[{text:reply}]});
+          if (window.conversationHistory.length>20) window.conversationHistory.splice(0,2);
+          return { text:reply, fromMemory:false };
+        } catch (e) {
+          lastError = e;
+          if (e.message === 'RATE_LIMIT') {
+            throw new Error('AIの利用上限に達した可能性があります。少し時間を置いてから試してね。');
+          }
+          // 無効キーなら次のキーへ。503（混雑）なら同じキーで別モデルへ。
+          if (e.message === 'BAD_KEY') continue;
+          if (e.message === 'MODEL_BUSY') break;
+          throw e;
+        }
       }
-      for (const match of [...reply.matchAll(/\[FACT:\s*(.*?)\]/g)]) {
-        const value = match[1].trim(); if (value && !window.userFacts.includes(value)) { window.userFacts.push(value); memoryChanged=true; }
-      }
-      reply = reply.replace(/\[REFLECT:\s*.*?\]/g,'').replace(/\[FACT:\s*.*?\]/g,'').trim();
-      updateUI(); if (memoryChanged) await saveToCloud();
-      window.conversationHistory.push({role:'model',parts:[{text:reply}]});
-      if (window.conversationHistory.length>20) window.conversationHistory.splice(0,2);
-      return { text:reply, fromMemory:false };
-    } catch (e) {
+    }
+  } finally {
+    // 成功しなかった場合だけ、今回追加したユーザーメッセージを戻す。
+    if (window.conversationHistory[window.conversationHistory.length - 1] === userMessage) {
       window.conversationHistory.pop();
-      if (e.message === 'RATE_LIMIT') {
-        // 429では別キーへ自動切替しません。プロジェクト単位の制限だからです。
-        throw new Error('AIの利用上限に達した可能性があります。少し時間を置いてから試してね。');
-      }
-      lastError = e;
     }
   }
-  throw lastError || new Error('Gemini API通信に失敗しました。');
+
+  throw new Error('AIが現在混雑しているか、利用上限に達しています。時間を置くか、管理者サイトのAPI設定を確認してね。');
 }
 
 async function processUserInput(text) {
