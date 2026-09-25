@@ -3,106 +3,128 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>管理者メニュー</title>
+<title>ライト OS 管理者サイト v8.6</title>
 <style>
-  :root { --bg: #121118; --sidebar: #0a0a0f; --pink: #ff6b9e; --blue: #89c4d9; --box: #1c1b22; }
-  body { margin: 0; background: var(--bg); color: #f0f0f0; display: flex; height: 100vh; font-family: sans-serif; }
-  .sidebar { width: 260px; background: var(--sidebar); padding: 20px; display: flex; flex-direction: column; gap: 15px; border-right: 1px solid #333;}
-  .nav-btn { padding: 12px; border-radius: 8px; border: 1px solid #555; background: transparent; color: #fff; cursor: pointer; text-align: left; }
-  .nav-btn.active { background: var(--blue); color: #000; font-weight: bold; border: none;}
-  .main { flex: 1; padding: 40px; overflow-y: auto; }
-  .section { display: none; }
-  .section.active { display: block; }
-  .memory-item { background: var(--box); padding: 15px; margin-bottom: 10px; border-radius: 6px; display: flex; justify-content: space-between; }
-  .btn-del { background: #d9534f; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
-  .form-group { margin-bottom: 20px; }
-  .form-group label { display: block; margin-bottom: 8px; color: #aaa; }
-  .form-group input, .form-group select { width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #444; background: var(--box); color: #fff; }
+body{background:#0b0c10;color:#fff;font-family:'Helvetica Neue',Arial,sans-serif;margin:0;min-height:100vh;padding:24px;box-sizing:border-box}.wrap{width:94%;max-width:900px;margin:0 auto}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.title{color:#ff7eb3;font-weight:bold;font-size:22px;letter-spacing:2px}.sub{color:#88c0d0;font-size:12px}.card{background:#161823;border:1px solid rgba(255,126,179,.4);border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 0 25px rgba(255,126,179,.08)}.section{color:#88c0d0;font-size:13px;border-bottom:1px dashed #88c0d0;padding-bottom:6px;margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{box-sizing:border-box}input,textarea,select,button{font:inherit;border-radius:10px;border:1px solid rgba(255,255,255,.18);padding:10px;background:rgba(0,0,0,.35);color:#fff;outline:none}input,select{min-height:40px}textarea{width:100%;min-height:120px;resize:vertical}button{cursor:pointer;font-weight:bold}button.primary{background:linear-gradient(135deg,#ff758c,#ff7eb3);border:none}button.blue{background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff}.muted{color:#aaa;font-size:12px;line-height:1.6}.small{font-size:11px;color:#aaa}.item{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;margin-top:10px;background:rgba(255,255,255,.03)}.item-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.item-title{color:#ff7eb3;font-weight:bold}.tag{display:inline-block;font-size:10px;padding:3px 7px;border-radius:10px;border:1px solid #88c0d0;color:#88c0d0;margin:3px}.danger{border-color:#bf616a;color:#bf616a}.ok{border-color:#a3be8c;color:#a3be8c}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:700px){.grid2{grid-template-columns:1fr}.header{align-items:flex-start;flex-direction:column;gap:8px}.wrap{width:100%}}.notice{padding:10px;border-radius:10px;background:rgba(241,196,15,.09);border:1px solid #f1c40f;color:#f1c40f;font-size:12px;margin-bottom:12px}.hidden{display:none!important}
 </style>
 </head>
 <body>
+<div class="wrap">
+  <div class="header"><div><div class="title">✨ ライト OS 管理者</div><div class="sub">API設定 / 記憶ファイル / 旧記憶の閲覧</div></div><button id="reloadBtn">🔄 更新</button></div>
 
-<div class="sidebar">
-  <div style="color:var(--pink); font-weight:bold; margin-bottom:20px;">✨ 管理者メニュー</div>
-  <button class="nav-btn active" onclick="switchTab('knowledge')">🧠 Firebase記憶の管理</button>
-  <button class="nav-btn" onclick="switchTab('settings')">⚙️ システム・アバター設定</button>
-  <button class="nav-btn" onclick="location.href='index.html'">◀ チャットへ戻る</button>
-</div>
+  <div class="notice">このページではGemini APIキーをFirestoreへ保存します。現在のindex.htmlは、この管理画面で登録した「使用中」のキーを読み込んで使います。複数キーは予備用として登録できますが、429（利用上限）では自動切替しません。</div>
 
-<div class="main">
-  <!-- 記憶管理 -->
-  <div id="knowledge" class="section active">
-    <h2 style="border-bottom: 1px solid #333; padding-bottom:10px;">部活全体 共有知識（Firestore）</h2>
-    <div style="margin-bottom: 20px; display:flex; gap:10px;">
-      <input type="text" id="newMem" placeholder="新しいルールを追加..." style="flex:1; padding:10px; background:var(--box); color:#fff; border:1px solid #555; border-radius:4px;">
-      <button onclick="addMem()" style="padding:10px 20px; background:var(--blue); color:#000; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">追加</button>
+  <div class="card">
+    <div class="section">🔑 Gemini APIキー管理</div>
+    <div class="grid2">
+      <div><div class="small">表示名</div><input id="keyLabel" style="width:100%" placeholder="例：2026年9月 新キー"></div>
+      <div><div class="small">モデル名</div><input id="modelName" style="width:100%" value="gemini-3.8-flash"></div>
     </div>
-    <div id="memList"></div>
+    <div style="margin-top:10px"><div class="small">APIキー</div><input id="keyValue" type="text" style="width:100%" placeholder="Gemini APIキーを貼り付け"></div>
+    <div class="row" style="margin-top:10px"><button class="primary" id="addKeyBtn">このキーを登録</button><button id="saveModelBtn">モデル名を保存</button></div>
+    <div id="keyList"></div>
   </div>
 
-  <!-- 設定 -->
-  <div id="settings" class="section">
-    <h2 style="border-bottom: 1px solid #333; padding-bottom:10px;">システム設定</h2>
-    <div class="form-group"><label>Gemini API キー</label><input type="password" id="apiKey"></div>
-    <div class="form-group"><label>アバター表示</label><select id="avaEn"><option value="true">ON</option><option value="false">OFF</option></select></div>
-    <div class="form-group"><label>モード</label><select id="avaMode"><option value="2d">2D (画像)</option><option value="3d">3D (VRM)</option></select></div>
-    <div class="form-group"><label>2Dパス (待機 / 喋る)</label><input type="text" id="idlePath" style="margin-bottom:5px;"><input type="text" id="speakPath"></div>
-    <div class="form-group"><label>3D VRMパス</label><input type="text" id="vrmPath"></div>
-    <button onclick="saveSet()" style="padding:10px 20px; background:var(--pink); color:#fff; border:none; border-radius:20px; width:100%; font-weight:bold; cursor:pointer;">保存</button>
+  <div class="card">
+    <div class="section">🧠 記憶ファイルを作る</div>
+    <div class="muted">「タイトル」と「詳細」を1ファイルとして保存します。「全員共通」なら全員のライトが参考にします。直接回答ONにすると、そのファイルに明確に一致する質問ではGeminiを呼ばず、詳細をそのまま返します。</div>
+    <div class="grid2" style="margin-top:12px">
+      <div><div class="small">対象</div><select id="memoryScope" style="width:100%"><option value="*">全員共通</option><option value="custom">特定の合言葉</option></select></div>
+      <div id="scopeCustomWrap" class="hidden"><div class="small">合言葉</div><input id="memoryScopeCustom" style="width:100%" placeholder="shout など"></div>
+    </div>
+    <div style="margin-top:10px"><div class="small">記憶のタイトル</div><input id="memoryTitle" style="width:100%" placeholder="例：2026年度 文化祭 セトリ"></div>
+    <div style="margin-top:10px"><div class="small">詳細</div><textarea id="memoryDetails" placeholder="ここに記憶の中身を書きます。"></textarea></div>
+    <div style="margin-top:10px"><div class="small">検索用キーワード（カンマ区切り）</div><input id="memoryKeywords" style="width:100%" placeholder="文化祭, セトリ, 2026"></div>
+    <div class="row" style="margin-top:10px"><label style="font-size:12px"><input type="checkbox" id="directAnswer"> 明確に一致したらAIを使わず直接回答</label><label style="font-size:12px"><input type="checkbox" id="memoryEnabled" checked> 有効</label></div>
+    <div class="row" style="margin-top:10px"><button class="blue" id="saveMemoryBtn">記憶ファイルを保存</button><button id="clearMemoryFormBtn">入力をクリア</button></div>
+    <input type="hidden" id="editingMemoryId">
+    <div id="memoryList"></div>
+  </div>
+
+  <div class="card">
+    <div class="section">📚 従来方式の記憶を閲覧</div>
+    <div class="row"><input id="legacyUserId" style="flex:1;min-width:220px" value="shout" placeholder="合言葉"><button class="blue" id="loadLegacyBtn">読み込む</button></div>
+    <div id="legacyView" class="item"><span class="muted">まだ読み込んでいません。</span></div>
   </div>
 </div>
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-  import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
-    authDomain: "light-65413.firebaseapp.com",
-    projectId: "light-65413",
-    storageBucket: "light-65413.firebasestorage.app",
-    messagingSenderId: "116819261632",
-    appId: "1:116819261632:web:9d9144aa125a55371d5525"
-  };
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+const firebaseConfig = {
+  apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
+  authDomain: "light-65413.firebaseapp.com",
+  projectId: "light-65413",
+  storageBucket: "light-65413.firebasestorage.app",
+  messagingSenderId: "116819261632",
+  appId: "1:116819261632:web:9d9144aa125a55371d5525"
+};
+const app=initializeApp(firebaseConfig); const db=getFirestore(app);
+let apiData={apiKeys:[],activeKeyId:'',model:'gemini-3.8-flash'};
 
-  // 記憶のリアルタイム監視
-  onSnapshot(collection(db, "light_memories"), (snapshot) => {
-    const list = document.getElementById('memList');
-    list.innerHTML = '';
-    snapshot.forEach((d) => {
-      const div = document.createElement('div'); div.className = 'memory-item';
-      div.innerHTML = `<span>${d.data().text}</span> <button class="btn-del" onclick="delMem('${d.id}')">削除</button>`;
-      list.appendChild(div);
-    });
-  });
+const $=id=>document.getElementById(id);
+function esc(v){return String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));}
+function stamp(){return Date.now();}
 
-  window.addMem = async () => {
-    const val = document.getElementById('newMem').value;
-    if(val) { await addDoc(collection(db, "light_memories"), { text: val }); document.getElementById('newMem').value = ''; }
-  };
-  window.delMem = async (id) => await deleteDoc(doc(db, "light_memories", id));
+$('memoryScope').addEventListener('change',()=> $('scopeCustomWrap').classList.toggle('hidden',$('memoryScope').value!=='custom'));
 
-  // タブ・設定管理
-  window.switchTab = (id) => {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    event.target.classList.add('active');
-  };
-  
-  window.onload = () => {
-    document.getElementById('apiKey').value = localStorage.getItem('gemini_api_key') || '';
-    const s = JSON.parse(localStorage.getItem('avatarSettings')) || { enabled:"true", mode:"2d", idle:"./idle.png", speak:"./speak.png", vrm:"./light.vrm" };
-    document.getElementById('avaEn').value = s.enabled; document.getElementById('avaMode').value = s.mode;
-    document.getElementById('idlePath').value = s.idle; document.getElementById('speakPath').value = s.speak; document.getElementById('vrmPath').value = s.vrm;
-  };
-  window.saveSet = () => {
-    localStorage.setItem('gemini_api_key', document.getElementById('apiKey').value);
-    localStorage.setItem('avatarSettings', JSON.stringify({ enabled:document.getElementById('avaEn').value, mode:document.getElementById('avaMode').value, idle:document.getElementById('idlePath').value, speak:document.getElementById('speakPath').value, vrm:document.getElementById('vrmPath').value }));
-    alert('保存完了！');
-  };
+async function loadApi(){
+  const s=await getDoc(doc(db,'light_config','main'));
+  if(s.exists()){const d=s.data()||{};apiData={apiKeys:Array.isArray(d.apiKeys)?d.apiKeys:[],activeKeyId:d.activeKeyId||'',model:d.model||'gemini-3.8-flash'};}
+  $('modelName').value=apiData.model;
+  renderKeys();
+}
+function renderKeys(){
+  const box=$('keyList');
+  if(!apiData.apiKeys.length){box.innerHTML='<div class="small" style="margin-top:10px">登録キーはありません。</div>';return;}
+  box.innerHTML=apiData.apiKeys.map((k,i)=>{
+    const active=k.id===apiData.activeKeyId;
+    const masked=(String(k.key||'').slice(0,5)+'••••••'+String(k.key||'').slice(-4));
+    return `<div class="item"><div class="item-head"><div><span class="item-title">${esc(k.label||('キー'+(i+1)))}</span> <span class="tag ${active?'ok':''}">${active?'使用中':'予備'}</span></div><span class="small">${esc(masked)}</span></div><div class="row" style="margin-top:8px"><button data-act="active" data-id="${esc(k.id)}">${active?'現在使用中':'このキーを使用'}</button><button class="danger" data-act="delete" data-id="${esc(k.id)}">削除</button></div></div>`;
+  }).join('');
+}
+async function saveApi(){
+  await setDoc(doc(db,'light_config','main'),{apiKeys:apiData.apiKeys,activeKeyId:apiData.activeKeyId,model:apiData.model,updatedAt:stamp()});
+}
+$('addKeyBtn').addEventListener('click',async()=>{
+  const key=$('keyValue').value.trim(); if(!key)return alert('APIキーを貼り付けてください。');
+  const label=$('keyLabel').value.trim()||'Gemini APIキー';
+  const item={id:'key-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6),label,key,enabled:true,createdAt:stamp()};
+  apiData.apiKeys.push(item); if(!apiData.activeKeyId)apiData.activeKeyId=item.id; apiData.model=$('modelName').value.trim()||'gemini-3.8-flash';
+  await saveApi(); $('keyValue').value=''; $('keyLabel').value=''; renderKeys(); alert('APIキーを登録しました。');
+});
+$('saveModelBtn').addEventListener('click',async()=>{apiData.model=$('modelName').value.trim()||'gemini-3.8-flash';await saveApi();alert('モデル名を保存しました。');});
+$('keyList').addEventListener('click',async e=>{
+  const btn=e.target.closest('button[data-act]'); if(!btn)return; const id=btn.dataset.id; const act=btn.dataset.act;
+  if(act==='active'){apiData.activeKeyId=id;await saveApi();renderKeys();}
+  if(act==='delete'){if(!confirm('このAPIキーを削除しますか？'))return;apiData.apiKeys=apiData.apiKeys.filter(k=>k.id!==id);if(apiData.activeKeyId===id)apiData.activeKeyId=apiData.apiKeys[0]?.id||'';await saveApi();renderKeys();}
+});
+
+function clearMemoryForm(){['memoryTitle','memoryDetails','memoryKeywords','memoryScopeCustom','editingMemoryId'].forEach(id=>$(id).value='');$('memoryScope').value='*';$('scopeCustomWrap').classList.add('hidden');$('directAnswer').checked=false;$('memoryEnabled').checked=true;$('saveMemoryBtn').textContent='記憶ファイルを保存';}
+$('clearMemoryFormBtn').addEventListener('click',clearMemoryForm);
+
+async function loadMemories(){
+  const snap=await getDocs(collection(db,'light_memory_files')); const arr=[]; snap.forEach(d=>arr.push({id:d.id,...(d.data()||{})}));
+  arr.sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)); renderMemories(arr);
+  return arr;
+}
+function renderMemories(arr){
+  const box=$('memoryList'); if(!arr.length){box.innerHTML='<div class="small" style="margin-top:10px">記憶ファイルはまだありません。</div>';return;}
+  box.innerHTML=arr.map(m=>`<div class="item"><div class="item-head"><div class="item-title">${esc(m.title||'無題')}</div><div>${m.directAnswer?'<span class="tag ok">直接回答ON</span>':''}${m.enabled===false?'<span class="tag danger">無効</span>':'<span class="tag">有効</span>'}</div></div><div class="small" style="margin-top:4px">対象: ${esc(m.scope==='*'?'全員共通':m.scope||'全員共通')}</div><div style="white-space:pre-wrap;margin-top:8px;font-size:13px">${esc(m.details||'')}</div><div style="margin-top:6px">${(Array.isArray(m.keywords)?m.keywords:[]).map(k=>`<span class="tag">${esc(k)}</span>`).join('')}</div><div class="row" style="margin-top:8px"><button data-m="edit" data-id="${esc(m.id)}">編集</button><button class="danger" data-m="delete" data-id="${esc(m.id)}">削除</button></div></div>`).join('');
+}
+$('saveMemoryBtn').addEventListener('click',async()=>{
+  const title=$('memoryTitle').value.trim(); const details=$('memoryDetails').value.trim(); if(!title||!details)return alert('タイトルと詳細を入力してください。');
+  const scope=$('memoryScope').value==='custom'?$('memoryScopeCustom').value.trim():'*'; if(!scope)return alert('対象の合言葉を入力してください。');
+  const data={title,details,scope,keywords:$('memoryKeywords').value.split(',').map(x=>x.trim()).filter(Boolean),directAnswer:$('directAnswer').checked,enabled:$('memoryEnabled').checked,updatedAt:stamp()};
+  const id=$('editingMemoryId').value.trim(); if(id){await updateDoc(doc(db,'light_memory_files',id),data);} else {data.createdAt=stamp();await addDoc(collection(db,'light_memory_files'),data);} await loadMemories(); clearMemoryForm(); alert('記憶ファイルを保存しました。');
+});
+$('memoryList').addEventListener('click',async e=>{const b=e.target.closest('button[data-m]');if(!b)return;const id=b.dataset.id;const arr=await loadMemories();const m=arr.find(x=>x.id===id);if(!m)return;if(b.dataset.m==='delete'){if(!confirm('この記憶ファイルを削除しますか？'))return;await deleteDoc(doc(db,'light_memory_files',id));await loadMemories();return;}if(b.dataset.m==='edit'){ $('editingMemoryId').value=id;$('memoryTitle').value=m.title||'';$('memoryDetails').value=m.details||'';$('memoryKeywords').value=(m.keywords||[]).join(', ');$('directAnswer').checked=!!m.directAnswer;$('memoryEnabled').checked=m.enabled!==false;if(m.scope==='*'||!m.scope){$('memoryScope').value='*';$('scopeCustomWrap').classList.add('hidden');}else{$('memoryScope').value='custom';$('scopeCustomWrap').classList.remove('hidden');$('memoryScopeCustom').value=m.scope;}$('saveMemoryBtn').textContent='この記憶ファイルを更新';window.scrollTo({top:0,behavior:'smooth'});}});
+
+$('loadLegacyBtn').addEventListener('click',async()=>{const uid=$('legacyUserId').value.trim();if(!uid)return;const s=await getDoc(doc(db,'light_memories',uid));if(!s.exists()){$('legacyView').innerHTML='<div class="muted">この合言葉の従来型記憶はありません。</div>';return;}const d=s.data()||{};$('legacyView').innerHTML=`<div><strong>合言葉:</strong> ${esc(uid)}</div><div style="margin-top:10px"><span class="tag">自己改善ルール ${Array.isArray(d.reflections)?d.reflections.length:0}件</span><span class="tag">事実記憶 ${Array.isArray(d.facts)?d.facts.length:0}件</span></div><div style="margin-top:12px"><strong>【反省・学習ルール】</strong><div class="small" style="white-space:pre-wrap;margin-top:6px">${esc((d.reflections||[]).join('\n'))||'(なし)'}</div></div><div style="margin-top:12px"><strong>【事実記憶】</strong><div class="small" style="white-space:pre-wrap;margin-top:6px">${esc((d.facts||[]).join('\n'))||'(なし)'}</div></div>`;});
+$('reloadBtn').addEventListener('click',async()=>{await loadApi();await loadMemories();});
+
+(async()=>{try{await loadApi();await loadMemories();}catch(e){console.error(e);alert('読み込みに失敗しました。Firestoreのルールを確認してください。');}})();
 </script>
 </body>
 </html>
