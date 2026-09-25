@@ -1,850 +1,128 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ライト OS ver.mightyX Cloud</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-  <style>
-    body { background-color:#0b0c10; color:#fff; font-family:'Helvetica Neue',Arial,sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100vh; margin:0; overflow:hidden; }
-    #main-app { display:none; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; overflow-y:auto; box-sizing:border-box; }
-    #avatar-container { width:200px; height:200px; margin-bottom:10px; }
-    #header-bar { width:90%; max-width:650px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
-    .app-title { font-weight:bold; font-size:16px; color:#ff7eb3; letter-spacing:1px; }
-    .app-subtitle { font-size:10px; color:#88c0d0; margin-top:3px; }
-    .icon-btn { background:rgba(255,255,255,0.1); border:1px solid #ff7eb3; color:#fff; padding:6px 14px; border-radius:20px; cursor:pointer; font-size:13px; transition:all 0.2s; }
-    .icon-btn:hover { background:rgba(255,126,179,0.3); }
-    #chat-log { width:90%; max-width:650px; height:240px; background:rgba(20,20,30,0.85); padding:15px; border-radius:16px; overflow-y:auto; margin-bottom:15px; border:1px solid rgba(255,126,179,0.4); box-shadow:0 0 25px rgba(255,126,179,0.15); font-size:15px; line-height:1.6; box-sizing:border-box; }
-    .msg-sys { color:#88c0d0; font-size:13px; } .msg-user { color:#a3be8c; margin-top:6px; } .msg-ai { color:#b48ead; margin-top:6px; } .msg-error { color:#bf616a; font-weight:bold; background:rgba(191,97,106,0.1); padding:5px; border-radius:5px; margin-top:6px; }
-    .controls { display:flex; gap:10px; align-items:center; width:90%; max-width:650px; }
-    button, input[type="text"], input[type="file"], select, textarea { padding:12px 18px; font-size:14px; border-radius:30px; border:none; outline:none; transition:all 0.2s ease; box-sizing:border-box; }
-    button { cursor:pointer; font-weight:bold; } button:hover { transform:translateY(-2px); } button:active { transform:translateY(1px); } button:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
-    #talk-btn { background:linear-gradient(135deg,#ff758c,#ff7eb3); color:white; box-shadow:0 4px 15px rgba(255,117,140,0.4); flex-shrink:0; }
-    #chat-input { flex-grow:1; border:1px solid #ff7eb3; background:rgba(0,0,0,0.6); color:white; }
-    #send-btn { background:linear-gradient(135deg,#4facfe,#00f2fe); color:white; box-shadow:0 4px 15px rgba(79,172,254,0.4); flex-shrink:0; }
-    #attach-bar { width:90%; max-width:650px; margin-top:0; margin-bottom:10px; padding:10px; background:rgba(20,20,30,.92); border:1px solid rgba(79,172,254,.45); border-radius:12px; display:none; box-sizing:border-box; }
-    #attach-bar.visible { display:block; }
-    #attach-preview { display:flex; gap:10px; align-items:center; }
-    #attach-preview img { width:56px; height:56px; object-fit:cover; border-radius:8px; border:1px solid rgba(255,126,179,.45); flex-shrink:0; }
-    #attach-meta { min-width:0; flex:1; }
-    #attach-meta input { width:100%; padding:8px 10px; border-radius:8px; background:rgba(0,0,0,.45); color:#fff; border:1px solid rgba(255,255,255,.15); }
-    #attach-tools { display:grid; grid-template-columns:1fr 1fr auto; gap:8px; margin-top:8px; align-items:center; }
-    #attach-tools input { min-width:0; }
-    #attach-tools select { min-width:0; padding:8px 10px; border-radius:8px; background:#0b0c10; color:#fff; border:1px solid rgba(255,255,255,.15); }
-    #attach-tools label { font-size:11px; color:#ccc; }
-    .mini-btn { padding:8px 10px; border-radius:8px; font-size:12px; background:rgba(255,255,255,.05); color:#fff; border:1px solid rgba(255,255,255,.18); }
-    #settings-modal { display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.75); backdrop-filter:blur(5px); justify-content:center; align-items:center; z-index:1000; }
-    .modal-content { background:#161823; border:1px solid #ff7eb3; border-radius:16px; width:85%; max-width:420px; padding:20px; box-shadow:0 0 30px rgba(255,126,179,0.3); max-height:90vh; overflow-y:auto; }
-    .modal-header { display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:15px; }
-    .modal-title { font-size:16px; font-weight:bold; color:#ff7eb3; } .close-btn { background:none; border:none; color:#aaa; font-size:20px; cursor:pointer; padding:0; }
-    .setting-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; font-size:14px; }
-    .modal-btn { width:100%; background:rgba(255,255,255,0.05); border:1px solid #4facfe; color:#4facfe; padding:10px; border-radius:8px; margin-top:8px; font-size:13px; }
-    .section-title { font-size:12px; color:#88c0d0; margin-top:20px; margin-bottom:5px; border-bottom:1px dashed #88c0d0; padding-bottom:3px; }
-    .sync-box { background:rgba(241,196,15,0.1); border:1px solid #f1c40f; padding:10px; border-radius:8px; margin-bottom:10px; }
-    #sync-id-input { width:100%; box-sizing:border-box; background:rgba(0,0,0,0.5); color:#f1c40f; border:1px solid #f1c40f; text-align:center; font-weight:bold; letter-spacing:1px; border-radius:5px; padding:8px; margin-bottom:8px; }
-    .sync-btn { background:#f1c40f; color:#000; width:100%; border-radius:5px; padding:8px; border:none; font-weight:bold; cursor:pointer; }
-    #login-screen { position:absolute; top:0; left:0; width:100vw; height:100vh; background:#0b0c10; z-index:2000; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
-    .login-title { color:#ff7eb3; font-size:24px; font-weight:bold; margin-bottom:10px; letter-spacing:2px; } .login-desc { color:#ccc; font-size:14px; margin-bottom:30px; }
-    #login-id-input { width:80%; max-width:330px; background:rgba(255,255,255,0.1); color:#fff; border:2px solid #ff7eb3; text-align:center; font-weight:bold; letter-spacing:1px; padding:15px; border-radius:30px; margin-bottom:20px; font-size:16px; }
-    #execute-login-btn { background:linear-gradient(135deg,#ff758c,#ff7eb3); color:white; width:80%; max-width:330px; padding:15px; border-radius:30px; font-size:16px; margin-bottom:10px; box-shadow:0 4px 15px rgba(255,117,140,0.4); }
-    .login-warning { width:80%; max-width:330px; box-sizing:border-box; margin-top:8px; padding:10px 12px; border:1px solid rgba(241,196,15,.65); background:rgba(241,196,15,.08); color:#f1c40f; border-radius:10px; font-size:11px; line-height:1.6; text-align:left; }
-    .status-note { color:#aaa; font-size:11px; margin-top:8px; line-height:1.5; }
-    .image-chat-card { margin-top:8px; padding:8px; border:1px solid rgba(255,126,179,.25); border-radius:10px; background:rgba(255,255,255,.03); }
-    .image-chat-card img { max-width:180px; max-height:140px; border-radius:8px; display:block; }
-    @media (max-width:560px) { #attach-tools { grid-template-columns:1fr 1fr; } #attach-tools .mini-btn { grid-column:1 / -1; } .app-subtitle { max-width:170px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; } }
-  </style>
-</head>
-<body>
-  <div id="login-screen">
-    <div class="login-title">✨ ライト OS</div>
-    <div class="login-desc">ユーザー名#バンド名を入力してね！<br>例：ryusei0723#Why's</div>
-    <input type="text" id="login-id-input" placeholder="例：ryusei0723#Why's" autocomplete="off" autocapitalize="none" spellcheck="false">
-    <button id="execute-login-btn">起動する</button>
-    <div class="status-note" style="max-width:330px;">初回は確認して登録します。次回から前回使った合言葉が自動で表示されます。<br>「#」はユーザー名とバンド名の区切りです。</div>
-    <div class="login-warning">⚠️ バンドが変わったら、新しい「ユーザー名#新しいバンド名」でログインし直してね。前回の合言葉をそのまま使わないでください。</div>
-  </div>
-
-  <div id="main-app">
-    <div id="header-bar">
-      <div><div class="app-title">✨ ライト</div><div class="app-subtitle" id="identity-label">未ログイン</div></div>
-      <button id="open-settings-btn" class="icon-btn">⚙️ 設定</button>
-    </div>
-    <div id="avatar-container"></div>
-    <div id="chat-log"><div class="msg-sys"><strong>システム:</strong> クラウド連携待機中...</div></div>
-    <div id="attach-bar">
-      <div id="attach-preview">
-        <img id="attach-thumb" alt="写真プレビュー">
-        <div id="attach-meta"><input id="photo-title" type="text" placeholder="写真タイトル（任意）"></div>
-      </div>
-      <div id="attach-tools">
-        <input id="photo-tags" type="text" placeholder="タグ（例：部室, アンプ, 2026）">
-        <select id="photo-scope">
-          <option value="band">バンド共有</option>
-          <option value="personal">個人だけ</option>
-          <option value="club">部活共有</option>
-        </select>
-        <button id="photo-clear-btn" class="mini-btn">写真を外す</button>
-        <label><input type="checkbox" id="photo-remember"> この写真を記憶する</label>
-        <input id="photo-note" type="text" placeholder="人間メモ（任意）">
-      </div>
-    </div>
-    <div class="controls">
-      <button id="talk-btn">🔴</button>
-      <button id="photo-btn" class="icon-btn" title="写真を添付">📷</button>
-      <input type="file" id="photo-input" accept="image/jpeg,image/png,image/webp" style="display:none;">
-      <input type="text" id="chat-input" placeholder="ライトに話しかける...">
-      <button id="send-btn">送信</button>
-    </div>
-  </div>
-
-  <div id="settings-modal">
-    <div class="modal-content">
-      <div class="modal-header"><div class="modal-title">⚙️ システム設定</div><button class="close-btn" id="close-settings-btn">✖</button></div>
-      <div class="setting-row"><span>ボイス再生（音声）</span><button id="mute-toggle-btn" class="icon-btn" style="border-color:#bf616a">🔇 音声 OFF</button></div>
-
-      <div class="section-title">👤 ユーザー情報</div>
-      <div class="sync-box">
-        <div style="font-size:11px;color:#f1c40f;text-align:center;margin-bottom:6px;">ユーザー：<strong id="current-user-label">未ログイン</strong></div>
-        <div style="font-size:11px;color:#f1c40f;text-align:center;margin-bottom:8px;">バンド：<strong id="current-band-label">未登録</strong></div>
-        <input type="text" id="sync-id-input" placeholder="ユーザー名#バンド名" autocomplete="off" autocapitalize="none" spellcheck="false">
-        <button id="sync-execute-btn" class="sync-btn">別のユーザーに切り替える</button>
-      </div>
-
-      <div class="section-title">【現在の学習ステータス】</div>
-      <div class="setting-row" style="flex-direction:column;align-items:flex-start;margin-bottom:5px;"><span id="brain-status-text" style="font-size:13px;">個人記憶: 0件 | 共有記憶: 0件 | 写真: 0件 | 長期記憶: なし</span></div>
-      <button id="view-brain-btn" class="modal-btn">🧠 記憶データの中身を確認 / 編集</button>
-
-      <div class="section-title">【拡張知識】</div>
-      <button id="pdf-btn" class="modal-btn">📄 説明書(PDF)を一時記憶させる</button>
-      <input type="file" id="pdf-upload" accept="application/pdf" style="display:none;">
-      <div class="status-note">記憶ファイルは管理者サイトで整理できます。写真は会話中に添付でき、「記憶する」を選ぶと部室・機材・ライブなどの写真ライブラリに保存されます。ライトは質問内容に応じてGeminiのモデルを自動選択し、混雑や無効キー時はフォールバックします。AIが使えない場合も保存済み記憶から可能な範囲で回答します。</div>
-    </div>
-  </div>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, addDoc, collection, getDocs, deleteDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
-      authDomain: "light-65413.firebaseapp.com",
-      projectId: "light-65413",
-      storageBucket: "light-65413.firebasestorage.app",
-      messagingSenderId: "116819261632",
-      appId: "1:116819261632:web:9d9144aa125a55371d5525"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    const DEFAULT_MODELS = {
-      lite: ['gemini-3.1-flash-lite','gemini-3.5-flash-lite','gemini-3.5-flash','gemini-3.6-flash'],
-      normal: ['gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'],
-      hard: ['gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'],
-      veryHard: ['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'],
-      image: ['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite']
-    };
-
-    window.isMuted = true;
-    window.selfReflections = [];
-    window.userFacts = [];
-    window.pdfKnowledge = '';
-    window.conversationHistory = [];
-    window.memoryFiles = [];
-    window.photoMemories = [];
-    window.timelineEntries = [];
-    window.lightBrain = { summary:'', recentHistory:[] };
-    window.apiConfig = { apiKeys:[], activeKeyId:'', model:'gemini-3.8-flash', modelMode:'auto' };
-    let sessionUserKey = '';
-    let sessionUserName = '';
-    let sessionDisplayName = '';
-    let sessionBandId = '';
-    let sessionBandName = '';
-    let currentPhoto = null;
-    let lastConversationImage = null;
-    let lastConversationImageTitle = '';
-
-    const $ = id => document.getElementById(id);
-    const chatLog = $('chat-log');
-    const chatInput = $('chat-input');
-    const sendBtn = $('send-btn');
-    const talkBtn = $('talk-btn');
-    const settingsModal = $('settings-modal');
-    const loginScreen = $('login-screen');
-    const mainApp = $('main-app');
-
-    function now(){ return Date.now(); }
-    function esc(value){ return String(value ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s])); }
-    function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
-    function canonicalPart(value){ return String(value || '').trim().toLowerCase(); }
-    function romanToKatakana(input){
-      let s=String(input||'').toLowerCase().replace(/[^a-z]/g,'');
-      if(!s)return '';
-      const map={
-        'rya':'リャ','ryu':'リュウ','ryo':'リョ','kya':'キャ','kyu':'キュ','kyo':'キョ','gya':'ギャ','gyu':'ギュ','gyo':'ギョ',
-        'sha':'シャ','shu':'シュ','she':'シェ','sho':'ショ','sya':'シャ','syu':'シュ','syo':'ショ',
-        'cha':'チャ','chu':'チュ','che':'チェ','cho':'チョ','cya':'チャ','cyu':'チュ','cyo':'チョ',
-        'ja':'ジャ','ju':'ジュ','je':'ジェ','jo':'ジョ','jya':'ジャ','jyu':'ジュ','jyo':'ジョ',
-        'nya':'ニャ','nyu':'ニュ','nyo':'ニョ','hya':'ヒャ','hyu':'ヒュ','hyo':'ヒョ',
-        'bya':'ビャ','byu':'ビュ','byo':'ビョ','pya':'ピャ','pyu':'ピュ','pyo':'ピョ','mya':'ミャ','myu':'ミュ','myo':'ミョ',
-        'fa':'ファ','fi':'フィ','fe':'フェ','fo':'フォ','fyu':'フュ','fyo':'フョ',
-        'va':'ヴァ','vi':'ヴィ','vu':'ヴ','ve':'ヴェ','vo':'ヴォ',
-        'shi':'シ','chi':'チ','tsu':'ツ','ji':'ジ','fu':'フ','hu':'フ',
-        'kwa':'クァ','kwi':'クィ','kwe':'クェ','kwo':'クォ','gwa':'グァ','gwi':'グィ','gwe':'グェ','gwo':'グォ',
-        'twu':'トゥ','dwu':'ドゥ','we':'ウェ','wi':'ウィ','wo':'ウォ','ye':'イェ',
-        'aa':'アー','ii':'イー','uu':'ウー','ee':'エー','oo':'オー','ou':'オウ','ei':'エイ',
-        'a':'ア','i':'イ','u':'ウ','e':'エ','o':'オ',
-        'ka':'カ','ki':'キ','ku':'ク','ke':'ケ','ko':'コ','ga':'ガ','gi':'ギ','gu':'グ','ge':'ゲ','go':'ゴ',
-        'sa':'サ','si':'シ','su':'ス','se':'セ','so':'ソ','za':'ザ','zi':'ジ','zu':'ズ','ze':'ゼ','zo':'ゾ',
-        'ta':'タ','ti':'チ','tu':'ツ','te':'テ','to':'ト','da':'ダ','di':'ヂ','du':'ヅ','de':'デ','do':'ド',
-        'na':'ナ','ni':'ニ','nu':'ヌ','ne':'ネ','no':'ノ','ha':'ハ','hi':'ヒ','he':'ヘ','ho':'ホ',
-        'ba':'バ','bi':'ビ','bu':'ブ','be':'ベ','bo':'ボ','pa':'パ','pi':'ピ','pu':'プ','pe':'ペ','po':'ポ',
-        'ma':'マ','mi':'ミ','mu':'ム','me':'メ','mo':'モ','ya':'ヤ','yu':'ユ','yo':'ヨ',
-        'ra':'ラ','ri':'リ','ru':'ル','re':'レ','ro':'ロ','wa':'ワ','n':'ン'
-      };
-      // Common Japanese-name patterns where the romanization commonly omits a long vowel.
-      const nameOverrides={'ryusei':'リュウセイ','ryuusei':'リュウセイ','souta':'ソウタ','shouta':'ショウタ','shota':'ショウタ','yuuki':'ユウキ','yuuta':'ユウタ','yuya':'ユウヤ','kouki':'コウキ','kouya':'コウヤ','kouta':'コウタ'};
-      if(nameOverrides[s])return nameOverrides[s];
-      const keys=Object.keys(map).sort((a,b)=>b.length-a.length);
-      let out='';let i=0;
-      while(i<s.length){
-        if(i+1<s.length && s[i]===s[i+1] && /[bcdfghjklmpqrstvwxyz]/.test(s[i]) && s[i]!=='n'){out+='ッ';i++;continue;}
-        if(s[i]==='n' && (i===s.length-1 || !/[aiueoy]/.test(s[i+1]))){out+='ン';i++;continue;}
-        let found='';
-        for(const k of keys){if(s.startsWith(k,i)){found=k;break;}}
-        if(found){out+=map[found];i+=found.length;}else{out+=s[i].toUpperCase();i++;}
-      }
-      return out;
-    }
-    function parseCredential(raw){
-      const v = String(raw || '').trim();
-      const first = v.indexOf('#');
-      if(first < 1 || first === v.length - 1 || v.indexOf('#', first + 1) !== -1) return null;
-      const user = v.slice(0, first).trim();
-      const band = v.slice(first + 1).trim();
-      if(!user || !band) return null;
-      if(user.length > 32 || band.length > 40) return null;
-      if(/[\\/\u0000-\u001F]/.test(user) || /[\\/\u0000-\u001F]/.test(band)) return null;
-      const username = canonicalPart(user);
-      const bandName = band.replace(/\s+/g, ' ').trim();
-      const bandCanonical = canonicalPart(bandName);
-      if(username === 'shout') return null;
-      return { username, bandName, bandCanonical, userKey:`${username}#${bandCanonical}` };
-    }
-    function bandDocId(bandCanonical){ return bandCanonical.replace(/#/g,'_').slice(0,80) || 'band'; }
-    function applicableMemoryScope(m){
-      if(m.enabled === false) return false;
-      const st = String(m.scopeType || '').toLowerCase();
-      const sid = String(m.scopeId || '');
-      if(st === 'club') return true;
-      if(st === 'band') return sid === sessionBandId || sid === sessionBandName || sid === sessionBandName.toLowerCase();
-      if(st === 'personal') return sid === sessionUserKey;
-      const oldScope = String(m.scope || '*');
-      return oldScope === '*' || oldScope === 'all' || oldScope === sessionUserKey;
-    }
-
-    function normalizeHistory(history){
-      return (Array.isArray(history) ? history : []).filter(x => x && (x.role === 'user' || x.role === 'model') && Array.isArray(x.parts));
-    }
-    function textFromParts(parts){ return (Array.isArray(parts) ? parts : []).map(p => String(p?.text || '')).join(''); }
-    function historyForRequest(){
-      return normalizeHistory(window.conversationHistory).slice(-20).map(x => ({
-        role:x.role,
-        parts:x.parts.map(p => ({ text:String(p?.text || '') })).filter(p => p.text !== '')
-      })).filter(x => x.parts.length);
-    }
-
-    function setLoginRemembered(){
-      const saved = localStorage.getItem('light_last_login') || '';
-      $('login-id-input').value = parseCredential(saved) ? saved : '';
-    }
-    setLoginRemembered();
-
-    async function ensureUserAndBand(parsed, askIfNew=true){
-      const userRef = doc(db, 'light_users', parsed.userKey);
-      const userSnap = await getDoc(userRef);
-      const isNew = !userSnap.exists();
-
-      // 同じユーザー名（＝名前＋誕生日）で、別バンドの登録が既にあるか確認。
-      // 新しいバンドとして初回登録するときだけ、バンド変更かどうかを確認する。
-      if(isNew){
-        const sameUserQuery = query(collection(db, 'light_users'), where('username', '==', parsed.username));
-        const sameUserSnap = await getDocs(sameUserQuery);
-        const previousBands = [];
-        sameUserSnap.forEach(s => {
-          const d = s.data() || {};
-          const oldBand = String(d.bandName || '').trim();
-          if(oldBand && oldBand.toLowerCase() !== parsed.bandName.toLowerCase() && !previousBands.includes(oldBand)) previousBands.push(oldBand);
-        });
-
-        if(previousBands.length && askIfNew){
-          const okBandChange = confirm(
-            `同じユーザー名・誕生日「${parsed.username}」の登録が見つかったぜ！\n\n` +
-            `以前のバンド：${previousBands.join(' / ')}\n` +
-            `今回のバンド：${parsed.bandName}\n\n` +
-            `バンドが変わって、新しいバンド用の記憶を作る登録で合ってる？\n\n` +
-            `※バンド名が違うと、別バンドとして記憶領域を分けて扱います。`
-          );
-          if(!okBandChange) return false;
-        } else if(askIfNew){
-          const ok = confirm(`「${parsed.username}#${parsed.bandName}」はまだ登録されていないぜ！\n\nこのユーザー名とバンド名で記憶を作成する？\n\n※入力を間違えると別ユーザーとして登録されます。`);
-          if(!ok) return false;
-        }
-      }
-      const stamp = now();
-      if(isNew){
-        await setDoc(userRef, {
-          credentialKey: parsed.userKey,
-          username: parsed.username,
-          bandId: bandDocId(parsed.bandCanonical),
-          bandName: parsed.bandName,
-          displayName: romanToKatakana(parsed.username),
-          createdAt: stamp,
-          lastLoginAt: stamp,
-          loginCount: 1
-        });
-      } else {
-        const old = userSnap.data() || {};
-        await setDoc(userRef, {
-          username: parsed.username,
-          bandId: old.bandId || bandDocId(parsed.bandCanonical),
-          bandName: old.bandName || parsed.bandName,
-          displayName: old.displayName || romanToKatakana(parsed.username),
-          lastLoginAt: stamp,
-          loginCount: Number(old.loginCount || 0) + 1
-        }, {merge:true});
-      }
-      const bId = isNew ? bandDocId(parsed.bandCanonical) : String((userSnap.data() || {}).bandId || bandDocId(parsed.bandCanonical));
-      const bRef = doc(db, 'light_bands', bId);
-      const bSnap = await getDoc(bRef);
-      await setDoc(bRef, {
-        bandId:bId,
-        name: parsed.bandName,
-        normalizedName: parsed.bandCanonical,
-        createdAt: bSnap.exists() ? (bSnap.data()?.createdAt || stamp) : stamp,
-        updatedAt: stamp
-      }, {merge:true});
-      return true;
-    }
-
-    async function bootSession(parsed){
-      sessionUserKey = parsed.userKey;
-      sessionUserName = parsed.username;
-      sessionDisplayName = romanToKatakana(parsed.username) || parsed.username;
-      sessionBandId = bandDocId(parsed.bandCanonical);
-      sessionBandName = parsed.bandName;
-      localStorage.setItem('light_last_login', `${sessionUserName}#${sessionBandName}`);
-      $('sync-id-input').value = `${sessionUserName}#${sessionBandName}`;
-      $('current-user-label').textContent = sessionDisplayName;
-      $('current-band-label').textContent = sessionBandName;
-      $('identity-label').textContent = `${sessionDisplayName} / ${sessionBandName}`;
-      loginScreen.style.display = 'none';
-      mainApp.style.display = 'flex';
-      resetSessionState();
-      await bootCloud();
-    }
-
-    $('execute-login-btn').addEventListener('click', async () => {
-      const btn = $('execute-login-btn');
-      const raw = $('login-id-input').value;
-      const parsed = parseCredential(raw);
-      if(!parsed){ alert('「ユーザー名#バンド名」の形で入力してね。\n例：ryusei0723#Why\'s'); return; }
-      btn.disabled = true;
-      try{
-        const ok = await ensureUserAndBand(parsed, true);
-        if(ok) await bootSession(parsed);
-      }catch(e){ console.error(e); alert('ユーザー登録・確認に失敗しました。Firestoreの設定を確認してね。'); }
-      finally{ btn.disabled = false; }
-    });
-    $('login-id-input').addEventListener('keypress', e => { if(e.key === 'Enter') $('execute-login-btn').click(); });
-
-    function resetSessionState(){
-      window.selfReflections=[]; window.userFacts=[]; window.pdfKnowledge=''; window.conversationHistory=[]; window.memoryFiles=[]; window.photoMemories=[]; window.timelineEntries=[]; window.lightBrain={summary:'',recentHistory:[]}; currentPhoto=null; lastConversationImage=null; lastConversationImageTitle='';
-      clearPhotoAttachment();
-      chatLog.innerHTML='<div class="msg-sys"><strong>システム:</strong> クラウド連携中...</div>';
-      updateUI();
-    }
-
-    function addLog(name, text, type='user', photoData=''){
-      const div=document.createElement('div');
-      div.className = type==='sys' ? 'msg-sys' : type==='ai' ? 'msg-ai' : type==='error' ? 'msg-error' : 'msg-user';
-      div.innerHTML=`<strong>${esc(name)}:</strong> ${esc(text).replace(/\n/g,'<br>')}`;
-      if(photoData){
-        const wrap=document.createElement('div'); wrap.className='image-chat-card';
-        const img=document.createElement('img'); img.src=photoData; img.alt='添付画像'; wrap.appendChild(img); div.appendChild(wrap);
-      }
-      chatLog.appendChild(div); chatLog.scrollTop=chatLog.scrollHeight;
-    }
-    function updateUI(){
-      const personal = window.memoryFiles.filter(m => m.enabled !== false && String(m.scopeType || '') === 'personal' && m.scopeId === sessionUserKey).length;
-      const shared = window.memoryFiles.filter(m => m.enabled !== false && m.scopeType !== 'personal' && applicableMemoryScope(m)).length;
-      const brain = window.lightBrain.summary ? 'あり' : 'なし';
-      $('brain-status-text').textContent=`個人記憶: ${personal}件 | 共有記憶: ${shared}件 | 写真: ${window.photoMemories.length}件 | 長期記憶: ${brain}`;
-    }
-
-    async function loadBrain(){
-      const snap=await getDoc(doc(db,'light_brains',sessionUserKey));
-      if(!snap.exists()){ window.lightBrain={summary:'',recentHistory:[]}; window.conversationHistory=[]; return; }
-      const d=snap.data()||{};
-      window.lightBrain={summary:String(d.summary||'').slice(0,3500),recentHistory:normalizeHistory(d.recentHistory).slice(-20)};
-      window.conversationHistory=window.lightBrain.recentHistory.slice();
-    }
-    async function saveBrain(){
-      if(!sessionUserKey) return;
-      const cleanHistory=normalizeHistory(window.conversationHistory).slice(-20);
-      window.lightBrain.recentHistory=cleanHistory;
-      await setDoc(doc(db,'light_brains',sessionUserKey),{
-        userKey:sessionUserKey,
-        username:sessionUserName,
-        bandId:sessionBandId,
-        bandName:sessionBandName,
-        summary:String(window.lightBrain.summary||'').slice(0,3500),
-        recentHistory:cleanHistory,
-        updatedAt:now()
-      });
-    }
-    function buildBrainContext(){
-      const s=String(window.lightBrain.summary||'').trim();
-      return s ? `\n\n【ライトの長期記憶】\n${s}` : '';
-    }
-
-    async function loadLegacy(){
-      const snap=await getDoc(doc(db,'light_memories',sessionUserKey));
-      if(snap.exists()){
-        const d=snap.data()||{}; window.selfReflections=Array.isArray(d.reflections)?d.reflections:[]; window.userFacts=Array.isArray(d.facts)?d.facts:[];
-      }else{ window.selfReflections=[]; window.userFacts=[]; }
-    }
-
-    async function loadMemoryFiles(){
-      const snap=await getDocs(collection(db,'light_memory_files'));
-      window.memoryFiles=[]; snap.forEach(d=>window.memoryFiles.push({id:d.id,...(d.data()||{})}));
-      window.memoryFiles.sort((a,b)=>(Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0)));
-    }
-
-    async function loadPhotoMemories(){
-      const snap=await getDocs(collection(db,'light_images'));
-      window.photoMemories=[];
-      snap.forEach(d=>{
-        const x={id:d.id,...(d.data()||{})};
-        if(x.enabled !== false && (x.scopeType==='club' || x.scopeType==='band' && x.scopeId===sessionBandId || x.scopeType==='personal' && x.scopeId===sessionUserKey)) window.photoMemories.push(x);
-      });
-      window.photoMemories.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
-    }
-
-
-    async function loadTimeline(){
-      const snap=await getDocs(collection(db,'light_history'));
-      window.timelineEntries=[];
-      snap.forEach(d=>window.timelineEntries.push({id:d.id,...(d.data()||{})}));
-      window.timelineEntries.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.createdAt||0)-Number(a.createdAt||0));
-    }
-    function buildTimelineContext(){
-      const arr=(window.timelineEntries||[]).slice(0,24);
-      if(!arr.length)return '';
-      let out='\n\n【軽音楽部タイムライン / 部史】\n';
-      for(const t of arr){const line=`id=${t.id} | ${t.date||''} | ${t.title||''} | ${(t.tags||[]).join(', ')}\n${t.details||''}\n`;if((out+line).length>8000)break;out+=line+'\n';}
-      return out;
-    }
-    function explicitHistoryCommand(text){
-      const q=String(text||'');
-      return (/(部史|タイムライン)/.test(q) && /(追加|登録|記録|載せ|加えて|修正|更新|編集|直し|書き換え|しておいて)/.test(q));
-    }
-    async function applyHistoryActions(actions,userText){
-      if(!explicitHistoryCommand(userText)||!Array.isArray(actions)||!actions.length)return 0;
-      let changed=0;
-      for(const action of actions.slice(0,3)){
-        if(!action||typeof action!=='object')continue;
-        const type=String(action.action||action.type||'').toLowerCase();
-        if(type==='add'||type==='create'){
-          const date=String(action.date||'').slice(0,10)||new Date().toISOString().slice(0,10);
-          const title=String(action.title||'').trim().slice(0,120);const details=String(action.details||'').trim().slice(0,5000);
-          const tags=Array.isArray(action.tags)?action.tags.map(x=>String(x).trim()).filter(Boolean).slice(0,20):[];
-          if(!title||!details)continue;
-          const ref=await addDoc(collection(db,'light_history'),{date,title,details,tags,createdAt:now(),createdBy:sessionUserKey,createdByName:sessionDisplayName,createdByBand:sessionBandName});
-          const entry={id:ref.id,date,title,details,tags,createdAt:now(),createdBy:sessionUserKey,createdByName:sessionDisplayName,createdByBand:sessionBandName};
-          window.timelineEntries=[entry,...window.timelineEntries];
-          await addDoc(collection(db,'light_history_edits'),{historyId:ref.id,action:'add',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,timestamp:now(),before:null,after:entry});
-          changed++;
-        }else if(type==='update'||type==='edit'){
-          let id=String(action.id||'').trim();
-          if(!id){const title=String(action.title||'').trim();const date=String(action.date||'').slice(0,10);const c=window.timelineEntries.filter(x=>(!title||String(x.title||'')===title)&&(!date||String(x.date||'')===date));if(c.length===1)id=c[0].id;}
-          const before=window.timelineEntries.find(x=>x.id===id);if(!before)continue;
-          const after={...before,date:String(action.date||before.date||'').slice(0,10),title:String(action.title||before.title||'').trim().slice(0,120),details:String(action.details||before.details||'').trim().slice(0,5000),tags:Array.isArray(action.tags)?action.tags.map(x=>String(x).trim()).filter(Boolean).slice(0,20):(before.tags||[]),updatedAt:now(),updatedBy:sessionUserKey,updatedByName:sessionDisplayName};
-          if(!after.title||!after.details)continue;
-          await updateDoc(doc(db,'light_history',id),after);
-          window.timelineEntries=window.timelineEntries.map(x=>x.id===id?after:x);
-          await addDoc(collection(db,'light_history_edits'),{historyId:id,action:'update',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,timestamp:now(),before,after});
-          changed++;
-        }
-      }
-      return changed;
-    }
-
-    async function loadApiConfig(){
-      const snap=await getDoc(doc(db,'light_config','main'));
-      if(snap.exists()){
-        const d=snap.data()||{};
-        window.apiConfig={
-          apiKeys:Array.isArray(d.apiKeys)?d.apiKeys.filter(k=>k && k.key && k.enabled!==false):[],
-          activeKeyId:d.activeKeyId||'', model:d.model||'gemini-3.8-flash', modelMode:d.modelMode||'auto'
-        };
-      }else{ window.apiConfig={apiKeys:[],activeKeyId:'',model:'gemini-3.8-flash',modelMode:'auto'}; }
-    }
-
-    async function bootCloud(){
-      addLog('システム',`「${sessionUserName}#${sessionBandName}」の記憶を読み込み中...`,'sys');
-      try{
-        await Promise.all([loadLegacy(),loadMemoryFiles(),loadPhotoMemories(),loadTimeline(),loadApiConfig(),loadBrain()]);
-        addLog('システム','クラウド記憶の読み込みが完了しました！','sys');
-        updateUI();
-        const remembered = window.lightBrain.summary || window.userFacts.length || window.memoryFiles.length;
-        const msg = remembered ? `おかえり、${sessionDisplayName}！記憶バッチリ引き継いだぜ！` : `よろしくな！あたしはライトだぜ！`;
-        addLog('ライト',msg,'ai');
-        maybeHotana();
-      }catch(e){
-        console.error(e); addLog('システムエラー','クラウドとの通信に失敗しました。Firestoreの設定を確認してください。','error');
-      }
-    }
-
-    async function saveLegacy(){
-      if(!sessionUserKey) return;
-      await setDoc(doc(db,'light_memories',sessionUserKey),{reflections:window.selfReflections,facts:window.userFacts,updatedAt:now()},{merge:true});
-    }
-
-    $('sync-execute-btn').addEventListener('click',async()=>{
-      const parsed=parseCredential($('sync-id-input').value);
-      if(!parsed) return alert('「ユーザー名#バンド名」の形で入力してください。');
-      try{
-        const ok=await ensureUserAndBand(parsed,true); if(!ok) return;
-        settingsModal.style.display='none'; await bootSession(parsed);
-      }catch(e){console.error(e);alert('ユーザー切り替えに失敗しました。');}
-    });
-
-    $('open-settings-btn').addEventListener('click',()=>settingsModal.style.display='flex');
-    $('close-settings-btn').addEventListener('click',()=>settingsModal.style.display='none');
-    $('mute-toggle-btn').addEventListener('click',()=>{
-      window.isMuted=!window.isMuted;
-      $('mute-toggle-btn').textContent=window.isMuted?'🔇 音声 OFF':'🔊 音声 ON';
-      $('mute-toggle-btn').style.borderColor=window.isMuted?'#bf616a':'#ff7eb3';
-      if(window.isMuted){if(window.currentAudio)window.currentAudio.pause();window.speechSynthesis.cancel();}
-    });
-
-    $('view-brain-btn').addEventListener('click',async()=>{
-      let msg='【ライトの長期記憶】\n'+(window.lightBrain.summary||'(まだありません)');
-      msg+='\n\n【事実記憶】\n'+(window.userFacts.length?window.userFacts.map(x=>'・'+x).join('\n'):'(なし)');
-      msg+='\n\n【記憶ファイル】\n'+(window.memoryFiles.filter(applicableMemoryScope).length?window.memoryFiles.filter(applicableMemoryScope).map(x=>'・'+x.title).join('\n'):'(なし)');
-      const next=prompt(msg+'\n\n長期記憶を手動で置き換えたいときは入力してOK。\n「CLEAR」と入力すると長期記憶と直近会話を消します。',window.lightBrain.summary||'');
-      if(next===null)return;
-      if(next.trim()==='CLEAR'){
-        window.lightBrain.summary='';window.conversationHistory=[];await saveBrain();updateUI();addLog('システム','長期記憶と直近会話をクリアしました。','sys');return;
-      }
-      if(next.trim()){window.lightBrain.summary=next.trim().slice(0,3500);await saveBrain();updateUI();addLog('システム','長期記憶を更新しました。','sys');}
-    });
-
-    window.currentAudio=null;
-    window.speak=function(text){
-      if(window.isMuted)return;
-      if(window.currentAudio){window.currentAudio.pause();window.currentAudio=null;}
-      window.speechSynthesis.cancel();
-      const clean=String(text||'').replace(/[#*「」『』（）()【】_~〜]/g,'').trim(); if(!clean)return;
-      const url=`https://api.tts.quest/v3/voicevox/synthesis?text=${encodeURIComponent(clean)}&speaker=8`;
-      const audio=new Audio(url);window.currentAudio=audio;let fallbackFired=false;
-      const fallback=()=>{if(fallbackFired||window.currentAudio!==audio)return;fallbackFired=true;window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(clean);u.lang='ja-JP';u.rate=1.1;u.pitch=1.3;window.speechSynthesis.speak(u);};
-      audio.play().catch(fallback); audio.onerror=fallback;
-    };
-
-    function getApplicableFiles(){return window.memoryFiles.filter(applicableMemoryScope);}
-    function scoreMemoryFile(m,q){
-      const text=q.toLowerCase(); let score=0;
-      const title=String(m.title||'').toLowerCase(); if(title && text.includes(title))score+=8;
-      for(const k of (Array.isArray(m.keywords)?m.keywords:[])){const kk=String(k).toLowerCase().trim();if(kk && text.includes(kk))score+=4;}
-      const detail=String(m.details||'').toLowerCase();
-      if(detail && text.length>=3){const words=text.split(/\s+/).filter(Boolean);for(const w of words)if(w.length>=3&&detail.includes(w))score+=1;}
-      if(m.kind==='photo')score+=0.5;
-      return score;
-    }
-    function rankedMemoryFiles(userText){
-      const files=getApplicableFiles().map(m=>({m,score:scoreMemoryFile(m,String(userText||''))}));
-      files.sort((a,b)=>b.score-a.score || Number(b.m.updatedAt||0)-Number(a.m.updatedAt||0));
-      return files.slice(0,12).map(x=>x.m);
-    }
-    function findDirectMemoryAnswer(userText){
-      const q=String(userText||'').toLowerCase().trim(); if(!q)return null;
-      const ranked=rankedMemoryFiles(q);
-      for(const m of ranked){
-        if(!m.directAnswer)continue;
-        const title=String(m.title||'').toLowerCase();
-        const kws=(Array.isArray(m.keywords)?m.keywords:[]).map(x=>String(x).toLowerCase()).filter(Boolean);
-        const strongTitle=title && q.includes(title);
-        const hits=kws.filter(k=>q.includes(k)).length;
-        if(strongTitle || (kws.length>0 && hits>=Math.min(2,kws.length)))return String(m.details||'').trim();
-      }
-      return null;
-    }
-    function buildMemoryContext(userText){
-      const files=rankedMemoryFiles(userText); if(!files.length)return '';
-      let out='\n\n【ライトの記憶ファイル（関係が強い順）】\n';
-      for(const m of files){
-        const source=m.sourceName?` / 出典:${m.sourceName}`:'';
-        const block=`\n--- ${m.title||'無題'} ---\n種別:${m.kind||'text'}${source}\n${m.details||''}`;
-        if((out+block).length>12000)break; out+=block;
-      }
-      return out;
-    }
-    function buildPhotoContext(userText){
-      const q=String(userText||'').toLowerCase();
-      const hits=window.photoMemories.filter(p=>{
-        const tags=(Array.isArray(p.tags)?p.tags:[]).map(x=>String(x).toLowerCase());
-        return String(p.title||'').toLowerCase().split(/\s+/).some(x=>x&&q.includes(x)) || tags.some(t=>t&&q.includes(t));
-      }).slice(0,5);
-      if(!hits.length)return '';
-      return '\n\n【写真記憶の索引】\n'+hits.map(p=>`・${p.title||'写真'} / タグ:${(p.tags||[]).join(', ')} / AI観察:${p.aiObservation||p.description||''}`).join('\n');
-    }
-
-    function chooseAdaptiveModelPlan(text, hasImage){
-      if(hasImage)return DEFAULT_MODELS.image.slice();
-      const q=String(text||'').toLowerCase().trim();
-      const simple=/^(こんにちは|こんばんは|おはよう|やあ|よろしく|ありがとう|ありがと|おやすみ|元気[?？]?|はい|いいえ|うん|なるほど)[！!。？?\s]*$/i.test(q);
-      const liteWords=['一言','短く','意味','翻訳','言い換え','誤字','文章を整え'];
-      const normalWords=['どう思う','教えて','おすすめ','相談','話して','説明して','質問'];
-      const hardWords=['コード','プログラム','バグ','設計','実装','分析','比較','計画','手順','整理して','詳しく','深く','理由を考えて','複数条件','アイデアを出して','長文','まとめて','要約して','資料から','PDF'];
-      const veryHard=['難しい','複雑','徹底的','多角的','論理的に検討','何段階','長期計画','複数の案を比較'];
-      const has=arr=>arr.some(w=>q.includes(w));
-      if(simple || (q.length<=40&&has(liteWords)))return DEFAULT_MODELS.lite.slice();
-      if(has(veryHard)||q.length>=650)return DEFAULT_MODELS.veryHard.slice();
-      if(has(hardWords)||window.pdfKnowledge||getApplicableFiles().length>=8)return DEFAULT_MODELS.hard.slice();
-      if(has(normalWords)||q.length>=120)return DEFAULT_MODELS.normal.slice();
-      return DEFAULT_MODELS.normal.slice();
-    }
-
-    function extractTags(reply){
-      const memoryChanged={reflect:false,fact:false,brain:false};
-      for(const m of reply.matchAll(/\[REFLECT:\s*([\s\S]*?)\]/g)){const v=m[1].trim();if(v&&!window.selfReflections.includes(v)){window.selfReflections.push(v);memoryChanged.reflect=true;}}
-      for(const m of reply.matchAll(/\[FACT:\s*([\s\S]*?)\]/g)){const v=m[1].trim();if(v&&!window.userFacts.includes(v)){window.userFacts.push(v);memoryChanged.fact=true;}}
-      const brains=[...reply.matchAll(/\[BRAIN:\s*([\s\S]*?)\]/g)];
-      if(brains.length){const v=brains[brains.length-1][1].trim();if(v&&v!=='変更なし'){window.lightBrain.summary=v.slice(0,3500);memoryChanged.brain=true;}}
-      const historyActions=[];
-      for(const m of reply.matchAll(/\[HISTORY_(ADD|UPDATE):\s*([\s\S]*?)\]/g)){
-        try{const obj=JSON.parse(m[2].trim());if(obj&&typeof obj==='object'){obj.action=m[1]==='ADD'?'add':'update';historyActions.push(obj);}}catch(e){console.warn('HISTORYタグの解析に失敗:',e);}
-      }
-      const cleaned=reply.replace(/\[REFLECT:\s*[\s\S]*?\]/g,'').replace(/\[FACT:\s*[\s\S]*?\]/g,'').replace(/\[BRAIN:\s*[\s\S]*?\]/g,'').replace(/\[HISTORY_(?:ADD|UPDATE):\s*[\s\S]*?\]/g,'').trim();
-      return {cleaned,memoryChanged,historyActions};
-    }
-
-    async function requestGemini(model,keyInfo,contents,systemInstruction){
-      const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-      const body={
-        system_instruction:{parts:[{text:systemInstruction}]},
-        contents,
-        generationConfig:{temperature:0.7,topP:0.95,topK:40,maxOutputTokens:1200}
-      };
-      let last=null;
-      for(let attempt=0;attempt<3;attempt++){
-        const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':keyInfo.key},body:JSON.stringify(body)});
-        const data=await response.json().catch(()=>({}));
-        if(response.ok){const text=data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('').trim();if(!text)throw new Error('AIから有効な回答が返ってきませんでした。');return text;}
-        const status=data?.error?.status || '';
-        if(response.status===429 || status==='RESOURCE_EXHAUSTED')throw new Error('MODEL_RATE_LIMIT');
-        if(response.status===401 || response.status===403)throw new Error('BAD_KEY');
-        if(response.status===404)throw new Error('MODEL_NOT_FOUND');
-        if(response.status===503 || status==='UNAVAILABLE' || response.status>=500){last=new Error(data?.error?.message||`Geminiサーバーエラー (${response.status})`);if(attempt<2){await sleep(1000*Math.pow(2,attempt));continue;}throw new Error('MODEL_BUSY');}
-        throw new Error(data?.error?.message||`Gemini通信エラー (${response.status})`);
-      }
-      throw last||new Error('Gemini API通信に失敗しました。');
-    }
-
-    function makeSystemInstruction(userText, hasImage){
-      const rules=window.selfReflections.length?'\n【過去の反省・学習ルール】\n・'+window.selfReflections.join('\n・'):'';
-      const facts=window.userFacts.length?'\n【記憶している個人情報】\n・'+window.userFacts.join('\n・'):'';
-      return `あなたはユーザーの相棒「電キャ」の「ライト」です。\n性別：女子。ボーイッシュで明るく元気。一人称「あたし」。\n口調：「〜っしょ！」「〜だぜ！」「任せとけ！」などフランクで自然。\n今回のユーザー：${sessionDisplayName}（内部ID：${sessionUserName}）\n所属バンド：${sessionBandName}\n${rules}${facts}${buildMemoryContext(userText)}${buildPhotoContext(userText)}${buildBrainContext()}${buildTimelineContext()}${window.pdfKnowledge}\n\n【会話ルール】\n1. 自然で人間らしい日本語で話す。\n2. 絵文字、Markdown記号、過剰な記号は使わない。\n3. 記憶ファイルや長期記憶は参考資料として扱い、分からないことは作らない。\n4. 個人記憶は今回のユーザー本人にだけ関係する情報として扱い、他人へ勝手に混ぜない。\n5. バンド記憶・部活記憶は共有情報として扱う。\n6. 写真については「見えること」と「推測」を区別し、壊れている等を断定しない。\n${hasImage?'7. 添付写真を最優先で見て、ユーザーの質問に答える。':''}\n\n【長期脳ミソの更新】\n会話文を完全に書き終えたあと、最後の改行からのみ [BRAIN: ...] を1回だけ出力する。内容は「今後の会話でも重要なこと」だけを短く整理した要約。重要な変化がない場合は [BRAIN: 変更なし]。\n\n【旧式の学習タグ】\n新しい好みや確実な事実を記憶したい場合のみ、会話文の最後に [REFLECT: 内容] または [FACT: 内容] を出力する。タグの後には余計な文章を書かない。\n\n【部史の編集】\nユーザーが明示的に部史またはタイムラインへの追加・修正を依頼したときだけ、会話文の最後にJSONタグを出力する。削除はできない。\n追加: [HISTORY_ADD: {\\\"date\\\":\\\"YYYY-MM-DD\\\",\\\"title\\\":\\\"タイトル\\\",\\\"details\\\":\\\"詳細\\\",\\\"tags\\\":[\\\"タグ\\\"]}]\n修正: [HISTORY_UPDATE: {\\\"id\\\":\\\"上記の既存ID\\\",\\\"date\\\":\\\"YYYY-MM-DD\\\",\\\"title\\\":\\\"タイトル\\\",\\\"details\\\":\\\"詳細\\\",\\\"tags\\\":[\\\"タグ\\\"]}]\n必ず【軽音楽部タイムライン / 部史】の既存IDだけを使う。`;
-    }
-
-    async function fallbackFromMemory(userText){
-      const direct=findDirectMemoryAnswer(userText);
-      let reply='';
-      if(direct) reply=direct;
-      else {
-        const files=rankedMemoryFiles(userText); const top=files[0];
-        if(top && scoreMemoryFile(top,userText)>=4) reply=`記憶ファイル「${top.title||'無題'}」によると、${String(top.details||'').trim()}`;
-        else if(window.userFacts.length || window.lightBrain.summary){
-          const bits=[]; if(window.lightBrain.summary)bits.push(window.lightBrain.summary); if(window.userFacts.length)bits.push('事実記憶：'+window.userFacts.slice(0,5).join(' / '));
-          reply=`今はAI接続が混雑してるけど、あたしが覚えてる範囲なら、${bits.join(' ')} って感じだぜ！`;
-        } else reply='今はAI接続が混雑してるみたいだぜ。時間を置いてもう一度試してみてな！';
-      }
-      const um={role:'user',parts:[{text:String(userText||'')} ]}; const mm={role:'model',parts:[{text:reply}]};
-      window.conversationHistory.push(um,mm); window.conversationHistory=normalizeHistory(window.conversationHistory).slice(-20);
-      try{await saveBrain();}catch(e){console.warn('フォールバック会話の保存に失敗:',e);}
-      return {text:reply,fromMemory:true};
-    }
-
-    async function callGemini(userText, imageInfo=null){
-      const direct = !imageInfo ? findDirectMemoryAnswer(userText) : null;
-      if(direct){
-        const um={role:'user',parts:[{text:userText}]}; const mm={role:'model',parts:[{text:direct}]}; window.conversationHistory.push(um,mm); window.conversationHistory=normalizeHistory(window.conversationHistory).slice(-20); await saveBrain(); return {text:direct,fromMemory:true};
-      }
-
-      await loadApiConfig();
-      if(!window.apiConfig.apiKeys.length) return await fallbackFromMemory(userText);
-
-      const userTextWithPhoto = imageInfo ? `${userText || 'この写真を見て'}\n【写真添付：${imageInfo.title || '写真'}】` : userText;
-      const imagePart = imageInfo ? [{inline_data:{mime_type:imageInfo.mimeType,data:imageInfo.base64}}] : [];
-      const baseHistory=historyForRequest();
-      const userMessage={role:'user',parts:[{text:userTextWithPhoto},...imagePart]};
-      const requestContents=[...baseHistory,userMessage];
-      const models=window.apiConfig.modelMode==='manual'?[window.apiConfig.model || 'gemini-3.8-flash']:chooseAdaptiveModelPlan(userTextWithPhoto,!!imageInfo);
-      const keys=[...window.apiConfig.apiKeys].sort((a,b)=>(a.id===window.apiConfig.activeKeyId?-1:0)-(b.id===window.apiConfig.activeKeyId?-1:0));
-      const systemInstruction=makeSystemInstruction(userTextWithPhoto,!!imageInfo);
-      let finalError=null;
-
-      try{
-        for(const model of models){
-          let modelBusy=false;
-          for(const keyInfo of keys){
-            try{
-              const aiReply=await requestGemini(model,keyInfo,requestContents,systemInstruction);
-              const parsed=extractTags(aiReply);
-              window.conversationHistory.push({role:'user',parts:[{text:userTextWithPhoto}]},{role:'model',parts:[{text:parsed.cleaned}]});
-              window.conversationHistory=normalizeHistory(window.conversationHistory).slice(-20);
-              if(parsed.memoryChanged.reflect || parsed.memoryChanged.fact) await saveLegacy();
-              const historyChanged=await applyHistoryActions(parsed.historyActions,userText);
-              if(historyChanged) addLog('システム',`部史を${historyChanged}件更新したぜ！`,'sys');
-              await saveBrain();
-              return {text:parsed.cleaned,fromMemory:false,model};
-            }catch(e){
-              finalError=e;
-              if(e.message==='BAD_KEY')continue;
-              if(e.message==='MODEL_RATE_LIMIT') { break; }
-              if(e.message==='MODEL_BUSY' || e.message==='MODEL_NOT_FOUND'){modelBusy=true;break;}
-              break;
-            }
-          }
-          if(modelBusy)continue;
-        }
-      }catch(e){ finalError=e; }
-
-      const fallback=await fallbackFromMemory(userText);
-      if(fallback && fallback.text){
-        addLog('システム',`AIに接続できなかったため、保存済み記憶を使って回答します。`,'sys');
-        return fallback;
-      }
-      throw finalError || new Error('AIが現在利用できません。');
-    }
-
-    async function processUserInput(text){
-      const trimmed=String(text||'').trim(); if(!trimmed && !currentPhoto)return;
-      const imageInfo=currentPhoto;
-      const displayText=trimmed || '写真を見て！';
-      addLog('あなた',displayText,'user',imageInfo?.dataUrl||'');
-      sendBtn.disabled=true; chatInput.disabled=true; talkBtn.disabled=true; $('photo-btn').disabled=true; sendBtn.textContent='🧠';
-      try{
-        const result=await callGemini(displayText,imageInfo);
-        addLog('ライト',result.text,'ai');
-        window.speak(result.text);
-        if(imageInfo && $('photo-remember').checked){ await savePhotoMemory(imageInfo,result.text); }
-      }catch(e){
-        console.error(e); addLog('システムエラー',e.message || 'AI通信に失敗しました。','error');
-        window.speak('ごめん！通信がおかしいみたいだぜ！');
-      }finally{
-        sendBtn.disabled=false; chatInput.disabled=false; talkBtn.disabled=false; $('photo-btn').disabled=false; sendBtn.textContent='送信';
-        if(imageInfo){ lastConversationImage=imageInfo; lastConversationImageTitle=imageInfo.title || '写真'; }
-        clearPhotoAttachment(); chatInput.focus();
-      }
-    }
-
-    sendBtn.addEventListener('click',()=>{const t=chatInput.value;chatInput.value='';processUserInput(t);});
-    chatInput.addEventListener('keypress',e=>{if(e.key==='Enter')sendBtn.click();});
-
-    const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(SpeechRecognition){
-      const recognition=new SpeechRecognition(); recognition.lang='ja-JP'; recognition.interimResults=false; recognition.continuous=false;
-      talkBtn.addEventListener('click',()=>{try{recognition.start();talkBtn.textContent='👂';talkBtn.style.background='#f1c40f';}catch(e){}});
-      recognition.onresult=e=>{talkBtn.textContent='🔴';talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';chatInput.value=e.results[0][0].transcript;sendBtn.click();};
-      recognition.onerror=()=>{talkBtn.textContent='🔴';talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';};
-      recognition.onend=()=>{talkBtn.textContent='🔴';talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';};
-    }else{talkBtn.style.display='none';}
-
-    $('photo-btn').addEventListener('click',()=>$('photo-input').click());
-    $('photo-input').addEventListener('change',async e=>{const f=e.target.files?.[0];if(f){try{currentPhoto=await preparePhoto(f);showPhotoAttachment();}catch(err){console.error(err);alert(err.message||'写真を読み込めませんでした。');}}e.target.value='';});
-    $('photo-clear-btn').addEventListener('click',clearPhotoAttachment);
-    function clearPhotoAttachment(){currentPhoto=null;$('attach-bar').classList.remove('visible');$('attach-thumb').src='';$('photo-title').value='';$('photo-tags').value='';$('photo-note').value='';$('photo-remember').checked=false;}
-    function showPhotoAttachment(){
-      $('attach-bar').classList.add('visible'); $('attach-thumb').src=currentPhoto.dataUrl; $('photo-title').value=currentPhoto.title||'';
-      $('photo-tags').value=currentPhoto.tags.join(', '); $('photo-note').value=''; $('photo-remember').checked=false; $('photo-scope').value='band';
-    }
-    $('photo-title').addEventListener('input',()=>{if(currentPhoto)currentPhoto.title=$('photo-title').value.trim();});
-    $('photo-tags').addEventListener('input',()=>{if(currentPhoto)currentPhoto.tags=$('photo-tags').value.split(',').map(x=>x.trim()).filter(Boolean);});
-    $('photo-note').addEventListener('input',()=>{if(currentPhoto)currentPhoto.humanNote=$('photo-note').value.trim();});
-    $('photo-scope').addEventListener('change',()=>{if(currentPhoto)currentPhoto.scopeType=$('photo-scope').value;});
-
-    async function preparePhoto(file){
-      if(!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error('JPEG / PNG / WebPの写真を選んでください。');
-      const dataUrl=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(new Error('写真の読み込みに失敗しました。'));r.readAsDataURL(file);});
-      const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(new Error('写真を画像として読み込めませんでした。'));im.src=dataUrl;});
-      const canvas=document.createElement('canvas'); let w=img.naturalWidth,h=img.naturalHeight; const max=1280; const scale=Math.min(1,max/Math.max(w,h)); w=Math.max(1,Math.round(w*scale)); h=Math.max(1,Math.round(h*scale)); canvas.width=w;canvas.height=h; const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
-      let quality=.78, compressed=canvas.toDataURL('image/jpeg',quality);
-      for(let i=0;i<5&&compressed.length>650000;i++){quality-=.08; if(quality<.42)quality=.42; compressed=canvas.toDataURL('image/jpeg',quality);}
-      for(let i=0;i<4&&compressed.length>650000;i++){w=Math.max(640,Math.round(w*.86));h=Math.max(640,Math.round(h*.86));canvas.width=w;canvas.height=h;ctx.drawImage(img,0,0,w,h);compressed=canvas.toDataURL('image/jpeg',Math.max(.42,quality));}
-      const base64=compressed.split(',')[1]||'';
-      return {dataUrl:compressed,base64,mimeType:'image/jpeg',originalName:file.name,title:'',tags:[],humanNote:'',scopeType:'band',width:w,height:h};
-    }
-
-    function chunkString(str,size){const out=[];for(let i=0;i<str.length;i+=size)out.push(str.slice(i,i+size));return out;}
-    async function savePhotoMemory(imageInfo, aiObservation){
-      const scopeType=imageInfo.scopeType || 'band';
-      const scopeId=scopeType==='personal'?sessionUserKey:scopeType==='band'?sessionBandId:'club';
-      const imageId='img-'+now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
-      const title=imageInfo.title || `写真 ${new Date().toLocaleString('ja-JP')}`;
-      const tags=[...new Set([...(imageInfo.tags||[]),'写真'])];
-      const dataUrl=imageInfo.dataUrl;
-      const chunks=chunkString(dataUrl,500000);
-      await setDoc(doc(db,'light_images',imageId),{
-        imageId,username:sessionUserName,displayName:sessionDisplayName,userKey:sessionUserKey,bandId:sessionBandId,bandName:sessionBandName,
-        scopeType,scopeId,title,tags,mimeType:'image/jpeg',width:imageInfo.width,height:imageInfo.height,
-        originalName:imageInfo.originalName,humanNote:imageInfo.humanNote||'',aiObservation:String(aiObservation||'').slice(0,5000),
-        chunkCount:chunks.length,totalChars:dataUrl.length,createdAt:now(),enabled:true
-      });
-      const chunkRef=collection(db,'light_images',imageId,'chunks');
-      await Promise.all(chunks.map((data,index)=>setDoc(doc(chunkRef,String(index)),{index,data,createdAt:now()})));
-      await addDoc(collection(db,'light_memory_files'),{
-        title,details:`AI観察：${String(aiObservation||'').slice(0,4500)}\n人間メモ：${imageInfo.humanNote||'(なし)'}`,
-        keywords:tags,scopeType,scopeId,kind:'photo',imageId,sourceName:imageInfo.originalName||'会話中の写真',
-        directAnswer:false,enabled:true,createdBy:sessionUserKey,createdAt:now(),updatedAt:now()
-      });
-      await loadMemoryFiles(); await loadPhotoMemories(); updateUI();
-      addLog('システム',`写真「${title}」を記憶しました。`,'sys');
-    }
-
-    $('pdf-btn').addEventListener('click',()=>$('pdf-upload').click());
-    $('pdf-upload').addEventListener('change',async e=>{
-      const f=e.target.files?.[0]; if(!f)return;
-      addLog('システム',`PDF「${f.name}」を読み込み中...`,'sys');
-      try{
-        const buf=await f.arrayBuffer(); const pdf=await pdfjsLib.getDocument({data:buf}).promise; let text='';
-        for(let i=1;i<=pdf.numPages;i++){const page=await pdf.getPage(i);text+=(await page.getTextContent()).items.map(x=>x.str).join(' ')+'\n';}
-        if(text.length>16000)text=text.slice(0,16000)+'...';
-        window.pdfKnowledge=`\n\n【一時読み込みPDF：${f.name}】\n${text}`;
-        addLog('ライト','その説明書、頭に入れたぜ！','ai');window.speak('その説明書、頭に入れたぜ！');settingsModal.style.display='none';
-      }catch(err){console.error(err);addLog('システムエラー','PDF読み込み失敗','error');}
-      e.target.value='';
-    });
-
-    function maybeHotana(){
-      const candidates=[];
-      getApplicableFiles().slice(0,30).forEach(m=>{if(m.title)candidates.push(`「${m.title}」のこと、また何か思い出したら教えてな。`);});
-      window.userFacts.slice(0,10).forEach(f=>candidates.push(`そういや「${f}」って覚えてるぜ。`));
-      if(candidates.length && Math.random()<0.35)addLog('ライト',candidates[Math.floor(Math.random()*candidates.length)],'ai');
-    }
-
-    // 3D avatar (existing visual style preserved)
-    const container=document.getElementById('avatar-container');
-    const scene=new THREE.Scene();
-    const camera=new THREE.PerspectiveCamera(75,1,0.1,1000);
-    const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true}); renderer.setSize(200,200); container.appendChild(renderer.domElement);
-    const avatarGroup=new THREE.Group(); const mat=new THREE.MeshBasicMaterial({color:0xff7eb3,wireframe:true});
-    const head=new THREE.Mesh(new THREE.IcosahedronGeometry(.8,1),mat);head.position.y=1.0;avatarGroup.add(head);
-    const body=new THREE.Mesh(new THREE.CylinderGeometry(.4,.7,1.5,7,1,true),mat);body.position.y=-.5;avatarGroup.add(body);
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(1.5,.02,16,100),mat);ring.rotation.x=Math.PI/2;avatarGroup.add(ring);scene.add(avatarGroup);camera.position.z=4;
-    function animate(){requestAnimationFrame(animate);avatarGroup.rotation.y+=.01;avatarGroup.position.y=Math.sin(Date.now()*.002)*.1;ring.rotation.x=Math.sin(Date.now()*.001)*.3+1.5;renderer.render(scene,camera);} animate();
-  </script>
-</body>
-</html>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ライト OS ver.mightyX</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<style>
+body{background:#0b0c10;color:#fff;font-family:'Helvetica Neue',Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;overflow:hidden}
+#main-app{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;overflow-y:auto;box-sizing:border-box}
+#avatar-container{width:200px;height:200px;margin-bottom:10px}#header-bar{width:90%;max-width:650px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.app-title{font-weight:bold;font-size:16px;color:#ff7eb3;letter-spacing:1px}.app-subtitle{font-size:10px;color:#88c0d0;margin-top:3px;max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon-btn{background:rgba(255,255,255,.1);border:1px solid #ff7eb3;color:#fff;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:13px;transition:all .2s}.icon-btn:hover{background:rgba(255,126,179,.3)}
+#chat-log{width:90%;max-width:650px;height:240px;background:rgba(20,20,30,.85);padding:15px;border-radius:16px;overflow-y:auto;margin-bottom:15px;border:1px solid rgba(255,126,179,.4);box-shadow:0 0 25px rgba(255,126,179,.15);font-size:15px;line-height:1.6;box-sizing:border-box}
+.msg-sys{color:#88c0d0;font-size:13px}.msg-user{color:#a3be8c;margin-top:6px}.msg-ai{color:#b48ead;margin-top:6px}.msg-error{color:#bf616a;font-weight:bold;background:rgba(191,97,106,.1);padding:5px;border-radius:5px;margin-top:6px}
+.controls{display:flex;gap:10px;align-items:center;width:90%;max-width:650px}button,input[type=text],select,textarea{padding:12px 18px;font-size:14px;border-radius:30px;border:none;outline:none;transition:all .2s ease;box-sizing:border-box}button{cursor:pointer;font-weight:bold}button:hover{transform:translateY(-2px)}button:active{transform:translateY(1px)}button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+#talk-btn{background:linear-gradient(135deg,#ff758c,#ff7eb3);color:white;box-shadow:0 4px 15px rgba(255,117,140,.4);flex-shrink:0}#chat-input{flex-grow:1;border:1px solid #ff7eb3;background:rgba(0,0,0,.6);color:#fff}#send-btn{background:linear-gradient(135deg,#4facfe,#00f2fe);color:white;box-shadow:0 4px 15px rgba(79,172,254,.4);flex-shrink:0}
+#photo-btn{background:rgba(255,255,255,.07);border-color:#88c0d0;color:#fff;flex-shrink:0;padding:12px 14px}#attach-bar{width:90%;max-width:650px;margin-top:0;margin-bottom:10px;padding:10px;background:rgba(20,20,30,.92);border:1px solid rgba(79,172,254,.45);border-radius:12px;display:none;box-sizing:border-box}#attach-bar.visible{display:block}
+#attach-thumbs{display:flex;gap:8px;flex-wrap:wrap;align-items:center}#attach-thumbs img{width:58px;height:58px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,126,179,.45)}#attach-info{font-size:11px;color:#ccc;margin-top:7px;line-height:1.5}
+#attach-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}.mini-btn{padding:8px 10px;border-radius:8px;font-size:12px;background:rgba(255,255,255,.05);color:#fff;border:1px solid rgba(255,255,255,.18)}
+.image-chat-card{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}.image-chat-card img{max-width:180px;max-height:140px;border-radius:8px;display:block}
+#settings-modal{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.75);backdrop-filter:blur(5px);justify-content:center;align-items:center;z-index:1000}.modal-content{background:#161823;border:1px solid #ff7eb3;border-radius:16px;width:85%;max-width:420px;padding:20px;box-shadow:0 0 30px rgba(255,126,179,.3);max-height:90vh;overflow-y:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:10px;margin-bottom:15px}.modal-title{font-size:16px;font-weight:bold;color:#ff7eb3}.close-btn{background:none;border:none;color:#aaa;font-size:20px;cursor:pointer;padding:0}.setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;font-size:14px}.modal-btn{width:100%;background:rgba(255,255,255,.05);border:1px solid #4facfe;color:#4facfe;padding:10px;border-radius:8px;margin-top:8px;font-size:13px}.section-title{font-size:12px;color:#88c0d0;margin-top:20px;margin-bottom:5px;border-bottom:1px dashed #88c0d0;padding-bottom:3px}
+.sync-box{background:rgba(241,196,15,.1);border:1px solid #f1c40f;padding:10px;border-radius:8px;margin-bottom:10px}#sync-id-input{width:100%;box-sizing:border-box;background:rgba(0,0,0,.5);color:#f1c40f;border:1px solid #f1c40f;text-align:center;font-weight:bold;letter-spacing:1px;border-radius:5px;padding:8px;margin-bottom:8px}.sync-btn{background:#f1c40f;color:#000;width:100%;border-radius:5px;padding:8px;border:none;font-weight:bold;cursor:pointer}
+#login-screen{position:absolute;top:0;left:0;width:100vw;height:100vh;background:#0b0c10;z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.login-title{color:#ff7eb3;font-size:24px;font-weight:bold;margin-bottom:10px;letter-spacing:2px}.login-desc{color:#ccc;font-size:14px;margin-bottom:30px}#login-id-input{width:80%;max-width:330px;background:rgba(255,255,255,.1);color:#fff;border:2px solid #ff7eb3;text-align:center;font-weight:bold;letter-spacing:1px;padding:15px;border-radius:30px;margin-bottom:20px;font-size:16px}#execute-login-btn{background:linear-gradient(135deg,#ff758c,#ff7eb3);color:white;width:80%;max-width:330px;padding:15px;border-radius:30px;font-size:16px;margin-bottom:10px;box-shadow:0 4px 15px rgba(255,117,140,.4)}.login-warning{width:80%;max-width:330px;box-sizing:border-box;margin-top:8px;padding:10px 12px;border:1px solid rgba(241,196,15,.65);background:rgba(241,196,15,.08);color:#f1c40f;border-radius:10px;font-size:11px;line-height:1.6;text-align:left}.status-note{color:#aaa;font-size:11px;margin-top:8px;line-height:1.5}
+@media(max-width:560px){.controls{gap:7px}#talk-btn{padding:12px 13px}.app-subtitle{max-width:190px}}
+</style></head><body>
+<div id="login-screen"><div class="login-title">✨ ライト OS</div><div class="login-desc">ユーザー名#バンド名を入力してね！<br>例：ryusei0723#Why's</div><input id="login-id-input" placeholder="例：ryusei0723#Why's" autocomplete="off" autocapitalize="none" spellcheck="false"><button id="execute-login-btn">起動する</button><div class="status-note" style="max-width:330px">初回は確認して登録します。次回から前回使った合言葉が自動で表示されます。<br>「#」はユーザー名とバンド名の区切りです。</div><div class="login-warning">⚠️ バンドが変わったら、新しい「ユーザー名#新しいバンド名」でログインし直してね。前回の合言葉をそのまま使わないでください。</div></div>
+<div id="main-app"><div id="header-bar"><div><div class="app-title">✨ ライト</div><div class="app-subtitle" id="identity-label">未ログイン</div></div><button id="open-settings-btn" class="icon-btn">⚙️ 設定</button></div><div id="avatar-container"></div><div id="chat-log"><div class="msg-sys"><strong>システム:</strong> クラウド連携待機中...</div></div><div id="attach-bar"><div id="attach-thumbs"></div><div id="attach-info">写真はチャットと一緒に送れます。説明・タグ・分類は、記憶するときにライトが会話の文脈から自動整理します。</div><div id="attach-actions"><label style="font-size:12px"><input type="checkbox" id="photo-remember"> この写真を記憶する（「覚えて」でも自動）</label><button id="photo-clear-btn" class="mini-btn">写真を外す</button></div></div><div class="controls"><button id="talk-btn">🔴</button><button id="photo-btn" class="icon-btn" title="写真を添付">📷</button><input id="photo-input" type="file" accept="image/jpeg,image/png,image/webp" multiple style="display:none"><input type="text" id="chat-input" placeholder="ライトに話しかける..."><button id="send-btn">送信</button></div></div>
+<div id="settings-modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">⚙️ システム設定</div><button class="close-btn" id="close-settings-btn">✖</button></div><div class="setting-row"><span>ボイス再生（音声）</span><button id="mute-toggle-btn" class="icon-btn">🔇 音声 OFF</button></div><div class="section-title">☁️ クラウド同期</div><div class="sync-box"><div style="font-size:11px;color:#ccc;margin-bottom:8px">現在の合言葉</div><input id="sync-id-input" readonly><button id="logout-btn" class="sync-btn" style="margin-top:5px;background:#bf616a;color:#fff">別のユーザーでログインし直す</button></div><div class="section-title">【現在の学習ステータス】</div><div class="setting-row" style="flex-direction:column;align-items:flex-start;margin-bottom:5px"><span id="brain-status-text" style="font-size:13px">個人記憶: 0件 | 共有記憶: 0件 | 写真: 0件 | 長期記憶: なし</span></div><button id="view-brain-btn" class="modal-btn">🧠 記憶データの中身を確認 / 編集</button><div class="section-title">【拡張知識】</div><button id="pdf-btn" class="modal-btn">📄 説明書・資料(PDF)を一時記憶させる</button><input type="file" id="pdf-upload" accept="application/pdf" style="display:none"></div></div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore,doc,getDoc,setDoc,addDoc,collection,getDocs,updateDoc,deleteDoc,query,where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+const firebaseConfig={
+  apiKey:"AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
+  authDomain:"light-65413.firebaseapp.com",
+  projectId:"light-65413",
+  storageBucket:"light-65413.firebasestorage.app",
+  messagingSenderId:"116819261632",
+  appId:"1:116819261632:web:9d9144aa125a55371d5525"
+};
+const app=initializeApp(firebaseConfig),db=getFirestore(app);
+const TEXT_MODELS=['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'];
+const MODEL_PLANS={
+  lite:['gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-3.5-flash','gemini-3.6-flash'],
+  normal:['gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'],
+  hard:['gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'],
+  veryHard:['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'],
+  image:['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite']
+};
+const ARCHIVE_CATEGORIES={
+  personal:'個人',band:'バンド',club:'軽音楽部',live_event:'ライブでの出来事',live_staff:'ライブスタッフ',staff_shared:'スタッフ共有事項',daily:'日常'
+};
+const STAFF_ROLES={pa:'PA',roady:'ローディ',promoter:'プロモーター',lighting:'照明'};
+window.isMuted=true;window.selfReflections=[];window.userFacts=[];window.pdfKnowledge='';window.conversationHistory=[];window.memoryFiles=[];window.photoMemories=[];window.timelineEntries=[];window.lightBrain={summary:'',recentHistory:[]};window.apiConfig={apiKeys:[],activeKeyId:'',model:'gemini-3.8-flash',modelMode:'auto'};window.recentConversationImages=[];
+let sessionUserKey='',sessionUserName='',sessionDisplayName='',sessionBandId='',sessionBandName='';let attachedPhotos=[];
+const $=id=>document.getElementById(id),chatLog=$('chat-log'),chatInput=$('chat-input'),sendBtn=$('send-btn'),talkBtn=$('talk-btn'),settingsModal=$('settings-modal'),loginScreen=$('login-screen'),mainApp=$('main-app');
+const now=()=>Date.now(), esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s])); const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function canonical(v){return String(v||'').trim().toLowerCase();}
+function romanToKatakana(input){let s=String(input||'').toLowerCase().replace(/[^a-z]/g,'');if(!s)return '';const overrides={ryusei:'リュウセイ',ryuusei:'リュウセイ',souta:'ソウタ',shota:'ショウタ',shouta:'ショウタ',yuuki:'ユウキ',yuuta:'ユウタ',yuya:'ユウヤ',kouki:'コウキ',kouya:'コウヤ',kouta:'コウタ',yuto:'ユウト',yuto:'ユウト',haruto:'ハルト',kaito:'カイト',ren:'レン',rin:'リン',yuna:'ユナ',hina:'ヒナ'};if(overrides[s])return overrides[s];const map={rya:'リャ',ryu:'リュウ',ryo:'リョ',kya:'キャ',kyu:'キュ',kyo:'キョ',gya:'ギャ',gyu:'ギュ',gyo:'ギョ',sha:'シャ',shu:'シュ',she:'シェ',sho:'ショ',cha:'チャ',chu:'チュ',che:'チェ',cho:'チョ',nya:'ニャ',nyu:'ニュ',nyo:'ニョ',hya:'ヒャ',hyu:'ヒュ',hyo:'ヒョ',bya:'ビャ',byu:'ビュ',byo:'ビョ',pya:'ピャ',pyu:'ピュ',pyo:'ピョ',mya:'ミャ',myu:'ミュ',myo:'ミョ',fya:'フャ',fyu:'フュ',fyo:'フョ',fa:'ファ',fi:'フィ',fe:'フェ',fo:'フォ',va:'ヴァ',vi:'ヴィ',vu:'ヴ',ve:'ヴェ',vo:'ヴォ',shi:'シ',chi:'チ',tsu:'ツ',ji:'ジ',fu:'フ',kwa:'クァ',kwi:'クィ',kwe:'クェ',kwo:'クォ',gwa:'グァ',gwi:'グィ',gwe:'グェ',gwo:'グォ',we:'ウェ',wi:'ウィ',wo:'ウォ',ye:'イェ',aa:'アー',ii:'イー',uu:'ウー',ee:'エー',oo:'オー',ou:'オウ',ei:'エイ',ka:'カ',ki:'キ',ku:'ク',ke:'ケ',ko:'コ',ga:'ガ',gi:'ギ',gu:'グ',ge:'ゲ',go:'ゴ',sa:'サ',si:'シ',su:'ス',se:'セ',so:'ソ',za:'ザ',zi:'ジ',zu:'ズ',ze:'ゼ',zo:'ゾ',ta:'タ',ti:'チ',tu:'ツ',te:'テ',to:'ト',da:'ダ',di:'ヂ',du:'ヅ',de:'デ',do:'ド',na:'ナ',ni:'ニ',nu:'ヌ',ne:'ネ',no:'ノ',ha:'ハ',hi:'ヒ',he:'ヘ',ho:'ホ',ba:'バ',bi:'ビ',bu:'ブ',be:'ベ',bo:'ボ',pa:'パ',pi:'ピ',pu:'プ',pe:'ペ',po:'ポ',ma:'マ',mi:'ミ',mu:'ム',me:'メ',mo:'モ',ya:'ヤ',yu:'ユ',yo:'ヨ',ra:'ラ',ri:'リ',ru:'ル',re:'レ',ro:'ロ',wa:'ワ',n:'ン'};const keys=Object.keys(map).sort((a,b)=>b.length-a.length);let out='',i=0;while(i<s.length){if(i+1<s.length&&s[i]===s[i+1]&&/[bcdfghjklmpqrstvwxyz]/.test(s[i])&&s[i]!=='n'){out+='ッ';i++;continue}if(s[i]==='n'&&(i===s.length-1||!/[aiueoy]/.test(s[i+1]))){out+='ン';i++;continue}let found='';for(const k of keys){if(s.startsWith(k,i)){found=k;break}}if(found){out+=map[found];i+=found.length}else{i++;}}return out||String(input||'');}
+function parseCredential(raw){const v=String(raw||'').trim(),p=v.indexOf('#');if(p<=0||p===v.length-1||v.indexOf('#',p+1)!==-1)return null;const user=v.slice(0,p).trim(),band=v.slice(p+1).trim();if(user.length>32||band.length>40||/[\\/\0-\x1F]/.test(user)||/[\\/\0-\x1F]/.test(band))return null;const username=canonical(user),bandName=band.replace(/\s+/g,' ').trim(),bandCanonical=canonical(bandName);if(!username||username==='shout')return null;return{username,bandName,bandCanonical,userKey:`${username}#${bandCanonical}`};}
+function bandDocId(s){return canonical(s).replace(/[^a-z0-9\u3040-\u30ff\u4e00-\u9fff_-]/g,'_').slice(0,80)||'band';}
+function normalizeHistory(h){return(Array.isArray(h)?h:[]).filter(x=>x&&(x.role==='user'||x.role==='model')&&Array.isArray(x.parts));}
+function textFromParts(p){return(Array.isArray(p)?p:[]).map(x=>String(x?.text||'')).join('');}
+function setLoginRemembered(){const saved=localStorage.getItem('light_last_login')||'';$('login-id-input').value=parseCredential(saved)?saved:'';}setLoginRemembered();
+async function ensureUserAndBand(parsed){const ref=doc(db,'light_users',parsed.userKey),snap=await getDoc(ref),isNew=!snap.exists();if(isNew){const qs=await getDocs(query(collection(db,'light_users'),where('username','==',parsed.username)));const oldBands=[];qs.forEach(d=>{const x=d.data()||{};if(x.bandName&&canonical(x.bandName)!==parsed.bandCanonical&&!oldBands.includes(x.bandName))oldBands.push(x.bandName);});const msg=oldBands.length?`同じユーザー名・誕生日「${parsed.username}」の登録が見つかったぜ！\n\n以前のバンド：${oldBands.join(' / ')}\n今回のバンド：${parsed.bandName}\n\nバンドが変わって、新しいバンド用の記憶を作る登録で合ってる？`:`「${parsed.username}#${parsed.bandName}」はまだ登録されていないぜ！\n\nこのユーザー名とバンド名で記憶を作成する？`;if(!confirm(msg))return false;}
+const stamp=now();if(isNew)await setDoc(ref,{credentialKey:parsed.userKey,username:parsed.username,bandId:bandDocId(parsed.bandCanonical),bandName:parsed.bandName,displayName:romanToKatakana(parsed.username),createdAt:stamp,lastLoginAt:stamp,loginCount:1});else{const old=snap.data()||{};await setDoc(ref,{username:parsed.username,bandId:old.bandId||bandDocId(parsed.bandCanonical),bandName:old.bandName||parsed.bandName,displayName:old.displayName||romanToKatakana(parsed.username),lastLoginAt:stamp,loginCount:Number(old.loginCount||0)+1},{merge:true});}
+const bid=isNew?bandDocId(parsed.bandCanonical):String((snap.data()||{}).bandId||bandDocId(parsed.bandCanonical));const br=doc(db,'light_bands',bid),bs=await getDoc(br);await setDoc(br,{bandId:bid,name:parsed.bandName,normalizedName:parsed.bandCanonical,createdAt:bs.exists()?(bs.data()?.createdAt||stamp):stamp,updatedAt:stamp},{merge:true});return true;}
+async function bootSession(p){sessionUserKey=p.userKey;sessionUserName=p.username;sessionDisplayName=romanToKatakana(p.username)||p.username;sessionBandId=bandDocId(p.bandCanonical);sessionBandName=p.bandName;localStorage.setItem('light_last_login',`${p.username}#${p.bandName}`);$('sync-id-input').value=`${p.username}#${p.bandName}`;$('identity-label').textContent=`${sessionDisplayName} / ${sessionBandName}`;loginScreen.style.display='none';mainApp.style.display='flex';resetState();await bootCloud();}
+$('execute-login-btn').addEventListener('click',async()=>{const b=$('execute-login-btn'),p=parseCredential($('login-id-input').value);if(!p)return alert('「ユーザー名#バンド名」の形で入力してね。\n例：ryusei0723#Why\'s');b.disabled=true;try{if(await ensureUserAndBand(p))await bootSession(p);}catch(e){console.error(e);alert('ユーザー登録・確認に失敗しました。Firestoreの設定を確認してね。')}finally{b.disabled=false;}});$('login-id-input').addEventListener('keypress',e=>{if(e.key==='Enter')$('execute-login-btn').click();});
+function resetState(){window.selfReflections=[];window.userFacts=[];window.pdfKnowledge='';window.conversationHistory=[];window.memoryFiles=[];window.photoMemories=[];window.timelineEntries=[];window.lightBrain={summary:'',recentHistory:[]};window.recentConversationImages=[];attachedPhotos=[];renderAttachments();chatLog.innerHTML='<div class="msg-sys"><strong>システム:</strong> クラウド連携中...</div>';updateUI();}
+function addLog(name,text,type='user',images=[]){const div=document.createElement('div');div.className=type==='sys'?'msg-sys':type==='ai'?'msg-ai':type==='error'?'msg-error':'msg-user';div.innerHTML=`<strong>${esc(name)}:</strong> ${esc(text).replace(/\n/g,'<br>')}`;if(images?.length){const wrap=document.createElement('div');wrap.className='image-chat-card';images.forEach(x=>{const im=document.createElement('img');im.src=x.dataUrl||x;im.alt='添付画像';wrap.appendChild(im)});div.appendChild(wrap);}chatLog.appendChild(div);chatLog.scrollTop=chatLog.scrollHeight;}
+function updateUI(){const personal=window.memoryFiles.filter(m=>m.enabled!==false&&m.scopeType==='personal'&&m.scopeId===sessionUserKey).length,shared=window.memoryFiles.filter(m=>m.enabled!==false&&m.scopeType!=='personal'&&applicableScope(m)).length;const brain=window.lightBrain.summary?'あり':'なし';$('brain-status-text').textContent=`個人記憶: ${personal}件 | 共有記憶: ${shared}件 | 写真: ${window.photoMemories.length}件 | 長期記憶: ${brain}`;}
+function applicableScope(m){const st=String(m.scopeType||''),sid=String(m.scopeId||'');if(st==='club')return true;if(st==='band')return sid===sessionBandId;if(st==='personal')return sid===sessionUserKey;return false;}
+async function loadBrain(){const s=await getDoc(doc(db,'light_brains',sessionUserKey));if(!s.exists()){window.lightBrain={summary:'',recentHistory:[]};return;}const d=s.data()||{};window.lightBrain={summary:String(d.summary||'').slice(0,3500),recentHistory:normalizeHistory(d.recentHistory).slice(-20)};window.conversationHistory=window.lightBrain.recentHistory.slice();}
+async function saveBrain(){await setDoc(doc(db,'light_brains',sessionUserKey),{userKey:sessionUserKey,username:sessionUserName,bandId:sessionBandId,bandName:sessionBandName,summary:String(window.lightBrain.summary||'').slice(0,3500),recentHistory:normalizeHistory(window.conversationHistory).slice(-20),updatedAt:now()});}
+function buildBrainContext(){return window.lightBrain.summary?`\n\n【ライトの長期記憶】\n${window.lightBrain.summary}`:'';}
+async function loadLegacy(){const s=await getDoc(doc(db,'light_memories',sessionUserKey));if(s.exists()){const d=s.data()||{};window.selfReflections=Array.isArray(d.reflections)?d.reflections:[];window.userFacts=Array.isArray(d.facts)?d.facts:[];}}
+async function loadMemoryFiles(){const s=await getDocs(collection(db,'light_memory_files'));window.memoryFiles=[];s.forEach(d=>window.memoryFiles.push({id:d.id,...(d.data()||{})}));window.memoryFiles.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));}
+async function loadPhotoMemories(){const s=await getDocs(collection(db,'light_images'));window.photoMemories=[];s.forEach(d=>{const x={id:d.id,...(d.data()||{})};if(x.enabled!==false&&applicableScope(x))window.photoMemories.push(x);});window.photoMemories.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));}
+async function loadTimeline(){const s=await getDocs(collection(db,'light_history'));window.timelineEntries=[];s.forEach(d=>window.timelineEntries.push({id:d.id,...(d.data()||{})}));window.timelineEntries.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.createdAt||0)-Number(a.createdAt||0));}
+function contextCategoryText(m){let s=`[${ARCHIVE_CATEGORIES[m.category]||m.category||'資料'}]`;if(m.staffRole)s+=` / ${STAFF_ROLES[m.staffRole]||m.staffRole}`;return s;}
+function scoreFile(m,q){const qq=canonical(q),hay=canonical([m.title,m.details,m.keywords?.join(' '),m.category,m.subcategory,m.staffRole,m.bandName,m.sourceName].join(' '));let score=0;for(const w of qq.split(/\s+/).filter(x=>x.length>1)){if(hay.includes(w))score+=2;}if(m.eventId&&canonical(q).includes('ライブ'))score+=1;return score;}
+function getApplicableFiles(){return window.memoryFiles.filter(applicableScope);}
+function rankedMemoryFiles(q){return getApplicableFiles().map(m=>({m,score:scoreFile(m,q)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score||Number(b.m.updatedAt||0)-Number(a.m.updatedAt||0)).slice(0,8).map(x=>x.m);}
+function findDirectAnswer(q){const hits=rankedMemoryFiles(q).filter(m=>m.directAnswer===true);if(!hits.length)return null;return hits[0].details;}
+function buildMemoryContext(q){const hits=rankedMemoryFiles(q);if(!hits.length)return '';let out='\n\n【関連する記憶ファイル】\n';for(const m of hits){const line=`${contextCategoryText(m)} | ${m.title||''} | tags:${(m.tags||m.keywords||[]).join(', ')} | event:${m.eventId||''}\n${m.details||''}\n`;if((out+line).length>7000)break;out+=line+'\n';}return out;}
+function buildPhotoContext(q){const qq=String(q||'').trim().toLowerCase();if(!qq)return '';const words=qq.split(/[\s、。,.！？!?・#]+/).map(x=>x.trim()).filter(x=>x.length>1);const scored=window.photoMemories.map(p=>{const hay=String([p.title,p.tags?.join(' '),p.category,p.staffRole,p.aiSummary,p.humanNote,p.eventTitle,p.bandName,p.date].join(' ')).toLowerCase();let score=0;if(qq&&hay.includes(qq))score+=8;for(const w of words){if(hay.includes(w))score+=2;}if(p.bandId===sessionBandId)score+=1;return{p,score};}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,5).map(x=>x.p);if(!scored.length)return '';let out='\n\n【関連する写真記録】\n';for(const p of scored){out+=`id=${p.id} | ${p.title||'写真'} | ${p.date||''} | ${ARCHIVE_CATEGORIES[p.category]||p.category||''} | ${(p.tags||[]).join(', ')} | event=${p.eventId||''}\n${p.aiSummary||''}\n`;if(out.length>4500)break;}return out;}
+function buildTimelineContext(){let out='\n\n【軽音楽部タイムライン】\n';for(const t of window.timelineEntries.slice(0,20)){out+=`id=${t.id} | ${t.date||''} | ${t.title||''} | band=${t.bandName||''} | tags=${(t.tags||[]).join(', ')}\n${t.details||''}\nlinkedPhotos=${(t.photoIds||[]).join(', ')}\n\n`;if(out.length>5500)break;}return window.timelineEntries.length?out:'';}
+function wantsRecentImages(q){return /(さっき|さきほど|この写真|その写真|前の写真|さっきの写真|直前の写真|上の写真|この画像|その画像)/.test(String(q||''));}
+function adaptivePlan(text,hasImage){if(window.apiConfig.modelMode==='manual')return[window.apiConfig.model||'gemini-3.8-flash'];const q=String(text||'');if(hasImage)return MODEL_PLANS.image;if(q.length<14||/^(やあ|やっほ|こんにちは|こんばんは|おはよう|ありがとう|おつかれ|了解|ok|OK|うん|笑|w+)[！!。\?？]*$/i.test(q))return MODEL_PLANS.lite;if(/(コード|プログラム|JSON|設計|分析|比較|詳しく|長文|原因|計画|複雑|調べて|資料|PDF|仕組み|デバッグ)/i.test(q)||q.length>280)return MODEL_PLANS.veryHard;if(/(相談|悩み|どうしたら|考えて|理由|メリット|デメリット|整理|要約|提案)/.test(q)||q.length>100)return MODEL_PLANS.hard;return MODEL_PLANS.normal;}
+function normalizeTags(a){return [...new Set((Array.isArray(a)?a:[]).map(x=>String(x||'').trim()).filter(Boolean))].slice(0,20);}
+function currentDate(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+async function requestGemini(model,keyInfo,contents,systemInstruction,config={}){const url=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;const body={contents,systemInstruction:{parts:[{text:systemInstruction}]},generationConfig:{temperature:config.json?0.2:0.7,topP:.95,topK:80,...(config.generationConfig||{})}};const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':keyInfo.key},body:JSON.stringify(body)});const data=await res.json().catch(()=>({}));if(!res.ok){const status=res.status;if(status===401||status===403){const e=new Error('BAD_KEY');e.detail=data?.error?.message||'';throw e;}if(status===429){const e=new Error('MODEL_RATE_LIMIT');e.detail=data?.error?.message||'';throw e;}if(status===500||status===502||status===503||status===504){const e=new Error('MODEL_BUSY');e.detail=data?.error?.message||'';throw e;}if(status===404){const e=new Error('MODEL_NOT_FOUND');e.detail=data?.error?.message||'';throw e;}const e=new Error(data?.error?.message||`HTTP ${status}`);e.detail=data?.error?.message||'';throw e;}const text=data?.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('')||'';if(!text)throw new Error('AIから回答が返ってきませんでした。');return text;}
+function getKeyOrder(){return [...window.apiConfig.apiKeys].filter(k=>k&&k.key).sort((a,b)=>(a.id===window.apiConfig.activeKeyId?-1:0)-(b.id===window.apiConfig.activeKeyId?-1:0));}
+async function loadApiConfig(){const s=await getDoc(doc(db,'light_config','main'));if(s.exists()){const d=s.data()||{};window.apiConfig={apiKeys:Array.isArray(d.apiKeys)?d.apiKeys:[],activeKeyId:d.activeKeyId||'',model:d.model||'gemini-3.8-flash',modelMode:d.modelMode||'auto'};}}
+function makeSystemInstruction(userText,hasImage){return `あなたは軽音楽部の相棒「電キャ」の「ライト」です。\n一人称は「あたし」。女子、ボーイッシュで明るく元気。自然で親しみやすく、「〜だぜ！」「任せとけ！」などの口調。\nユーザーの呼び名は「${sessionDisplayName}」。バンド名は「${sessionBandName}」。\n現在日付：${currentDate()}\n\n【記憶の読み分け】\n個人記憶はこのユーザーだけ、バンド記憶は「${sessionBandName}」の共有、部活記憶は全員共有。\nライブスタッフはPA・ローディ・プロモーター・照明の4担当。スタッフ共有事項も同じ4担当。\n分類は「個人」「バンド」「軽音楽部」「ライブでの出来事」「ライブスタッフ」「スタッフ共有事項」「日常」を基本とする。\n\n【重要】\nAIの視覚的な推測は「〜に見える」「〜のようだ」と表現し、確認済みの事実と混同しない。\nユーザーが明示的に記録・保存を頼んだ場合だけ資料を作成・更新する。\n部史の削除はしない。\n\n【会話】\n記憶ファイル：${buildMemoryContext(userText)}\n写真記録：${buildPhotoContext(userText)}\n部史：${buildTimelineContext()}\n${buildBrainContext()}\n${window.pdfKnowledge}\n${window.selfReflections.length?`\n【旧学習ルール】\n${window.selfReflections.join('\n')}`:''}\n${window.userFacts.length?`\n【旧事実記憶】\n${window.userFacts.join('\n')}`:''}\n\n【会話ルール】\n1. 会話文だけを自然に返す。絵文字・Markdownの#や*は使わない。\n2. 事実が記憶にない場合は作らない。\n3. 写真が添付されている場合は写真とユーザーの文章を一緒に解釈する。\n4. 「覚えて」「記録して」「資料にして」など明示依頼がある場合、別の保存処理が後で走るので、会話では通常の返答だけする。\n5. 会話の最後に長期記憶に残す価値がある情報が明確にある場合だけ、最後の行に [BRAIN: 要約] を追加する。それ以外は追加しない。\n6. [BRAIN:] は最後の行以外には絶対に出さない。\n`}
+function stripBrain(reply){const ms=[...String(reply||'').matchAll(/\[BRAIN:\s*([\s\S]*?)\]/g)];let summary='';if(ms.length)summary=ms[ms.length-1][1].trim().slice(0,3500);const cleaned=String(reply||'').replace(/\[BRAIN:\s*[\s\S]*?\]/g,'').trim();return{cleaned,summary};}
+function buildHistoryRequest(baseText,images){const parts=[{text:baseText}];for(const im of images||[])parts.push({inline_data:{mime_type:im.mimeType,data:im.base64}});return parts;}
+async function generateChat(text,photos){await loadApiConfig();if(!window.apiConfig.apiKeys.length)throw new Error('Gemini APIキーが登録されていません。管理者サイトで登録してください。');const imageNow=photos.length>0;if(imageNow)window.recentConversationImages=photos.slice(-2);const history=normalizeHistory(window.conversationHistory).slice(-20);const label=text||'この写真を見て';const currentParts=buildHistoryRequest(label,photos);if(!imageNow&&wantsRecentImages(text)){for(const im of window.recentConversationImages.slice(-2))currentParts.push({inline_data:{mime_type:im.mimeType,data:im.base64}});}const contents=[...history,{role:'user',parts:currentParts}];const models=adaptivePlan(text,imageNow),keys=getKeyOrder();const si=makeSystemInstruction(text,imageNow);let last=null;for(const model of models){let nextModel=false;for(const key of keys){try{const raw=await requestGemini(model,key,contents,si);const parsed=stripBrain(raw);if(parsed.summary)window.lightBrain.summary=parsed.summary;window.conversationHistory.push({role:'user',parts:[{text:label}]},{role:'model',parts:[{text:parsed.cleaned}]});window.conversationHistory=normalizeHistory(window.conversationHistory).slice(-20);await saveBrain();return{reply:parsed.cleaned,model};}catch(e){last=e;if(e.message==='BAD_KEY'){continue;}if(e.message==='MODEL_RATE_LIMIT'||e.message==='MODEL_BUSY'||e.message==='MODEL_NOT_FOUND'){nextModel=true;break;}throw e;}}if(nextModel)continue;}throw last||new Error('AIが現在利用できません。');}
+const CATALOG_SCHEMA={type:'object',properties:{title:{type:'string'},category:{type:'string',enum:['personal','band','club','live_event','live_staff','staff_shared','daily']},subcategory:{type:'string'},staffRole:{type:'string',enum:['pa','roady','promoter','lighting','none']},scopeType:{type:'string',enum:['personal','band','club']},tags:{type:'array',items:{type:'string'}},summary:{type:'string'},aiObservation:{type:'string'},humanNoteSuggested:{type:'string'},date:{type:'string'},dateSource:{type:'string',enum:['message','current','unknown']},shouldCreateTimeline:{type:'boolean'},timelineTitle:{type:'string'},timelineDetails:{type:'string'},timelineTags:{type:'array',items:{type:'string'}},trouble:{type:'string'},response:{type:'string'}},required:['title','category','subcategory','staffRole','scopeType','tags','summary','aiObservation','humanNoteSuggested','date','dateSource','shouldCreateTimeline','timelineTitle','timelineDetails','timelineTags','trouble','response']};
+async function catalogPhotoWithAI(photo,text,chatReply){await loadApiConfig();const keys=getKeyOrder(),models=window.apiConfig.modelMode==='manual'?[window.apiConfig.model||'gemini-3.8-flash']:MODEL_PLANS.image;const prompt=`この写真を「軽音楽部の資料館」に登録するためのメタデータをJSONで作ってください。会話文も必ず材料にしてください。\n現在日付:${currentDate()}\nユーザー:${sessionDisplayName}\nバンド:${sessionBandName}\nユーザーの発言:${text||'(写真だけ)'}\nライトの返答:${chatReply||''}\n\nルール:\n- titleは短く人間が検索しやすく。\n- categoryは指定された7分類から。\n- live_staffならstaffRoleをPA/ローディ/プロモーター/照明のどれかに。違うならnone。\n- scopeTypeは個人/バンド/部活。文脈がなければバンド。\n- tagsは日本語の検索語を5〜12個。トラブル、対処法、ノウハウ、基本事項、注意事項などがあれば入れる。\n- aiObservationは写真から見えることだけ。断定しない。\n- dateは会話から分かる日付。『昨日』などは現在日付から計算。分からなければ空文字。\n- shouldCreateTimelineはライブ、イベント、重要な部活出来事ならtrue。\n- timelineは既存タイムラインに関連付けやすいタイトル・説明・タグにする。\n- troubleはトラブルの内容が明確なときだけ。\n- responseは短く『写真記録を整理した』程度。`;const contents=[{role:'user',parts:[{text:prompt},{inline_data:{mime_type:photo.mimeType,data:photo.base64}}]}];let last=null;for(const model of models){for(const key of keys){try{const txt=await requestGemini(model,key,contents,'写真記録の司書としてJSONだけを返す。説明文は不要。',{json:true,generationConfig:{responseMimeType:'application/json',responseSchema:CATALOG_SCHEMA,maxOutputTokens:900}});return JSON.parse(txt);}catch(e){last=e;if(e.message==='BAD_KEY')continue;if(e.message==='MODEL_BUSY'||e.message==='MODEL_RATE_LIMIT'||e.message==='MODEL_NOT_FOUND')break;}}}throw last||new Error('写真の整理に失敗しました。');}
+function findTimelineMatch(catalog){const date=String(catalog.date||'');const title=canonical(catalog.timelineTitle||catalog.title||'');let best=null,score=0;for(const t of window.timelineEntries){let s=0;if(date&&t.date===date)s+=5;if(title&&canonical(`${t.title||''} ${t.tags?.join(' ')||''}`).includes(title))s+=4;const tt=canonical((t.tags||[]).join(' '));for(const tag of catalog.timelineTags||[]){if(tag&&tt.includes(canonical(tag)))s+=1;}if(t.bandId===sessionBandId)s+=2;if(s>score){score=s;best=t;}}return score>=7?best:null;}
+async function upsertTimelineFromCatalog(catalog,imageId,memoryId){if(!catalog.shouldCreateTimeline)return '';const match=findTimelineMatch(catalog);const date=String(catalog.date||currentDate()).slice(0,10);const title=String(catalog.timelineTitle||catalog.title||'出来事').trim();const details=String(catalog.timelineDetails||catalog.summary||'').trim();const tags=normalizeTags([...(catalog.timelineTags||[]),...(catalog.tags||[])].slice(0,16));if(match){const photoIds=[...new Set([...(match.photoIds||[]),imageId].filter(Boolean))],memoryIds=[...new Set([...(match.memoryIds||[]),memoryId].filter(Boolean))];const after={...match,date:match.date||date,title:match.title||title,details:match.details?`${match.details}\n\n追加記録：${details}`:details,tags:[...new Set([...(match.tags||[]),...tags])],photoIds,memoryIds,updatedAt:now(),lastLinkedAt:now()};await updateDoc(doc(db,'light_history',match.id),after);await addDoc(collection(db,'light_history_edits'),{historyId:match.id,action:'link',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,timestamp:now(),before:match,after});return match.id;}const ref=await addDoc(collection(db,'light_history'),{date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName,createdAt:now(),createdBy:sessionUserKey,createdByName:sessionDisplayName,photoIds:imageId?[imageId]:[],memoryIds:memoryId?[memoryId]:[]});await addDoc(collection(db,'light_history_edits'),{historyId:ref.id,action:'add',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,timestamp:now(),before:null,after:{id:ref.id,date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName,photoIds:imageId?[imageId]:[],memoryIds:memoryId?[memoryId]:[]}});window.timelineEntries.unshift({id:ref.id,date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName,createdAt:now(),photoIds:imageId?[imageId]:[],memoryIds:memoryId?[memoryId]:[]});return ref.id;}
+async function storeImageChunks(imageId,dataUrl){const chunks=[];for(let i=0;i<dataUrl.length;i+=450000)chunks.push(dataUrl.slice(i,i+450000));await Promise.all(chunks.map((data,i)=>setDoc(doc(db,'light_images',imageId,'chunks',String(i)),{index:i,data,createdAt:now()})));return chunks.length;}
+async function archivePhoto(photo,catalog,originalText){const scopeType=catalog.scopeType||'band',scopeId=scopeType==='personal'?sessionUserKey:scopeType==='club'?'club':sessionBandId;const imageId='img-'+now().toString(36)+'-'+Math.random().toString(36).slice(2,7);const tags=normalizeTags([...(catalog.tags||[]),'写真']);const data=photo.dataUrl;const idata={imageId,userKey:sessionUserKey,username:sessionUserName,displayName:sessionDisplayName,bandId:sessionBandId,bandName:sessionBandName,scopeType,scopeId,title:catalog.title||`写真 ${new Date().toLocaleString('ja-JP')}`,category:catalog.category||'band',subcategory:catalog.subcategory||'',staffRole:catalog.staffRole||'none',tags,aiSummary:String(catalog.summary||'').slice(0,4500),aiObservation:String(catalog.aiObservation||'').slice(0,3500),humanNote:String(catalog.humanNoteSuggested||'').slice(0,1500),sourceText:String(originalText||'').slice(0,2000),date:String(catalog.date||'').slice(0,10),dateSource:catalog.dateSource||'unknown',mimeType:'image/jpeg',width:photo.width,height:photo.height,originalName:photo.originalName||'',createdAt:now(),enabled:true};await setDoc(doc(db,'light_images',imageId),idata);idata.chunkCount=await storeImageChunks(imageId,data);const mf=await addDoc(collection(db,'light_memory_files'),{title:idata.title,details:`${idata.aiSummary}\n\nAI観察：${idata.aiObservation}\n\nトラブル：${catalog.trouble||'(なし)'}\n\n人間メモ：${idata.humanNote||'(なし)'}`,keywords:tags,tags,category:idata.category,subcategory:idata.subcategory,staffRole:idata.staffRole,scopeType,scopeId,bandId:sessionBandId,bandName:sessionBandName,kind:'photo',imageId,sourceName:idata.originalName||'会話中の写真',directAnswer:false,enabled:true,eventId:'',createdBy:sessionUserKey,createdAt:now(),updatedAt:now()});const eventId=await upsertTimelineFromCatalog(catalog,imageId,mf.id);if(eventId){await updateDoc(doc(db,'light_images',imageId),{eventId,eventTitle:catalog.timelineTitle||catalog.title||''});await updateDoc(doc(db,'light_memory_files',mf.id),{eventId,updatedAt:now()});}await loadMemoryFiles();await loadPhotoMemories();await loadTimeline();updateUI();addLog('システム',`写真「${idata.title}」を資料館に記録したぜ。`,'sys');}
+function explicitCommand(text){return /(覚えて|記録して|資料にして|資料館|部史に|タイムラインに|追加して|更新して|修正して|追記して|付け足して|追加|更新|修正|追記)/.test(String(text||''));}
+const ACTION_SCHEMA={type:'object',properties:{action:{type:'string',enum:['none','add_timeline','update_timeline','update_photo','add_memory']},targetQuery:{type:'string'},title:{type:'string'},details:{type:'string'},date:{type:'string'},tags:{type:'array',items:{type:'string'}},category:{type:'string',enum:['personal','band','club','live_event','live_staff','staff_shared','daily','none']},staffRole:{type:'string',enum:['pa','roady','promoter','lighting','none']},scopeType:{type:'string',enum:['personal','band','club','none']},note:{type:'string'}},required:['action','targetQuery','title','details','date','tags','category','staffRole','scopeType','note']};
+async function planExplicitAction(text){await loadApiConfig();const keys=getKeyOrder(),models=adaptivePlan(text,false);const prompt=`ユーザーの依頼を資料館/部史への操作に変換してください。明示依頼がないものはaction=none。削除依頼はnone。\nユーザー:${sessionDisplayName}\nバンド:${sessionBandName}\n現在日付:${currentDate()}\n依頼:${text}\n利用可能な操作:add_timeline=部史追加, update_timeline=既存部史更新, update_photo=写真記録への追記, add_memory=記憶ファイル追加。`;const contents=[{role:'user',parts:[{text:prompt}]}];for(const model of models){for(const key of keys){try{const txt=await requestGemini(model,key,contents,'資料館の操作プランナーとしてJSONだけを返す。',{json:true,generationConfig:{responseMimeType:'application/json',responseSchema:ACTION_SCHEMA,maxOutputTokens:500}});return JSON.parse(txt);}catch(e){if(e.message==='BAD_KEY')continue;if(e.message==='MODEL_BUSY'||e.message==='MODEL_RATE_LIMIT'||e.message==='MODEL_NOT_FOUND')break;return null;}}}return null;}
+function bestPhoto(q){const qq=canonical(q);let best=null,score=0;for(const p of window.photoMemories){let s=0;const hay=canonical([p.title,p.tags?.join(' '),p.aiSummary,p.category,p.staffRole,p.eventTitle,p.date].join(' '));for(const w of qq.split(/\s+/).filter(x=>x.length>1))if(hay.includes(w))s+=2;if(p.bandId===sessionBandId)s+=1;if(s>score){score=s;best=p;}}return score>=3?best:null;}
+function bestTimeline(q){const qq=canonical(q);let best=null,score=0;for(const t of window.timelineEntries){let s=0;const hay=canonical([t.title,t.details,t.tags?.join(' '),t.date].join(' '));for(const w of qq.split(/\s+/).filter(x=>x.length>1))if(hay.includes(w))s+=2;if(t.bandId===sessionBandId)s+=1;if(s>score){score=s;best=t;}}return score>=3?best:null;}
+async function applyExplicitAction(plan,originalText){if(!plan||plan.action==='none')return false;if(plan.action==='add_timeline'){const date=(plan.date||currentDate()).slice(0,10),title=plan.title||'出来事',details=plan.details||originalText,tags=normalizeTags(plan.tags);const ref=await addDoc(collection(db,'light_history'),{date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName,createdAt:now(),createdBy:sessionUserKey,createdByName:sessionDisplayName,photoIds:[],memoryIds:[]});await addDoc(collection(db,'light_history_edits'),{historyId:ref.id,action:'add',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,timestamp:now(),before:null,after:{id:ref.id,date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName}});await loadTimeline();addLog('システム',`「${title}」を部史に追加したぜ。`,'sys');return true;}
+if(plan.action==='update_timeline'){const t=bestTimeline(plan.targetQuery||plan.title);if(!t)return false;const before={...t},after={...t};if(plan.title)after.title=plan.title;if(plan.details)after.details=plan.details;if(plan.date)after.date=plan.date.slice(0,10);if(plan.tags?.length)after.tags=normalizeTags(plan.tags);after.updatedAt=now();after.updatedBy=sessionUserKey;after.updatedByName=sessionDisplayName;await updateDoc(doc(db,'light_history',t.id),after);await addDoc(collection(db,'light_history_edits'),{historyId:t.id,action:'update',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,timestamp:now(),before,after});await loadTimeline();addLog('システム',`「${after.title||t.title}」を部史で更新したぜ。`,'sys');return true;}
+if(plan.action==='update_photo'){const p=bestPhoto(plan.targetQuery||plan.title);if(!p)return false;const note=String(plan.note||plan.details||'').trim();if(!note)return false;const before={...p},added=[...(p.additionalNotes||[]),{text:note,by:sessionUserKey,byName:sessionDisplayName,at:now()}];const after={...p,additionalNotes:added,updatedAt:now()};await updateDoc(doc(db,'light_images',p.id),{additionalNotes:added,updatedAt:now()});if(p.id){const fs=await getDocs(collection(db,'light_memory_files'));for(const d of fs.docs){if((d.data()||{}).imageId===p.id)await updateDoc(d.ref,{details:`${d.data()?.details||''}\n\n追記（${sessionDisplayName}）：${note}`,updatedAt:now()});}}await addDoc(collection(db,'light_photo_edits'),{imageId:p.id,action:'append_note',editor:sessionUserKey,editorName:sessionDisplayName,timestamp:now(),before,after});await loadPhotoMemories();addLog('システム',`写真「${p.title||'写真'}」に追記したぜ。`,'sys');return true;}
+if(plan.action==='add_memory'){const scopeType=plan.scopeType==='personal'?'personal':plan.scopeType==='club'?'club':'band',scopeId=scopeType==='personal'?sessionUserKey:scopeType==='club'?'club':sessionBandId;const ref=await addDoc(collection(db,'light_memory_files'),{title:plan.title||'会話からの記憶',details:plan.details||originalText,tags:normalizeTags(plan.tags),keywords:normalizeTags(plan.tags),category:plan.category&&plan.category!=='none'?plan.category:scopeType,subcategory:'',staffRole:plan.staffRole||'none',scopeType,scopeId,bandId:sessionBandId,bandName:sessionBandName,kind:'text',directAnswer:false,enabled:true,createdBy:sessionUserKey,createdAt:now(),updatedAt:now()});await loadMemoryFiles();updateUI();addLog('システム',`「${plan.title||'会話からの記憶'}」を記憶ファイルに保存したぜ。`,'sys');return true;}return false;}
+async function fallbackFromMemory(text){const direct=findDirectAnswer(text);if(direct){const reply=String(direct);window.conversationHistory.push({role:'user',parts:[{text}]},{role:'model',parts:[{text:reply}]});window.conversationHistory=normalizeHistory(window.conversationHistory).slice(-20);await saveBrain();return{reply,fromMemory:true};}const hits=rankedMemoryFiles(text);if(hits.length){const reply=`保存してある資料を見ると、${hits[0].title||'この件'}についてこう記録されてるぜ。\n\n${hits[0].details||''}`;return{reply,fromMemory:true};}return null;}
+async function callLight(text,photos){try{return await generateChat(text,photos);}catch(e){const fb=await fallbackFromMemory(text);if(fb){addLog('システム','AIに接続できなかったため、保存済み記憶を使って回答します。','sys');return{reply:fb.reply,fromMemory:true};}throw e;}}
+async function processUserInput(text){const t=String(text||'').trim();if(!t&&!attachedPhotos.length)return;const photos=attachedPhotos.slice();const display=t||'この写真を見て！';addLog('あなた',display,'user',photos);sendBtn.disabled=true;chatInput.disabled=true;talkBtn.disabled=true;$('photo-btn').disabled=true;sendBtn.textContent='🧠';try{const result=await callLight(display,photos);addLog('ライト',result.reply,'ai');if(!window.isMuted)window.speak(result.reply);if(photos.length&&($('photo-remember').checked || /(覚えて|記録して|資料館|保存して|資料にして)/.test(t))){for(const photo of photos){try{const c=await catalogPhotoWithAI(photo,display,result.reply);await archivePhoto(photo,c,display);}catch(err){console.error(err);addLog('システム','写真の整理に失敗したぜ。会話自体は保存されているから安心して。','error');}}}if(explicitCommand(t)&&(!photos.length||/(部史|タイムライン|写真.*追記|写真.*更新|写真.*修正|付け足して)/.test(t))&&!/写真.*見て/.test(t)){const plan=await planExplicitAction(t);await applyExplicitAction(plan,t);}}catch(e){console.error(e);addLog('システムエラー',e.message||'AI通信に失敗しました。','error');}finally{sendBtn.disabled=false;chatInput.disabled=false;talkBtn.disabled=false;$('photo-btn').disabled=false;sendBtn.textContent='送信';clearAttachments();chatInput.focus();}}
+$('send-btn').addEventListener('click',()=>{const t=chatInput.value;chatInput.value='';processUserInput(t);});chatInput.addEventListener('keypress',e=>{if(e.key==='Enter')$('send-btn').click();});
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(SR){const r=new SR();r.lang='ja-JP';r.continuous=false;r.interimResults=false;talkBtn.addEventListener('click',()=>{try{r.start();talkBtn.textContent='👂';talkBtn.style.background='#f1c40f';}catch(e){}});r.onresult=e=>{talkBtn.textContent='🔴';talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';chatInput.value=e.results[0][0].transcript;$('send-btn').click();};r.onerror=()=>{talkBtn.textContent='🔴';talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';};r.onend=()=>{talkBtn.textContent='🔴';talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';};}else talkBtn.style.display='none';
+$('photo-btn').addEventListener('click',()=>$('photo-input').click());$('photo-input').addEventListener('change',async e=>{const files=[...(e.target.files||[])].slice(0,4);if(!files.length)return;try{attachedPhotos=[];for(const f of files)attachedPhotos.push(await preparePhoto(f));renderAttachments();}catch(err){console.error(err);alert(err.message||'写真を読み込めませんでした。');}e.target.value='';});$('photo-clear-btn').addEventListener('click',clearAttachments);function clearAttachments(){attachedPhotos=[];renderAttachments();$('photo-remember').checked=false;}function renderAttachments(){$('attach-thumbs').innerHTML='';if(!attachedPhotos.length){$('attach-bar').classList.remove('visible');return}attachedPhotos.forEach(p=>{const im=document.createElement('img');im.src=p.dataUrl;im.alt='写真';$('attach-thumbs').appendChild(im);});$('attach-info').textContent=`${attachedPhotos.length}枚の写真を添付中。説明・タグ・分類は「記憶する」をONにしたとき、ライトが会話の文脈から自動整理します。`;$('attach-bar').classList.add('visible');}
+async function preparePhoto(file){if(!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error('JPEG / PNG / WebPの写真を選んでください。');const url=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('写真の読み込みに失敗しました。'));r.readAsDataURL(file)});const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('画像として読み込めませんでした。'));i.src=url});const canvas=document.createElement('canvas');let w=img.naturalWidth,h=img.naturalHeight,max=960,scale=Math.min(1,max/Math.max(w,h));w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,w,h);let q=.72,out=canvas.toDataURL('image/jpeg',q);for(let i=0;i<4&&out.length>450000;i++){q=Math.max(.42,q-.08);out=canvas.toDataURL('image/jpeg',q);}const base64=out.split(',')[1]||'';return{dataUrl:out,base64,mimeType:'image/jpeg',originalName:file.name,width:w,height:h};}
+window.isMuted=true;const muteBtn=$('mute-toggle-btn');muteBtn.textContent='🔇 音声 OFF';$('open-settings-btn').addEventListener('click',()=>$('settings-modal').style.display='flex');$('close-settings-btn').addEventListener('click',()=>$('settings-modal').style.display='none');muteBtn.addEventListener('click',()=>{window.isMuted=!window.isMuted;muteBtn.textContent=window.isMuted?'🔇 音声 OFF':'🔊 音声 ON';muteBtn.style.borderColor=window.isMuted?'#bf616a':'#ff7eb3';if(window.isMuted){speechSynthesis.cancel();if(window.currentAudio)window.currentAudio.pause();}});window.currentAudio=null;window.speak=t=>{if(window.isMuted)return;speechSynthesis.cancel();const clean=String(t||'').replace(/[「」『』（）()【】_~〜]/g,'').trim();if(!clean)return;const audio=new Audio(`https://api.tts.quest/v3/voicevox/synthesis?text=${encodeURIComponent(clean)}&speaker=8`);window.currentAudio=audio;audio.play().catch(()=>{const u=new SpeechSynthesisUtterance(clean);u.lang='ja-JP';u.rate=1.1;u.pitch=1.2;speechSynthesis.speak(u)});};
+$('logout-btn').addEventListener('click',()=>{localStorage.removeItem('light_last_login');settingsModal.style.display='none';location.reload();});$('sync-id-input').addEventListener('click',()=>navigator.clipboard?.writeText($('sync-id-input').value).catch(()=>{}));$('view-brain-btn').addEventListener('click',()=>{const s=`【長期記憶】\n${window.lightBrain.summary||'(なし)'}\n\n【自己改善ルール】\n${window.selfReflections.join('\n')||'(なし)'}\n\n【事実記憶】\n${window.userFacts.join('\n')||'(なし)'}`;alert(s);});
+$('pdf-btn').addEventListener('click',()=>$('pdf-upload').click());$('pdf-upload').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;addLog('システム',`PDF「${f.name}」を読み込み中...`,'sys');try{const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let txt='';for(let i=1;i<=pdf.numPages;i++){const page=await pdf.getPage(i);txt+=(await page.getTextContent()).items.map(x=>x.str).join(' ')+'\n';}window.pdfKnowledge=`\n\n【追加知識：${f.name}】\n${txt.slice(0,14000)}`;addLog('ライト','その資料、頭に入れたぜ！','ai');if(!window.isMuted)window.speak('その資料、頭に入れたぜ！');}catch(err){console.error(err);addLog('システム','PDF読み込み失敗','error');}e.target.value='';});
+async function bootCloud(){try{await Promise.all([loadApiConfig(),loadBrain(),loadLegacy(),loadMemoryFiles(),loadPhotoMemories(),loadTimeline()]);updateUI();addLog('システム',`「${sessionUserName}#${sessionBandName}」の記憶と資料を読み込んだぜ。`,'sys');const msg=`おかえり、${sessionDisplayName}。今日もよろしくな！`;addLog('ライト',msg,'ai');if(!window.isMuted)window.speak(msg);}catch(e){console.error(e);addLog('システムエラー','クラウドとの通信に失敗しました。Firebaseの設定を確認してください。','error');}}
+const container=$('avatar-container'),scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(75,1,.1,1000),renderer=new THREE.WebGLRenderer({alpha:true,antialias:true});renderer.setSize(200,200);container.appendChild(renderer.domElement);const group=new THREE.Group(),mat=new THREE.MeshBasicMaterial({color:0xff7eb3,wireframe:true});const head=new THREE.Mesh(new THREE.IcosahedronGeometry(.8,1),mat);head.position.y=1;group.add(head);const body=new THREE.Mesh(new THREE.CylinderGeometry(.4,.7,1.5,7,1,true),mat);body.position.y=-.5;group.add(body);const ring=new THREE.Mesh(new THREE.TorusGeometry(1.5,.02,16,100),mat);ring.rotation.x=Math.PI/2;group.add(ring);scene.add(group);camera.position.z=4;function animate(){requestAnimationFrame(animate);group.rotation.y+=.01;group.position.y=Math.sin(Date.now()*.002)*.1;ring.rotation.x=Math.sin(Date.now()*.001)*.3+1.5;renderer.render(scene,camera);}animate();
+</script></body></html>
