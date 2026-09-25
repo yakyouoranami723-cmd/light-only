@@ -3,138 +3,197 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ライト OS 管理者サイト v8.7</title>
+<title>ライト OS 管理者 ver.mightyX</title>
 <style>
-body{background:#0b0c10;color:#fff;font-family:'Helvetica Neue',Arial,sans-serif;margin:0;min-height:100vh;padding:24px;box-sizing:border-box}.wrap{width:94%;max-width:900px;margin:0 auto}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.title{color:#ff7eb3;font-weight:bold;font-size:22px;letter-spacing:2px}.sub{color:#88c0d0;font-size:12px}.card{background:#161823;border:1px solid rgba(255,126,179,.4);border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 0 25px rgba(255,126,179,.08)}.section{color:#88c0d0;font-size:13px;border-bottom:1px dashed #88c0d0;padding-bottom:6px;margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{box-sizing:border-box}input,textarea,select,button{font:inherit;border-radius:10px;border:1px solid rgba(255,255,255,.18);padding:10px;background:rgba(0,0,0,.35);color:#fff;outline:none}input,select{min-height:40px}textarea{width:100%;min-height:120px;resize:vertical}button{cursor:pointer;font-weight:bold}button.primary{background:linear-gradient(135deg,#ff758c,#ff7eb3);border:none}button.blue{background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff}.muted{color:#aaa;font-size:12px;line-height:1.6}.small{font-size:11px;color:#aaa}.item{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;margin-top:10px;background:rgba(255,255,255,.03)}.item-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.item-title{color:#ff7eb3;font-weight:bold}.tag{display:inline-block;font-size:10px;padding:3px 7px;border-radius:10px;border:1px solid #88c0d0;color:#88c0d0;margin:3px}.danger{border-color:#bf616a;color:#bf616a}.ok{border-color:#a3be8c;color:#a3be8c}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:700px){.grid2{grid-template-columns:1fr}.header{align-items:flex-start;flex-direction:column;gap:8px}.wrap{width:100%}}.notice{padding:10px;border-radius:10px;background:rgba(241,196,15,.09);border:1px solid #f1c40f;color:#f1c40f;font-size:12px;margin-bottom:12px}.hidden{display:none!important}
+body{background:#0b0c10;color:#fff;font-family:'Helvetica Neue',Arial,sans-serif;margin:0;min-height:100vh;padding:24px;box-sizing:border-box}.wrap{width:94%;max-width:920px;margin:0 auto}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.title{color:#ff7eb3;font-weight:bold;font-size:22px;letter-spacing:2px}.sub{color:#88c0d0;font-size:12px}.card{background:#161823;border:1px solid rgba(255,126,179,.4);border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 0 25px rgba(255,126,179,.08)}.section{color:#88c0d0;font-size:13px;border-bottom:1px dashed #88c0d0;padding-bottom:6px;margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{box-sizing:border-box}input,textarea,select,button{font:inherit;border-radius:10px;border:1px solid rgba(255,255,255,.18);padding:10px;background:rgba(0,0,0,.35);color:#fff;outline:none}input,select{min-height:40px}textarea{width:100%;min-height:120px;resize:vertical}button{cursor:pointer;font-weight:bold}button.primary{background:linear-gradient(135deg,#ff758c,#ff7eb3);border:none}button.blue{background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff}.muted{color:#aaa;font-size:12px;line-height:1.6}.small{font-size:11px;color:#aaa}.item{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;margin-top:10px;background:rgba(255,255,255,.03)}.item-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.item-title{color:#ff7eb3;font-weight:bold}.tag{display:inline-block;font-size:10px;padding:3px 7px;border-radius:10px;border:1px solid #88c0d0;color:#88c0d0;margin:3px}.danger{border-color:#bf616a;color:#bf616a}.ok{border-color:#a3be8c;color:#a3be8c}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}@media(max-width:700px){.grid2,.grid3{grid-template-columns:1fr}.header{align-items:flex-start;flex-direction:column;gap:8px}.wrap{width:100%}}.notice{padding:10px;border-radius:10px;background:rgba(241,196,15,.09);border:1px solid #f1c40f;color:#f1c40f;font-size:12px;margin-bottom:12px}.hidden{display:none!important}.thumb{width:100px;height:75px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,126,179,.3);background:#0b0c10}.stat{display:inline-block;padding:8px 10px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.03);font-size:12px}.good{color:#a3be8c}.warn{color:#f1c40f}.bad{color:#bf616a}.split{display:flex;gap:12px;align-items:flex-start}.grow{flex:1;min-width:0}.scroll{max-height:340px;overflow:auto}.codeish{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;white-space:pre-wrap;word-break:break-all}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="header"><div><div class="title">✨ ライト OS 管理者</div><div class="sub">API設定 / 自動モデル選択 / 記憶ファイル / 旧記憶の閲覧</div></div><button id="reloadBtn">🔄 更新</button></div>
+  <div class="header"><div><div class="title">✨ ライト OS 管理者</div><div class="sub">API設定 / ユーザー・バンド / 脳ミソ / 記憶ファイル / 写真ライブラリ / 部史 / バックアップ</div></div><button id="reloadBtn">🔄 更新</button></div>
 
-  <div class="notice">Gemini APIキーはこの管理画面で登録します。自動モードでは質問内容に応じて3.1 Flash-Lite / 3.5 Flash-Lite / 3.5 Flash / 3.6 Flash / 3.7 Flash / 3.8 Flashを使い分けます。混雑やモデル固有の制限が出た場合は、別モデルへ順番にフォールバックします。複数キーは無効キーの予備として使いますが、キーを回してプロジェクトの無料枠を増やす仕組みではありません。</div>
+  <div class="notice">この管理画面は、現在のFirebase設定をそのまま使います。APIキーはFirestoreに保存され、index.htmlから直接読み出してGemini APIへ送信します。部内用途向けの簡易管理方式です。無料枠の利用量はAPIキーを増やしてもプロジェクト単位の制限が変わるわけではありません。</div>
 
   <div class="card">
-    <div class="section">🔑 Gemini APIキー管理</div>
+    <div class="section">🔑 Gemini APIキー管理 / モデル運用</div>
     <div class="grid2">
       <div><div class="small">表示名</div><input id="keyLabel" style="width:100%" placeholder="例：2026年9月 新キー"></div>
-      <div>
-        <div class="small">AIモデル運用</div>
-        <select id="modelMode" style="width:100%">
-          <option value="auto">自動（質問ごとに適材適所）</option>
-          <option value="manual">手動（下のモデルを固定）</option>
-        </select>
-      </div>
+      <div><div class="small">AIモデル運用</div><select id="modelMode" style="width:100%"><option value="auto">自動（質問ごとに適材適所）</option><option value="manual">手動（下のモデルを固定）</option></select></div>
     </div>
     <div style="margin-top:10px"><div class="small">APIキー</div><input id="keyValue" type="text" style="width:100%" placeholder="Gemini APIキーを貼り付け"></div>
     <div class="grid2" style="margin-top:10px">
-      <div><div class="small">手動モード時のモデル名</div><input id="modelName" style="width:100%" value="gemini-3.8-flash" placeholder="例：gemini-3.8-flash"></div>
-      <div><div class="small">自動モードの目安</div><div class="small" style="padding:10px;border:1px solid rgba(255,255,255,.1);border-radius:10px">短い雑談 → 3.1 Lite<br>通常会話 → 3.6 Flash<br>相談・資料 → 3.7 Flash<br>複雑な依頼 → 3.8 Flash</div></div>
+      <div><div class="small">手動モード時のモデル名</div><select id="modelName" style="width:100%"></select></div>
+      <div><div class="small">自動モードの考え方</div><div class="small" style="padding:10px;border:1px solid rgba(255,255,255,.1);border-radius:10px">短い雑談 → 3.1 Flash-Lite<br>通常 → 3.6 Flash<br>相談・資料 → 3.7 Flash<br>複雑・画像 → 3.8 Flash</div></div>
     </div>
-    <div class="row" style="margin-top:10px"><button class="primary" id="addKeyBtn">このキーを登録</button><button id="saveModelBtn">モデル設定を保存</button></div>
+    <div class="row" style="margin-top:10px"><button class="primary" id="addKeyBtn">このキーを登録</button><button id="saveModelBtn">モデル設定を保存</button><button id="healthBtn" class="blue">🩺 AI接続テスト</button></div>
+    <div id="healthResult" class="small" style="margin-top:8px"></div>
     <div id="keyList"></div>
   </div>
 
   <div class="card">
-    <div class="section">🧠 記憶ファイルを作る</div>
-    <div class="muted">「タイトル」と「詳細」を1ファイルとして保存します。「全員共通」なら全員のライトが参考にします。直接回答ONにすると、そのファイルに明確に一致する質問ではGeminiを呼ばず、詳細をそのまま返します。</div>
-    <div class="grid2" style="margin-top:12px">
-      <div><div class="small">対象</div><select id="memoryScope" style="width:100%"><option value="*">全員共通</option><option value="custom">特定の合言葉</option></select></div>
-      <div id="scopeCustomWrap" class="hidden"><div class="small">合言葉</div><input id="memoryScopeCustom" style="width:100%" placeholder="shout など"></div>
+    <div class="section">👥 ユーザー管理 / 🎸 バンド管理</div>
+    <div class="grid2">
+      <div>
+        <div class="row"><button class="blue" id="loadUsersBtn">ユーザー一覧を更新</button><span id="userListMeta" class="small"></span></div>
+        <div id="userList" class="scroll" style="margin-top:10px"><div class="muted">まだ読み込んでいません。</div></div>
+      </div>
+      <div>
+        <div class="row"><button class="blue" id="loadBandsBtn">バンド一覧を更新</button><span id="bandListMeta" class="small"></span></div>
+        <div id="bandList" class="scroll" style="margin-top:10px"><div class="muted">まだ読み込んでいません。</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section">🧠 ライトの長期記憶（脳ミソ）</div>
+    <div class="muted">ユーザーごとに、モデルがまたいでも引き継ぐ要約と直近20メッセージを保存します。ここから手動で確認・修正できます。</div>
+    <div class="row" style="margin-top:12px"><input id="brainUserId" style="flex:1;min-width:240px" placeholder="ユーザー#バンド（例：ryusei0723#Why's）"><button class="blue" id="loadBrainBtn">読み込む</button></div>
+    <div class="small" style="margin-top:10px">長期記憶</div>
+    <textarea id="brainSummary" placeholder="長期記憶はここに表示されます。" style="min-height:170px"></textarea>
+    <div class="row" style="margin-top:10px"><button class="primary" id="saveBrainBtn">長期記憶を保存</button><button class="danger" id="clearBrainBtn">このユーザーの脳ミソを全消去</button></div>
+    <div id="brainMeta" class="small" style="margin-top:8px"></div>
+    <details style="margin-top:12px"><summary style="cursor:pointer;color:#88c0d0">直近の会話履歴を見る</summary><div id="brainHistory" class="item" style="margin-top:8px"><span class="muted">まだ読み込んでいません。</span></div></details>
+  </div>
+
+  <div class="card">
+    <div class="section">🧠 記憶ファイルを作る / 図書館化</div>
+    <div class="muted">タイトル＋詳細＋タグを1ファイルとして保存します。対象は「部活共通」「バンド共有」「個人」。写真の記憶もここから検索対象になります。</div>
+    <div class="grid3" style="margin-top:12px">
+      <div><div class="small">対象</div><select id="memoryScopeType" style="width:100%"><option value="club">部活共通</option><option value="band">バンド共有</option><option value="personal">個人</option></select></div>
+      <div><div class="small">バンド/ユーザー</div><select id="memoryScopeTarget" style="width:100%"><option value="">対象を選択</option></select></div>
+      <div><div class="small">種類</div><select id="memoryKind" style="width:100%"><option value="text">文章</option><option value="manual">マニュアル</option><option value="history">歴史</option><option value="event">イベント</option><option value="photo">写真</option></select></div>
     </div>
     <div style="margin-top:10px"><div class="small">記憶のタイトル</div><input id="memoryTitle" style="width:100%" placeholder="例：2026年度 文化祭 セトリ"></div>
     <div style="margin-top:10px"><div class="small">詳細</div><textarea id="memoryDetails" placeholder="ここに記憶の中身を書きます。"></textarea></div>
-    <div style="margin-top:10px"><div class="small">検索用キーワード（カンマ区切り）</div><input id="memoryKeywords" style="width:100%" placeholder="文化祭, セトリ, 2026"></div>
+    <div style="margin-top:10px"><div class="small">検索用タグ（カンマ区切り）</div><input id="memoryKeywords" style="width:100%" placeholder="文化祭, セトリ, 2026"></div>
+    <div style="margin-top:10px"><div class="small">出典 / メモ（任意）</div><input id="memorySource" style="width:100%" placeholder="例：2026文化祭資料.pdf / りゅうせい"></div>
     <div class="row" style="margin-top:10px"><label style="font-size:12px"><input type="checkbox" id="directAnswer"> 明確に一致したらAIを使わず直接回答</label><label style="font-size:12px"><input type="checkbox" id="memoryEnabled" checked> 有効</label></div>
     <div class="row" style="margin-top:10px"><button class="blue" id="saveMemoryBtn">記憶ファイルを保存</button><button id="clearMemoryFormBtn">入力をクリア</button></div>
     <input type="hidden" id="editingMemoryId">
-    <div id="memoryList"></div>
+    <div id="memoryList" class="scroll"></div>
+  </div>
+
+  <div class="card">
+    <div class="section">📷 写真ライブラリ（学校の図書館風）</div>
+    <div class="grid2">
+      <div><div class="small">検索</div><input id="photoSearch" style="width:100%" placeholder="例：部室, アンプ, 文化祭"></div>
+      <div><div class="small">対象</div><select id="photoScopeFilter" style="width:100%"><option value="all">すべて</option><option value="club">部活共通</option><option value="band">バンド共有</option><option value="personal">個人</option></select></div>
+    </div>
+    <div class="row" style="margin-top:10px"><button class="blue" id="loadPhotosBtn">写真一覧を更新</button><span id="photoListMeta" class="small"></span></div>
+    <div id="photoList" class="scroll" style="margin-top:10px"><div class="muted">まだ読み込んでいません。</div></div>
+  </div>
+
+  <div class="card">
+    <div class="section">📜 軽音楽部タイムライン / 部史</div>
+    <div class="grid3">
+      <div><div class="small">日付</div><input id="timelineDate" type="date" style="width:100%"></div>
+      <div><div class="small">タイトル</div><input id="timelineTitle" style="width:100%" placeholder="例：文化祭ライブ"></div>
+      <div><div class="small">タグ</div><input id="timelineTags" style="width:100%" placeholder="文化祭, ライブ"></div>
+    </div>
+    <div style="margin-top:10px"><div class="small">詳細</div><textarea id="timelineDetails" placeholder="出来事の詳細"></textarea></div>
+    <div class="row" style="margin-top:10px"><button class="primary" id="saveTimelineBtn">部史に追加</button></div>
+    <div id="timelineList" class="scroll"></div>
+  </div>
+
+  <div class="card">
+    <div class="section">🩺 システム状態</div>
+    <div class="row"><span class="stat">Firebase <strong id="firebaseState">確認中</strong></span><span class="stat">APIキー <strong id="keyCountState">0</strong></span><span class="stat">ユーザー <strong id="userCountState">0</strong></span><span class="stat">バンド <strong id="bandCountState">0</strong></span><span class="stat">記憶ファイル <strong id="memoryCountState">0</strong></span><span class="stat">写真 <strong id="photoCountState">0</strong></span></div>
+    <div class="small" style="margin-top:10px">ここは管理用の目安です。実際のGemini利用可否は、AI接続テストで確認できます。</div>
+  </div>
+
+  <div class="card">
+    <div class="section">💾 バックアップ / 復元</div>
+    <div class="muted">Firestoreの主要データをJSONに書き出します。APIキーは初期状態では含めません。写真本体まで含めるとファイルが大きくなるので、必要なときだけチェックしてください。</div>
+    <div class="row" style="margin-top:12px"><label style="font-size:12px"><input type="checkbox" id="backupIncludePhotos"> 写真本体を含める</label><label style="font-size:12px"><input type="checkbox" id="backupIncludeKeys"> APIキーを含める</label></div>
+    <div class="row" style="margin-top:10px"><button class="blue" id="exportBtn">JSONバックアップを作る</button><input type="file" id="restoreInput" accept="application/json"><button id="restoreBtn">バックアップを復元</button></div>
+    <div id="backupResult" class="small" style="margin-top:8px"></div>
   </div>
 
   <div class="card">
     <div class="section">📚 従来方式の記憶を閲覧</div>
-    <div class="row"><input id="legacyUserId" style="flex:1;min-width:220px" value="shout" placeholder="合言葉"><button class="blue" id="loadLegacyBtn">読み込む</button></div>
+    <div class="row"><input id="legacyUserId" style="flex:1;min-width:220px" value="shout" placeholder="旧合言葉"><button class="blue" id="loadLegacyBtn">読み込む</button></div>
     <div id="legacyView" class="item"><span class="muted">まだ読み込んでいません。</span></div>
   </div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, collection, getDocs, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, addDoc, collection, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
-  authDomain: "light-65413.firebaseapp.com",
-  projectId: "light-65413",
-  storageBucket: "light-65413.firebasestorage.app",
-  messagingSenderId: "116819261632",
-  appId: "1:116819261632:web:9d9144aa125a55371d5525"
-};
-const app=initializeApp(firebaseConfig); const db=getFirestore(app);
-let apiData={apiKeys:[],activeKeyId:'',model:'gemini-3.8-flash',modelMode:'auto'};
-
-const $=id=>document.getElementById(id);
+const firebaseConfig={apiKey:"AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",authDomain:"light-65413.firebaseapp.com",projectId:"light-65413",storageBucket:"light-65413.firebasestorage.app",messagingSenderId:"116819261632",appId:"1:116819261632:web:9d9144aa125a55371d5525"};
+const app=initializeApp(firebaseConfig);const db=getFirestore(app);
+const TEXT_MODELS=['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'];
+let apiData={apiKeys:[],activeKeyId:'',model:'gemini-3.8-flash',modelMode:'auto'};let users=[];let bands=[];let memories=[];let photos=[];let timelines=[];
+const $=id=>document.getElementById(id);const now=()=>Date.now();
 function esc(v){return String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));}
-function stamp(){return Date.now();}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function fillModelOptions(){ $('modelName').innerHTML=TEXT_MODELS.map(m=>`<option value="${m}">${m}</option>`).join(''); }
+fillModelOptions();
 
-$('memoryScope').addEventListener('change',()=> $('scopeCustomWrap').classList.toggle('hidden',$('memoryScope').value!=='custom'));
+async function loadApi(){const s=await getDoc(doc(db,'light_config','main'));if(s.exists()){const d=s.data()||{};apiData={apiKeys:Array.isArray(d.apiKeys)?d.apiKeys:[],activeKeyId:d.activeKeyId||'',model:d.model||'gemini-3.8-flash',modelMode:d.modelMode||'auto'};}else{apiData={apiKeys:[],activeKeyId:'',model:'gemini-3.8-flash',modelMode:'auto'};}$('modelName').value=TEXT_MODELS.includes(apiData.model)?apiData.model:'gemini-3.8-flash';$('modelMode').value=apiData.modelMode;renderKeys();updateStates();}
+function renderKeys(){const box=$('keyList');if(!apiData.apiKeys.length){box.innerHTML='<div class="small" style="margin-top:10px">登録キーはありません。</div>';return;}box.innerHTML=apiData.apiKeys.map((k,i)=>{const active=k.id===apiData.activeKeyId;const key=String(k.key||'');const masked=key.length<=10?key.slice(0,3)+'••••':key.slice(0,5)+'••••••'+key.slice(-4);return `<div class="item"><div class="item-head"><div><span class="item-title">${esc(k.label||`キー${i+1}`)}</span> <span class="tag ${active?'ok':''}">${active?'使用中':'予備'}</span> ${k.lastStatus?`<span class="tag ${k.lastStatus==='ok'?'ok':'danger'}">${esc(k.lastStatus)}</span>`:''}</div><span class="small">${esc(masked)}</span></div><div class="row" style="margin-top:8px"><button data-key-action="active" data-id="${esc(k.id)}">${active?'現在使用中':'このキーを使用'}</button><button class="danger" data-key-action="delete" data-id="${esc(k.id)}">削除</button></div></div>`;}).join('');}
+async function saveApi(){await setDoc(doc(db,'light_config','main'),{apiKeys:apiData.apiKeys,activeKeyId:apiData.activeKeyId,model:apiData.model,modelMode:apiData.modelMode,updatedAt:now()});}
+$('addKeyBtn').addEventListener('click',async()=>{try{const key=$('keyValue').value.trim();if(!key)return alert('APIキーを貼り付けてください。');const label=$('keyLabel').value.trim()||'Gemini APIキー';const item={id:'key-'+now().toString(36)+'-'+Math.random().toString(36).slice(2,7),label,key,enabled:true,createdAt:now(),lastStatus:'未テスト'};apiData.apiKeys.push(item);if(!apiData.activeKeyId)apiData.activeKeyId=item.id;apiData.model=$('modelName').value;apiData.modelMode=$('modelMode').value;await saveApi();$('keyValue').value='';$('keyLabel').value='';renderKeys();updateStates();alert('APIキーを登録しました。');}catch(e){console.error(e);alert('APIキーの保存に失敗しました。');}});
+$('saveModelBtn').addEventListener('click',async()=>{apiData.model=$('modelName').value;apiData.modelMode=$('modelMode').value;await saveApi();alert('モデル設定を保存しました。');});
+$('keyList').addEventListener('click',async e=>{const b=e.target.closest('button[data-key-action]');if(!b)return;const id=b.dataset.id;if(b.dataset.keyAction==='active'){apiData.activeKeyId=id;await saveApi();renderKeys();return;}if(b.dataset.keyAction==='delete'){if(!confirm('このAPIキーを削除しますか？'))return;apiData.apiKeys=apiData.apiKeys.filter(x=>x.id!==id);if(apiData.activeKeyId===id)apiData.activeKeyId=apiData.apiKeys[0]?.id||'';await saveApi();renderKeys();updateStates();}});
 
-async function loadApi(){
-  const s=await getDoc(doc(db,'light_config','main'));
-  if(s.exists()){const d=s.data()||{};apiData={apiKeys:Array.isArray(d.apiKeys)?d.apiKeys:[],activeKeyId:d.activeKeyId||'',model:d.model||'gemini-3.8-flash',modelMode:d.modelMode||'auto'};}
-  $('modelName').value=apiData.model; $('modelMode').value=apiData.modelMode;
-  renderKeys();
-}
-function renderKeys(){
-  const box=$('keyList');
-  if(!apiData.apiKeys.length){box.innerHTML='<div class="small" style="margin-top:10px">登録キーはありません。</div>';return;}
-  box.innerHTML=apiData.apiKeys.map((k,i)=>{
-    const active=k.id===apiData.activeKeyId;
-    const masked=(String(k.key||'').slice(0,5)+'••••••'+String(k.key||'').slice(-4));
-    return `<div class="item"><div class="item-head"><div><span class="item-title">${esc(k.label||('キー'+(i+1)))}</span> <span class="tag ${active?'ok':''}">${active?'使用中':'予備'}</span></div><span class="small">${esc(masked)}</span></div><div class="row" style="margin-top:8px"><button data-act="active" data-id="${esc(k.id)}">${active?'現在使用中':'このキーを使用'}</button><button class="danger" data-act="delete" data-id="${esc(k.id)}">削除</button></div></div>`;
-  }).join('');
-}
-async function saveApi(){
-  await setDoc(doc(db,'light_config','main'),{apiKeys:apiData.apiKeys,activeKeyId:apiData.activeKeyId,model:apiData.model,modelMode:apiData.modelMode,updatedAt:stamp()});
-}
-$('addKeyBtn').addEventListener('click',async()=>{
-  const key=$('keyValue').value.trim(); if(!key)return alert('APIキーを貼り付けてください。');
-  const label=$('keyLabel').value.trim()||'Gemini APIキー';
-  const item={id:'key-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6),label,key,enabled:true,createdAt:stamp()};
-  apiData.apiKeys.push(item); if(!apiData.activeKeyId)apiData.activeKeyId=item.id; apiData.model=$('modelName').value.trim()||'gemini-3.8-flash'; apiData.modelMode=$('modelMode').value||'auto';
-  await saveApi(); $('keyValue').value=''; $('keyLabel').value=''; renderKeys(); alert('APIキーを登録しました。');
-});
-$('saveModelBtn').addEventListener('click',async()=>{apiData.model=$('modelName').value.trim()||'gemini-3.8-flash';apiData.modelMode=$('modelMode').value||'auto';await saveApi();alert(apiData.modelMode==='auto'?'自動モデル選択を保存しました。':'手動モデルを保存しました。');});
-$('keyList').addEventListener('click',async e=>{
-  const btn=e.target.closest('button[data-act]'); if(!btn)return; const id=btn.dataset.id; const act=btn.dataset.act;
-  if(act==='active'){apiData.activeKeyId=id;await saveApi();renderKeys();}
-  if(act==='delete'){if(!confirm('このAPIキーを削除しますか？'))return;apiData.apiKeys=apiData.apiKeys.filter(k=>k.id!==id);if(apiData.activeKeyId===id)apiData.activeKeyId=apiData.apiKeys[0]?.id||'';await saveApi();renderKeys();}
-});
+async function testKey(key,model){const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({contents:[{parts:[{text:'「OK」だけを返してください。'}]}],generationConfig:{temperature:0,maxOutputTokens:10}})});const data=await res.json().catch(()=>({}));return {ok:res.ok,status:res.status,message:data?.error?.message||''};}
+$('healthBtn').addEventListener('click',async()=>{try{await loadApi();if(!apiData.apiKeys.length)return $('healthResult').textContent='APIキーがありません。';const key=apiData.apiKeys.find(k=>k.id===apiData.activeKeyId)||apiData.apiKeys[0];const model=$('modelMode').value==='manual'?$('modelName').value:'gemini-3.6-flash';$('healthResult').textContent='接続テスト中...';const result=await testKey(key.key,model);key.lastStatus=result.ok?'ok':String(result.status);await saveApi();renderKeys();$('healthResult').textContent=result.ok?`🟢 接続OK：${model}`:`🔴 失敗：HTTP ${result.status} ${result.message}`;}catch(e){console.error(e);$('healthResult').textContent='🔴 接続テストに失敗しました。';}});
 
-function clearMemoryForm(){['memoryTitle','memoryDetails','memoryKeywords','memoryScopeCustom','editingMemoryId'].forEach(id=>$(id).value='');$('memoryScope').value='*';$('scopeCustomWrap').classList.add('hidden');$('directAnswer').checked=false;$('memoryEnabled').checked=true;$('saveMemoryBtn').textContent='記憶ファイルを保存';}
+async function loadUsers(){const s=await getDocs(collection(db,'light_users'));users=[];s.forEach(d=>users.push({id:d.id,...(d.data()||{})}));users.sort((a,b)=>Number(b.lastLoginAt||0)-Number(a.lastLoginAt||0));$('userListMeta').textContent=`${users.length}人`;$('userCountState').textContent=users.length;if(!users.length){$('userList').innerHTML='<div class="muted">ユーザーがいません。</div>';return;}$('userList').innerHTML=users.map(u=>`<div class="item"><div class="item-head"><div class="item-title">${esc(u.username||u.id)}</div><span class="tag ok">${Number(u.loginCount||0)}回</span></div><div class="small">${esc(u.bandName||'')} / ${u.lastLoginAt?esc(new Date(u.lastLoginAt).toLocaleString('ja-JP')):'未ログイン'}</div><div class="row" style="margin-top:8px"><button class="blue" data-user="brain" data-id="${esc(u.id)}">個人脳を見る</button><button data-user="memory" data-id="${esc(u.id)}">個人記憶を見る</button></div></div>`);}
+async function loadBands(){const s=await getDocs(collection(db,'light_bands'));bands=[];s.forEach(d=>bands.push({id:d.id,...(d.data()||{})}));bands.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ja'));$('bandListMeta').textContent=`${bands.length}組`;$('bandCountState').textContent=bands.length;renderBandList();refreshScopeTargets();}
+function renderBandList(){if(!bands.length){$('bandList').innerHTML='<div class="muted">バンドがいません。</div>';return;}$('bandList').innerHTML=bands.map(b=>{const count=users.filter(u=>u.bandId===b.id).length;return `<div class="item"><div class="item-head"><div class="item-title">${esc(b.name||b.id)}</div><span class="tag ok">${count}人</span></div><div class="small">登録・更新: ${b.updatedAt?esc(new Date(b.updatedAt).toLocaleString('ja-JP')):'不明'}</div><div class="row" style="margin-top:8px"><button class="blue" data-band="view" data-id="${esc(b.id)}">共有記憶を見る</button></div></div>`;}).join('');}
+$('loadUsersBtn').addEventListener('click',async()=>{try{await loadUsers();}catch(e){console.error(e);alert('ユーザー一覧の読み込みに失敗しました。');}});
+$('loadBandsBtn').addEventListener('click',async()=>{try{await loadBands();}catch(e){console.error(e);alert('バンド一覧の読み込みに失敗しました。');}});
+$('userList').addEventListener('click',async e=>{const b=e.target.closest('button[data-user]');if(!b)return;const id=b.dataset.id;if(b.dataset.user==='brain'){$('brainUserId').value=id;await loadBrain(id);$('brainUserId').scrollIntoView({behavior:'smooth',block:'center'});}if(b.dataset.user==='memory'){await loadMemories();const arr=memories.filter(m=>m.scopeType==='personal'&&m.scopeId===id);renderMemories(arr);window.scrollTo({top:document.getElementById('memoryList').offsetTop-80,behavior:'smooth'});}});
+$('bandList').addEventListener('click',async e=>{const b=e.target.closest('button[data-band]');if(!b)return;const id=b.dataset.id;await loadMemories();const arr=memories.filter(m=>m.scopeType==='band'&&m.scopeId===id);renderMemories(arr);window.scrollTo({top:document.getElementById('memoryList').offsetTop-80,behavior:'smooth'});});
+
+async function loadBrain(uid){const snap=await getDoc(doc(db,'light_brains',uid));if(!snap.exists()){$('brainSummary').value='';$('brainHistory').innerHTML='<div class="muted">このユーザーの脳ミソはまだありません。</div>';$('brainMeta').textContent='';return;}const d=snap.data()||{};$('brainSummary').value=String(d.summary||'');const h=Array.isArray(d.recentHistory)?d.recentHistory:[];$('brainMeta').textContent=`${d.updatedAt?new Date(d.updatedAt).toLocaleString('ja-JP'):'不明'} / ${h.length}メッセージ`;$('brainHistory').innerHTML=h.length?h.map(x=>{const who=x.role==='user'?'あなた':'ライト';const txt=Array.isArray(x.parts)?x.parts.map(p=>p.text||'').join(''):'';return `<div style="margin:7px 0"><strong>${esc(who)}:</strong> ${esc(txt).replace(/\n/g,'<br>')}</div>`;}).join(''):'<div class="muted">会話履歴なし</div>';}
+$('loadBrainBtn').addEventListener('click',async()=>{const uid=$('brainUserId').value.trim();if(!uid)return alert('ユーザー#バンドを入力してください。');try{await loadBrain(uid);}catch(e){console.error(e);alert('脳ミソの読み込みに失敗しました。');}});
+$('saveBrainBtn').addEventListener('click',async()=>{const uid=$('brainUserId').value.trim();if(!uid)return alert('ユーザー#バンドを入力してください。');const snap=await getDoc(doc(db,'light_brains',uid));const old=snap.exists()?snap.data()||{}:{};await setDoc(doc(db,'light_brains',uid),{summary:$('brainSummary').value.trim().slice(0,3500),recentHistory:Array.isArray(old.recentHistory)?old.recentHistory.slice(-20):[],updatedAt:now(),userKey:uid},{merge:true});await loadBrain(uid);alert('長期記憶を保存しました。');});
+$('clearBrainBtn').addEventListener('click',async()=>{const uid=$('brainUserId').value.trim();if(!uid)return alert('ユーザー#バンドを入力してください。');if(!confirm(`「${uid}」の長期記憶と直近会話を消去しますか？`))return;await setDoc(doc(db,'light_brains',uid),{summary:'',recentHistory:[],updatedAt:now()},{merge:true});await loadBrain(uid);alert('脳ミソを消去しました。');});
+
+function scopeLabel(m){if(m.scopeType==='club'||m.scope==='*'||m.scope==='all')return '部活共通';if(m.scopeType==='band')return `バンド：${esc(bands.find(b=>b.id===m.scopeId)?.name||m.scopeId)}`;if(m.scopeType==='personal')return `個人：${esc(users.find(u=>u.id===m.scopeId)?.username||m.scopeId)}`;return esc(m.scope||'不明');}
+function refreshScopeTargets(){const type=$('memoryScopeType').value;const select=$('memoryScopeTarget');if(type==='club'){select.innerHTML='<option value="club">全部員</option>';select.disabled=true;}else if(type==='band'){select.disabled=false;select.innerHTML='<option value="">バンドを選択</option>'+bands.map(b=>`<option value="${esc(b.id)}">${esc(b.name||b.id)}</option>`).join('');}else{select.disabled=false;select.innerHTML='<option value="">ユーザーを選択</option>'+users.map(u=>`<option value="${esc(u.id)}">${esc(u.username||u.id)} / ${esc(u.bandName||'')}</option>`).join('');}}
+$('memoryScopeType').addEventListener('change',refreshScopeTargets);refreshScopeTargets();
+async function loadMemories(){const s=await getDocs(collection(db,'light_memory_files'));memories=[];s.forEach(d=>memories.push({id:d.id,...(d.data()||{})}));memories.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));renderMemories(memories);updateStates();return memories;}
+function renderMemories(arr){const box=$('memoryList');if(!arr.length){box.innerHTML='<div class="muted">該当する記憶ファイルはありません。</div>';return;}box.innerHTML=arr.map(m=>`<div class="item"><div class="item-head"><div class="item-title">${esc(m.title||'無題')}</div><div>${m.directAnswer?'<span class="tag ok">直接回答ON</span>':''}${m.enabled===false?'<span class="tag danger">無効</span>':'<span class="tag">有効</span>'}</div></div><div class="small" style="margin-top:4px">対象: ${scopeLabel(m)} / 種類: ${esc(m.kind||'text')}</div><div style="white-space:pre-wrap;margin-top:8px;font-size:13px">${esc(m.details||'')}</div><div style="margin-top:6px">${(Array.isArray(m.keywords)?m.keywords:[]).map(k=>`<span class="tag">${esc(k)}</span>`).join('')}</div>${m.sourceName?`<div class="small" style="margin-top:6px">出典: ${esc(m.sourceName)}</div>`:''}${m.imageId?`<div class="small" style="margin-top:6px">写真ID: ${esc(m.imageId)}</div>`:''}<div class="row" style="margin-top:8px"><button data-memory="edit" data-id="${esc(m.id)}">編集</button><button class="danger" data-memory="delete" data-id="${esc(m.id)}">削除</button></div></div>`).join('');}
+function clearMemoryForm(){$('editingMemoryId').value='';$('memoryScopeType').value='club';refreshScopeTargets();$('memoryTitle').value='';$('memoryDetails').value='';$('memoryKeywords').value='';$('memorySource').value='';$('memoryKind').value='text';$('directAnswer').checked=false;$('memoryEnabled').checked=true;$('saveMemoryBtn').textContent='記憶ファイルを保存';}
 $('clearMemoryFormBtn').addEventListener('click',clearMemoryForm);
+$('saveMemoryBtn').addEventListener('click',async()=>{try{const title=$('memoryTitle').value.trim();const details=$('memoryDetails').value.trim();if(!title||!details)return alert('タイトルと詳細を入力してください。');const type=$('memoryScopeType').value;const target=type==='club'?'club':$('memoryScopeTarget').value;if(!target)return alert('対象を選択してください。');const data={title,details,scopeType:type,scopeId:target,kind:$('memoryKind').value,keywords:$('memoryKeywords').value.split(',').map(x=>x.trim()).filter(Boolean),sourceName:$('memorySource').value.trim(),directAnswer:$('directAnswer').checked,enabled:$('memoryEnabled').checked,updatedAt:now()};const id=$('editingMemoryId').value.trim();if(id)await updateDoc(doc(db,'light_memory_files',id),data);else{data.createdAt=now();await addDoc(collection(db,'light_memory_files'),data);}await loadMemories();clearMemoryForm();alert('記憶ファイルを保存しました。');}catch(e){console.error(e);alert('記憶ファイルの保存に失敗しました。');}});
+$('memoryList').addEventListener('click',async e=>{const b=e.target.closest('button[data-memory]');if(!b)return;const id=b.dataset.id;const m=memories.find(x=>x.id===id);if(!m)return;if(b.dataset.memory==='delete'){if(!confirm('この記憶ファイルを削除しますか？'))return;await deleteDoc(doc(db,'light_memory_files',id));await loadMemories();return;}if(b.dataset.memory==='edit'){$('editingMemoryId').value=id;$('memoryScopeType').value=m.scopeType||((m.scope==='*'||m.scope==='all')?'club':(users.some(u=>u.id===m.scope)?'personal':'personal'));refreshScopeTargets();if(m.scopeType!=='club')$('memoryScopeTarget').value=m.scopeId||m.scope||'';$('memoryTitle').value=m.title||'';$('memoryDetails').value=m.details||'';$('memoryKeywords').value=(m.keywords||[]).join(', ');$('memorySource').value=m.sourceName||'';$('memoryKind').value=m.kind||'text';$('directAnswer').checked=!!m.directAnswer;$('memoryEnabled').checked=m.enabled!==false;$('saveMemoryBtn').textContent='この記憶ファイルを更新';window.scrollTo({top:document.getElementById('memoryTitle').offsetTop-120,behavior:'smooth'});}});
 
-async function loadMemories(){
-  const snap=await getDocs(collection(db,'light_memory_files')); const arr=[]; snap.forEach(d=>arr.push({id:d.id,...(d.data()||{})}));
-  arr.sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)); renderMemories(arr);
-  return arr;
+async function loadPhotos(){const s=await getDocs(collection(db,'light_images'));photos=[];s.forEach(d=>photos.push({id:d.id,...(d.data()||{})}));photos.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));renderPhotos();updateStates();}
+function photoMatches(p){const q=$('photoSearch').value.trim().toLowerCase();const scope=$('photoScopeFilter').value;if(scope!=='all'&&p.scopeType!==scope)return false;if(!q)return true;const hay=[p.title,p.bandName,p.username,p.humanNote,p.aiObservation,...(p.tags||[])].join(' ').toLowerCase();return hay.includes(q);}
+function renderPhotos(){const arr=photos.filter(photoMatches);$('photoListMeta').textContent=`${arr.length}件 / 全${photos.length}件`;$('photoList').innerHTML=arr.length?arr.map(p=>`<div class="item"><div class="split"><div><img class="thumb" src="" alt="写真" data-photo-thumb="${esc(p.id)}"><div class="small" style="margin-top:5px">${p.createdAt?esc(new Date(p.createdAt).toLocaleString('ja-JP')):''}</div></div><div class="grow"><div class="item-title">${esc(p.title||'写真')}</div><div class="small">${esc(p.username||'')} / ${esc(p.bandName||'')} / ${esc(p.scopeType||'')}</div><div style="margin-top:5px">${(p.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="small" style="margin-top:5px">AI観察：${esc(p.aiObservation||'なし')}</div><div class="small" style="margin-top:5px">人間メモ：${esc(p.humanNote||'なし')}</div><div class="row" style="margin-top:7px"><button data-photo-action="view" data-id="${esc(p.id)}">写真を見る</button><button class="danger" data-photo-action="delete" data-id="${esc(p.id)}">写真を削除</button></div></div></div></div>`).join(''):'<div class="muted">該当する写真がありません。</div>';const thumbs=[...document.querySelectorAll('[data-photo-thumb]')].slice(0,24);for(const img of thumbs)loadPhotoDataUrl(img.dataset.photoThumb).then(url=>{if(url)img.src=url;}).catch(()=>{});}
+$('photoSearch').addEventListener('input',renderPhotos);$('photoScopeFilter').addEventListener('change',renderPhotos);$('loadPhotosBtn').addEventListener('click',async()=>{try{await loadPhotos();}catch(e){console.error(e);alert('写真一覧の読み込みに失敗しました。');}});
+async function loadPhotoDataUrl(imageId){const info=photos.find(p=>p.id===imageId);if(!info)return '';const s=await getDocs(collection(db,'light_images',imageId,'chunks'));const chunks=[];s.forEach(d=>chunks.push({i:Number(d.data()?.index??d.id),data:String(d.data()?.data||'')}));chunks.sort((a,b)=>a.i-b.i);return chunks.map(x=>x.data).join('');}
+$('photoList').addEventListener('click',async e=>{const b=e.target.closest('button[data-photo-action]');if(!b)return;const id=b.dataset.id;const p=photos.find(x=>x.id===id);if(!p)return;if(b.dataset.photoAction==='view'){const url=await loadPhotoDataUrl(id);if(url)window.open(url,'_blank','noopener');else alert('写真本体を読み込めませんでした。');}else{if(!confirm(`「${p.title||'写真'}」を写真本体と一緒に削除しますか？`))return;const s=await getDocs(collection(db,'light_images',id,'chunks'));await Promise.all(s.docs.map(d=>deleteDoc(d.ref)));await deleteDoc(doc(db,'light_images',id));const fs=await getDocs(collection(db,'light_memory_files'));for(const d of fs.docs)if((d.data()||{}).imageId===id)await deleteDoc(d.ref);await loadPhotos();await loadMemories();}});
+
+async function loadTimeline(){const s=await getDocs(collection(db,'light_history'));timelines=[];s.forEach(d=>timelines.push({id:d.id,...(d.data()||{})}));timelines.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));renderTimeline();}
+function renderTimeline(){if(!timelines.length){$('timelineList').innerHTML='<div class="muted">部史はまだありません。</div>';return;}$('timelineList').innerHTML=timelines.map(t=>`<div class="item"><div class="item-head"><div class="item-title">${esc(t.date||'')} ${esc(t.title||'')}</div><button class="danger" data-timeline-delete="${esc(t.id)}">削除</button></div><div class="small">${(t.tags||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div><div style="white-space:pre-wrap;margin-top:8px">${esc(t.details||'')}</div></div>`).join('');}
+$('saveTimelineBtn').addEventListener('click',async()=>{const date=$('timelineDate').value;const title=$('timelineTitle').value.trim();const details=$('timelineDetails').value.trim();if(!date||!title||!details)return alert('日付・タイトル・詳細を入力してください。');await addDoc(collection(db,'light_history'),{date,title,details,tags:$('timelineTags').value.split(',').map(x=>x.trim()).filter(Boolean),createdAt:now()});$('timelineDate').value='';$('timelineTitle').value='';$('timelineDetails').value='';$('timelineTags').value='';await loadTimeline();alert('部史に追加しました。');});
+$('timelineList').addEventListener('click',async e=>{const id=e.target.closest('[data-timeline-delete]')?.dataset.timelineDelete;if(!id)return;if(!confirm('この部史を削除しますか？'))return;await deleteDoc(doc(db,'light_history',id));await loadTimeline();});
+
+async function loadLegacy(uid){const s=await getDoc(doc(db,'light_memories',uid));if(!s.exists()){$('legacyView').innerHTML='<div class="muted">この旧合言葉の記憶はありません。</div>';return;}const d=s.data()||{};$('legacyView').innerHTML=`<div><strong>${esc(uid)}</strong></div><div style="margin-top:8px"><span class="tag">自己改善 ${Array.isArray(d.reflections)?d.reflections.length:0}件</span><span class="tag">事実 ${Array.isArray(d.facts)?d.facts.length:0}件</span></div><div style="margin-top:10px"><strong>【反省・学習ルール】</strong><div class="small" style="white-space:pre-wrap;margin-top:5px">${esc((d.reflections||[]).join('\n'))||'(なし)'}</div></div><div style="margin-top:10px"><strong>【事実記憶】</strong><div class="small" style="white-space:pre-wrap;margin-top:5px">${esc((d.facts||[]).join('\n'))||'(なし)'}</div></div>`;}
+$('loadLegacyBtn').addEventListener('click',async()=>{const uid=$('legacyUserId').value.trim();if(!uid)return;try{await loadLegacy(uid);}catch(e){console.error(e);alert('旧記憶の読み込みに失敗しました。');}});
+
+async function getCollectionData(name){const s=await getDocs(collection(db,name));const arr=[];s.forEach(d=>arr.push({id:d.id,data:d.data()||{}}));return arr;}
+async function exportBackup(){
+  const collections=['light_users','light_bands','light_brains','light_memory_files','light_memories','light_history','light_system'];const result={version:'mightyX-1',exportedAt:new Date().toISOString(),collections:{}};
+  for(const name of collections){try{result.collections[name]=await getCollectionData(name);}catch(e){result.collections[name]=[];}}
+  result.collections.light_config=[];const cfg=apiData;result.collections.light_config=[{id:'main',data:{...cfg,apiKeys:$('backupIncludeKeys').checked?cfg.apiKeys:[]}}];
+  result.collections.light_images=await getCollectionData('light_images');
+  result.imageChunks=[];
+  if($('backupIncludePhotos').checked){for(const p of result.collections.light_images){const s=await getDocs(collection(db,'light_images',p.id,'chunks'));s.forEach(d=>result.imageChunks.push({imageId:p.id,id:d.id,data:d.data()||{}}));}}
+  const blob=new Blob([JSON.stringify(result)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`light-mightyX-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);$('backupResult').textContent=`バックアップ作成完了：${(blob.size/1024/1024).toFixed(2)} MB`;
 }
-function renderMemories(arr){
-  const box=$('memoryList'); if(!arr.length){box.innerHTML='<div class="small" style="margin-top:10px">記憶ファイルはまだありません。</div>';return;}
-  box.innerHTML=arr.map(m=>`<div class="item"><div class="item-head"><div class="item-title">${esc(m.title||'無題')}</div><div>${m.directAnswer?'<span class="tag ok">直接回答ON</span>':''}${m.enabled===false?'<span class="tag danger">無効</span>':'<span class="tag">有効</span>'}</div></div><div class="small" style="margin-top:4px">対象: ${esc(m.scope==='*'?'全員共通':m.scope||'全員共通')}</div><div style="white-space:pre-wrap;margin-top:8px;font-size:13px">${esc(m.details||'')}</div><div style="margin-top:6px">${(Array.isArray(m.keywords)?m.keywords:[]).map(k=>`<span class="tag">${esc(k)}</span>`).join('')}</div><div class="row" style="margin-top:8px"><button data-m="edit" data-id="${esc(m.id)}">編集</button><button class="danger" data-m="delete" data-id="${esc(m.id)}">削除</button></div></div>`).join('');
-}
-$('saveMemoryBtn').addEventListener('click',async()=>{
-  const title=$('memoryTitle').value.trim(); const details=$('memoryDetails').value.trim(); if(!title||!details)return alert('タイトルと詳細を入力してください。');
-  const scope=$('memoryScope').value==='custom'?$('memoryScopeCustom').value.trim():'*'; if(!scope)return alert('対象の合言葉を入力してください。');
-  const data={title,details,scope,keywords:$('memoryKeywords').value.split(',').map(x=>x.trim()).filter(Boolean),directAnswer:$('directAnswer').checked,enabled:$('memoryEnabled').checked,updatedAt:stamp()};
-  const id=$('editingMemoryId').value.trim(); if(id){await updateDoc(doc(db,'light_memory_files',id),data);} else {data.createdAt=stamp();await addDoc(collection(db,'light_memory_files'),data);} await loadMemories(); clearMemoryForm(); alert('記憶ファイルを保存しました。');
-});
-$('memoryList').addEventListener('click',async e=>{const b=e.target.closest('button[data-m]');if(!b)return;const id=b.dataset.id;const arr=await loadMemories();const m=arr.find(x=>x.id===id);if(!m)return;if(b.dataset.m==='delete'){if(!confirm('この記憶ファイルを削除しますか？'))return;await deleteDoc(doc(db,'light_memory_files',id));await loadMemories();return;}if(b.dataset.m==='edit'){ $('editingMemoryId').value=id;$('memoryTitle').value=m.title||'';$('memoryDetails').value=m.details||'';$('memoryKeywords').value=(m.keywords||[]).join(', ');$('directAnswer').checked=!!m.directAnswer;$('memoryEnabled').checked=m.enabled!==false;if(m.scope==='*'||!m.scope){$('memoryScope').value='*';$('scopeCustomWrap').classList.add('hidden');}else{$('memoryScope').value='custom';$('scopeCustomWrap').classList.remove('hidden');$('memoryScopeCustom').value=m.scope;}$('saveMemoryBtn').textContent='この記憶ファイルを更新';window.scrollTo({top:0,behavior:'smooth'});}});
+$('exportBtn').addEventListener('click',async()=>{try{$('backupResult').textContent='バックアップ作成中...';await loadApi();await exportBackup();}catch(e){console.error(e);$('backupResult').textContent='🔴 バックアップ作成に失敗しました。';}});
+$('restoreBtn').addEventListener('click',async()=>{const f=$('restoreInput').files?.[0];if(!f)return alert('バックアップJSONを選択してください。');if(!confirm('バックアップの内容でFirestoreを上書きします。続けますか？'))return;try{const data=JSON.parse(await f.text());const allowed=['light_users','light_bands','light_brains','light_memory_files','light_memories','light_history','light_system','light_config','light_images'];for(const name of allowed){for(const item of (data.collections?.[name]||[])){await setDoc(doc(db,name,item.id),item.data||{});}}for(const ch of (data.imageChunks||[])){await setDoc(doc(db,'light_images',ch.imageId,'chunks',ch.id),ch.data||{});}await Promise.all([loadApi(),loadUsers(),loadBands(),loadMemories(),loadPhotos(),loadTimeline()]);$('backupResult').textContent='🟢 復元が完了しました。';alert('バックアップを復元しました。');}catch(e){console.error(e);$('backupResult').textContent='🔴 復元に失敗しました。';alert('復元に失敗しました。JSONが正しいか確認してください。');}});
 
-$('loadLegacyBtn').addEventListener('click',async()=>{const uid=$('legacyUserId').value.trim();if(!uid)return;const s=await getDoc(doc(db,'light_memories',uid));if(!s.exists()){$('legacyView').innerHTML='<div class="muted">この合言葉の従来型記憶はありません。</div>';return;}const d=s.data()||{};$('legacyView').innerHTML=`<div><strong>合言葉:</strong> ${esc(uid)}</div><div style="margin-top:10px"><span class="tag">自己改善ルール ${Array.isArray(d.reflections)?d.reflections.length:0}件</span><span class="tag">事実記憶 ${Array.isArray(d.facts)?d.facts.length:0}件</span></div><div style="margin-top:12px"><strong>【反省・学習ルール】</strong><div class="small" style="white-space:pre-wrap;margin-top:6px">${esc((d.reflections||[]).join('\n'))||'(なし)'}</div></div><div style="margin-top:12px"><strong>【事実記憶】</strong><div class="small" style="white-space:pre-wrap;margin-top:6px">${esc((d.facts||[]).join('\n'))||'(なし)'}</div></div>`;});
-$('reloadBtn').addEventListener('click',async()=>{await loadApi();await loadMemories();});
-
-(async()=>{try{await loadApi();await loadMemories();}catch(e){console.error(e);alert('読み込みに失敗しました。Firestoreのルールを確認してください。');}})();
+function updateStates(){$('keyCountState').textContent=apiData.apiKeys.filter(k=>k&&k.key).length;$('memoryCountState').textContent=memories.length;$('photoCountState').textContent=photos.length;}
+$('reloadBtn').addEventListener('click',async()=>{try{await loadApi();await loadUsers();await loadBands();await loadMemories();await loadPhotos();await loadTimeline();$('firebaseState').textContent='OK';$('firebaseState').className='good';}catch(e){console.error(e);$('firebaseState').textContent='ERROR';$('firebaseState').className='bad';alert('更新に失敗しました。Firestoreルールを確認してください。');}});
+(async()=>{try{await loadApi();await loadUsers();await loadBands();await loadMemories();await loadPhotos();await loadTimeline();$('firebaseState').textContent='OK';$('firebaseState').className='good';}catch(e){console.error(e);$('firebaseState').textContent='ERROR';$('firebaseState').className='bad';alert('初期読み込みに失敗しました。Firestoreルールを確認してください。');}})();
 </script>
 </body>
 </html>
