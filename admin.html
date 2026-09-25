@@ -3,25 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ライト OS 管理者サイト v8.6</title>
+<title>ライト OS 管理者サイト v8.7</title>
 <style>
 body{background:#0b0c10;color:#fff;font-family:'Helvetica Neue',Arial,sans-serif;margin:0;min-height:100vh;padding:24px;box-sizing:border-box}.wrap{width:94%;max-width:900px;margin:0 auto}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.title{color:#ff7eb3;font-weight:bold;font-size:22px;letter-spacing:2px}.sub{color:#88c0d0;font-size:12px}.card{background:#161823;border:1px solid rgba(255,126,179,.4);border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 0 25px rgba(255,126,179,.08)}.section{color:#88c0d0;font-size:13px;border-bottom:1px dashed #88c0d0;padding-bottom:6px;margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.row>*{box-sizing:border-box}input,textarea,select,button{font:inherit;border-radius:10px;border:1px solid rgba(255,255,255,.18);padding:10px;background:rgba(0,0,0,.35);color:#fff;outline:none}input,select{min-height:40px}textarea{width:100%;min-height:120px;resize:vertical}button{cursor:pointer;font-weight:bold}button.primary{background:linear-gradient(135deg,#ff758c,#ff7eb3);border:none}button.blue{background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff}.muted{color:#aaa;font-size:12px;line-height:1.6}.small{font-size:11px;color:#aaa}.item{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;margin-top:10px;background:rgba(255,255,255,.03)}.item-head{display:flex;justify-content:space-between;gap:10px;align-items:center}.item-title{color:#ff7eb3;font-weight:bold}.tag{display:inline-block;font-size:10px;padding:3px 7px;border-radius:10px;border:1px solid #88c0d0;color:#88c0d0;margin:3px}.danger{border-color:#bf616a;color:#bf616a}.ok{border-color:#a3be8c;color:#a3be8c}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:700px){.grid2{grid-template-columns:1fr}.header{align-items:flex-start;flex-direction:column;gap:8px}.wrap{width:100%}}.notice{padding:10px;border-radius:10px;background:rgba(241,196,15,.09);border:1px solid #f1c40f;color:#f1c40f;font-size:12px;margin-bottom:12px}.hidden{display:none!important}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="header"><div><div class="title">✨ ライト OS 管理者</div><div class="sub">API設定 / 記憶ファイル / 旧記憶の閲覧</div></div><button id="reloadBtn">🔄 更新</button></div>
+  <div class="header"><div><div class="title">✨ ライト OS 管理者</div><div class="sub">API設定 / 自動モデル選択 / 記憶ファイル / 旧記憶の閲覧</div></div><button id="reloadBtn">🔄 更新</button></div>
 
-  <div class="notice">このページではGemini APIキーをFirestoreへ保存します。現在のindex.htmlは、この管理画面で登録した「使用中」のキーを読み込んで使います。複数キーは予備用として登録できますが、429（利用上限）では自動切替しません。</div>
+  <div class="notice">Gemini APIキーはこの管理画面で登録します。自動モードでは質問内容に応じて3.1 Flash-Lite / 3.5 Flash-Lite / 3.5 Flash / 3.6 Flash / 3.7 Flash / 3.8 Flashを使い分けます。混雑やモデル固有の制限が出た場合は、別モデルへ順番にフォールバックします。複数キーは無効キーの予備として使いますが、キーを回してプロジェクトの無料枠を増やす仕組みではありません。</div>
 
   <div class="card">
     <div class="section">🔑 Gemini APIキー管理</div>
     <div class="grid2">
       <div><div class="small">表示名</div><input id="keyLabel" style="width:100%" placeholder="例：2026年9月 新キー"></div>
-      <div><div class="small">モデル名</div><input id="modelName" style="width:100%" value="gemini-3.8-flash"></div>
+      <div>
+        <div class="small">AIモデル運用</div>
+        <select id="modelMode" style="width:100%">
+          <option value="auto">自動（質問ごとに適材適所）</option>
+          <option value="manual">手動（下のモデルを固定）</option>
+        </select>
+      </div>
     </div>
     <div style="margin-top:10px"><div class="small">APIキー</div><input id="keyValue" type="text" style="width:100%" placeholder="Gemini APIキーを貼り付け"></div>
-    <div class="row" style="margin-top:10px"><button class="primary" id="addKeyBtn">このキーを登録</button><button id="saveModelBtn">モデル名を保存</button></div>
+    <div class="grid2" style="margin-top:10px">
+      <div><div class="small">手動モード時のモデル名</div><input id="modelName" style="width:100%" value="gemini-3.8-flash" placeholder="例：gemini-3.8-flash"></div>
+      <div><div class="small">自動モードの目安</div><div class="small" style="padding:10px;border:1px solid rgba(255,255,255,.1);border-radius:10px">短い雑談 → 3.1 Lite<br>通常会話 → 3.6 Flash<br>相談・資料 → 3.7 Flash<br>複雑な依頼 → 3.8 Flash</div></div>
+    </div>
+    <div class="row" style="margin-top:10px"><button class="primary" id="addKeyBtn">このキーを登録</button><button id="saveModelBtn">モデル設定を保存</button></div>
     <div id="keyList"></div>
   </div>
 
@@ -61,7 +71,7 @@ const firebaseConfig = {
   appId: "1:116819261632:web:9d9144aa125a55371d5525"
 };
 const app=initializeApp(firebaseConfig); const db=getFirestore(app);
-let apiData={apiKeys:[],activeKeyId:'',model:'gemini-3.8-flash'};
+let apiData={apiKeys:[],activeKeyId:'',model:'gemini-3.8-flash',modelMode:'auto'};
 
 const $=id=>document.getElementById(id);
 function esc(v){return String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));}
@@ -71,8 +81,8 @@ $('memoryScope').addEventListener('change',()=> $('scopeCustomWrap').classList.t
 
 async function loadApi(){
   const s=await getDoc(doc(db,'light_config','main'));
-  if(s.exists()){const d=s.data()||{};apiData={apiKeys:Array.isArray(d.apiKeys)?d.apiKeys:[],activeKeyId:d.activeKeyId||'',model:d.model||'gemini-3.8-flash'};}
-  $('modelName').value=apiData.model;
+  if(s.exists()){const d=s.data()||{};apiData={apiKeys:Array.isArray(d.apiKeys)?d.apiKeys:[],activeKeyId:d.activeKeyId||'',model:d.model||'gemini-3.8-flash',modelMode:d.modelMode||'auto'};}
+  $('modelName').value=apiData.model; $('modelMode').value=apiData.modelMode;
   renderKeys();
 }
 function renderKeys(){
@@ -85,16 +95,16 @@ function renderKeys(){
   }).join('');
 }
 async function saveApi(){
-  await setDoc(doc(db,'light_config','main'),{apiKeys:apiData.apiKeys,activeKeyId:apiData.activeKeyId,model:apiData.model,updatedAt:stamp()});
+  await setDoc(doc(db,'light_config','main'),{apiKeys:apiData.apiKeys,activeKeyId:apiData.activeKeyId,model:apiData.model,modelMode:apiData.modelMode,updatedAt:stamp()});
 }
 $('addKeyBtn').addEventListener('click',async()=>{
   const key=$('keyValue').value.trim(); if(!key)return alert('APIキーを貼り付けてください。');
   const label=$('keyLabel').value.trim()||'Gemini APIキー';
   const item={id:'key-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6),label,key,enabled:true,createdAt:stamp()};
-  apiData.apiKeys.push(item); if(!apiData.activeKeyId)apiData.activeKeyId=item.id; apiData.model=$('modelName').value.trim()||'gemini-3.8-flash';
+  apiData.apiKeys.push(item); if(!apiData.activeKeyId)apiData.activeKeyId=item.id; apiData.model=$('modelName').value.trim()||'gemini-3.8-flash'; apiData.modelMode=$('modelMode').value||'auto';
   await saveApi(); $('keyValue').value=''; $('keyLabel').value=''; renderKeys(); alert('APIキーを登録しました。');
 });
-$('saveModelBtn').addEventListener('click',async()=>{apiData.model=$('modelName').value.trim()||'gemini-3.8-flash';await saveApi();alert('モデル名を保存しました。');});
+$('saveModelBtn').addEventListener('click',async()=>{apiData.model=$('modelName').value.trim()||'gemini-3.8-flash';apiData.modelMode=$('modelMode').value||'auto';await saveApi();alert(apiData.modelMode==='auto'?'自動モデル選択を保存しました。':'手動モデルを保存しました。');});
 $('keyList').addEventListener('click',async e=>{
   const btn=e.target.closest('button[data-act]'); if(!btn)return; const id=btn.dataset.id; const act=btn.dataset.act;
   if(act==='active'){apiData.activeKeyId=id;await saveApi();renderKeys();}
