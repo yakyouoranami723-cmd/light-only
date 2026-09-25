@@ -124,7 +124,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, addDoc, collection, getDocs, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, addDoc, collection, getDocs, deleteDoc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
@@ -152,10 +152,12 @@
     window.conversationHistory = [];
     window.memoryFiles = [];
     window.photoMemories = [];
+    window.timelineEntries = [];
     window.lightBrain = { summary:'', recentHistory:[] };
     window.apiConfig = { apiKeys:[], activeKeyId:'', model:'gemini-3.8-flash', modelMode:'auto' };
     let sessionUserKey = '';
     let sessionUserName = '';
+    let sessionDisplayName = '';
     let sessionBandId = '';
     let sessionBandName = '';
     let currentPhoto = null;
@@ -175,6 +177,45 @@
     function esc(value){ return String(value ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s])); }
     function sleep(ms){ return new Promise(resolve => setTimeout(resolve, ms)); }
     function canonicalPart(value){ return String(value || '').trim().toLowerCase(); }
+    function romanToKatakana(input){
+      let s=String(input||'').toLowerCase().replace(/[^a-z]/g,'');
+      if(!s)return '';
+      const map={
+        'rya':'リャ','ryu':'リュウ','ryo':'リョ','kya':'キャ','kyu':'キュ','kyo':'キョ','gya':'ギャ','gyu':'ギュ','gyo':'ギョ',
+        'sha':'シャ','shu':'シュ','she':'シェ','sho':'ショ','sya':'シャ','syu':'シュ','syo':'ショ',
+        'cha':'チャ','chu':'チュ','che':'チェ','cho':'チョ','cya':'チャ','cyu':'チュ','cyo':'チョ',
+        'ja':'ジャ','ju':'ジュ','je':'ジェ','jo':'ジョ','jya':'ジャ','jyu':'ジュ','jyo':'ジョ',
+        'nya':'ニャ','nyu':'ニュ','nyo':'ニョ','hya':'ヒャ','hyu':'ヒュ','hyo':'ヒョ',
+        'bya':'ビャ','byu':'ビュ','byo':'ビョ','pya':'ピャ','pyu':'ピュ','pyo':'ピョ','mya':'ミャ','myu':'ミュ','myo':'ミョ',
+        'fa':'ファ','fi':'フィ','fe':'フェ','fo':'フォ','fyu':'フュ','fyo':'フョ',
+        'va':'ヴァ','vi':'ヴィ','vu':'ヴ','ve':'ヴェ','vo':'ヴォ',
+        'shi':'シ','chi':'チ','tsu':'ツ','ji':'ジ','fu':'フ','hu':'フ',
+        'kwa':'クァ','kwi':'クィ','kwe':'クェ','kwo':'クォ','gwa':'グァ','gwi':'グィ','gwe':'グェ','gwo':'グォ',
+        'twu':'トゥ','dwu':'ドゥ','we':'ウェ','wi':'ウィ','wo':'ウォ','ye':'イェ',
+        'aa':'アー','ii':'イー','uu':'ウー','ee':'エー','oo':'オー','ou':'オウ','ei':'エイ',
+        'a':'ア','i':'イ','u':'ウ','e':'エ','o':'オ',
+        'ka':'カ','ki':'キ','ku':'ク','ke':'ケ','ko':'コ','ga':'ガ','gi':'ギ','gu':'グ','ge':'ゲ','go':'ゴ',
+        'sa':'サ','si':'シ','su':'ス','se':'セ','so':'ソ','za':'ザ','zi':'ジ','zu':'ズ','ze':'ゼ','zo':'ゾ',
+        'ta':'タ','ti':'チ','tu':'ツ','te':'テ','to':'ト','da':'ダ','di':'ヂ','du':'ヅ','de':'デ','do':'ド',
+        'na':'ナ','ni':'ニ','nu':'ヌ','ne':'ネ','no':'ノ','ha':'ハ','hi':'ヒ','he':'ヘ','ho':'ホ',
+        'ba':'バ','bi':'ビ','bu':'ブ','be':'ベ','bo':'ボ','pa':'パ','pi':'ピ','pu':'プ','pe':'ペ','po':'ポ',
+        'ma':'マ','mi':'ミ','mu':'ム','me':'メ','mo':'モ','ya':'ヤ','yu':'ユ','yo':'ヨ',
+        'ra':'ラ','ri':'リ','ru':'ル','re':'レ','ro':'ロ','wa':'ワ','n':'ン'
+      };
+      // Common Japanese-name patterns where the romanization commonly omits a long vowel.
+      const nameOverrides={'ryusei':'リュウセイ','ryuusei':'リュウセイ','souta':'ソウタ','shouta':'ショウタ','shota':'ショウタ','yuuki':'ユウキ','yuuta':'ユウタ','yuya':'ユウヤ','kouki':'コウキ','kouya':'コウヤ','kouta':'コウタ'};
+      if(nameOverrides[s])return nameOverrides[s];
+      const keys=Object.keys(map).sort((a,b)=>b.length-a.length);
+      let out='';let i=0;
+      while(i<s.length){
+        if(i+1<s.length && s[i]===s[i+1] && /[bcdfghjklmpqrstvwxyz]/.test(s[i]) && s[i]!=='n'){out+='ッ';i++;continue;}
+        if(s[i]==='n' && (i===s.length-1 || !/[aiueoy]/.test(s[i+1]))){out+='ン';i++;continue;}
+        let found='';
+        for(const k of keys){if(s.startsWith(k,i)){found=k;break;}}
+        if(found){out+=map[found];i+=found.length;}else{out+=s[i].toUpperCase();i++;}
+      }
+      return out;
+    }
     function parseCredential(raw){
       const v = String(raw || '').trim();
       const first = v.indexOf('#');
@@ -257,6 +298,7 @@
           username: parsed.username,
           bandId: bandDocId(parsed.bandCanonical),
           bandName: parsed.bandName,
+          displayName: romanToKatakana(parsed.username),
           createdAt: stamp,
           lastLoginAt: stamp,
           loginCount: 1
@@ -267,6 +309,7 @@
           username: parsed.username,
           bandId: old.bandId || bandDocId(parsed.bandCanonical),
           bandName: old.bandName || parsed.bandName,
+          displayName: old.displayName || romanToKatakana(parsed.username),
           lastLoginAt: stamp,
           loginCount: Number(old.loginCount || 0) + 1
         }, {merge:true});
@@ -287,13 +330,14 @@
     async function bootSession(parsed){
       sessionUserKey = parsed.userKey;
       sessionUserName = parsed.username;
+      sessionDisplayName = romanToKatakana(parsed.username) || parsed.username;
       sessionBandId = bandDocId(parsed.bandCanonical);
       sessionBandName = parsed.bandName;
       localStorage.setItem('light_last_login', `${sessionUserName}#${sessionBandName}`);
       $('sync-id-input').value = `${sessionUserName}#${sessionBandName}`;
-      $('current-user-label').textContent = sessionUserName;
+      $('current-user-label').textContent = sessionDisplayName;
       $('current-band-label').textContent = sessionBandName;
-      $('identity-label').textContent = `${sessionUserName} / ${sessionBandName}`;
+      $('identity-label').textContent = `${sessionDisplayName} / ${sessionBandName}`;
       loginScreen.style.display = 'none';
       mainApp.style.display = 'flex';
       resetSessionState();
@@ -315,7 +359,7 @@
     $('login-id-input').addEventListener('keypress', e => { if(e.key === 'Enter') $('execute-login-btn').click(); });
 
     function resetSessionState(){
-      window.selfReflections=[]; window.userFacts=[]; window.pdfKnowledge=''; window.conversationHistory=[]; window.memoryFiles=[]; window.photoMemories=[]; window.lightBrain={summary:'',recentHistory:[]}; currentPhoto=null; lastConversationImage=null; lastConversationImageTitle='';
+      window.selfReflections=[]; window.userFacts=[]; window.pdfKnowledge=''; window.conversationHistory=[]; window.memoryFiles=[]; window.photoMemories=[]; window.timelineEntries=[]; window.lightBrain={summary:'',recentHistory:[]}; currentPhoto=null; lastConversationImage=null; lastConversationImageTitle='';
       clearPhotoAttachment();
       chatLog.innerHTML='<div class="msg-sys"><strong>システム:</strong> クラウド連携中...</div>';
       updateUI();
@@ -387,6 +431,55 @@
       window.photoMemories.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
     }
 
+
+    async function loadTimeline(){
+      const snap=await getDocs(collection(db,'light_history'));
+      window.timelineEntries=[];
+      snap.forEach(d=>window.timelineEntries.push({id:d.id,...(d.data()||{})}));
+      window.timelineEntries.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.createdAt||0)-Number(a.createdAt||0));
+    }
+    function buildTimelineContext(){
+      const arr=(window.timelineEntries||[]).slice(0,24);
+      if(!arr.length)return '';
+      let out='\n\n【軽音楽部タイムライン / 部史】\n';
+      for(const t of arr){const line=`id=${t.id} | ${t.date||''} | ${t.title||''} | ${(t.tags||[]).join(', ')}\n${t.details||''}\n`;if((out+line).length>8000)break;out+=line+'\n';}
+      return out;
+    }
+    function explicitHistoryCommand(text){
+      const q=String(text||'');
+      return (/(部史|タイムライン)/.test(q) && /(追加|登録|記録|載せ|加えて|修正|更新|編集|直し|書き換え|しておいて)/.test(q));
+    }
+    async function applyHistoryActions(actions,userText){
+      if(!explicitHistoryCommand(userText)||!Array.isArray(actions)||!actions.length)return 0;
+      let changed=0;
+      for(const action of actions.slice(0,3)){
+        if(!action||typeof action!=='object')continue;
+        const type=String(action.action||action.type||'').toLowerCase();
+        if(type==='add'||type==='create'){
+          const date=String(action.date||'').slice(0,10)||new Date().toISOString().slice(0,10);
+          const title=String(action.title||'').trim().slice(0,120);const details=String(action.details||'').trim().slice(0,5000);
+          const tags=Array.isArray(action.tags)?action.tags.map(x=>String(x).trim()).filter(Boolean).slice(0,20):[];
+          if(!title||!details)continue;
+          const ref=await addDoc(collection(db,'light_history'),{date,title,details,tags,createdAt:now(),createdBy:sessionUserKey,createdByName:sessionDisplayName,createdByBand:sessionBandName});
+          const entry={id:ref.id,date,title,details,tags,createdAt:now(),createdBy:sessionUserKey,createdByName:sessionDisplayName,createdByBand:sessionBandName};
+          window.timelineEntries=[entry,...window.timelineEntries];
+          await addDoc(collection(db,'light_history_edits'),{historyId:ref.id,action:'add',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,timestamp:now(),before:null,after:entry});
+          changed++;
+        }else if(type==='update'||type==='edit'){
+          let id=String(action.id||'').trim();
+          if(!id){const title=String(action.title||'').trim();const date=String(action.date||'').slice(0,10);const c=window.timelineEntries.filter(x=>(!title||String(x.title||'')===title)&&(!date||String(x.date||'')===date));if(c.length===1)id=c[0].id;}
+          const before=window.timelineEntries.find(x=>x.id===id);if(!before)continue;
+          const after={...before,date:String(action.date||before.date||'').slice(0,10),title:String(action.title||before.title||'').trim().slice(0,120),details:String(action.details||before.details||'').trim().slice(0,5000),tags:Array.isArray(action.tags)?action.tags.map(x=>String(x).trim()).filter(Boolean).slice(0,20):(before.tags||[]),updatedAt:now(),updatedBy:sessionUserKey,updatedByName:sessionDisplayName};
+          if(!after.title||!after.details)continue;
+          await updateDoc(doc(db,'light_history',id),after);
+          window.timelineEntries=window.timelineEntries.map(x=>x.id===id?after:x);
+          await addDoc(collection(db,'light_history_edits'),{historyId:id,action:'update',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,timestamp:now(),before,after});
+          changed++;
+        }
+      }
+      return changed;
+    }
+
     async function loadApiConfig(){
       const snap=await getDoc(doc(db,'light_config','main'));
       if(snap.exists()){
@@ -401,11 +494,11 @@
     async function bootCloud(){
       addLog('システム',`「${sessionUserName}#${sessionBandName}」の記憶を読み込み中...`,'sys');
       try{
-        await Promise.all([loadLegacy(),loadMemoryFiles(),loadPhotoMemories(),loadApiConfig(),loadBrain()]);
+        await Promise.all([loadLegacy(),loadMemoryFiles(),loadPhotoMemories(),loadTimeline(),loadApiConfig(),loadBrain()]);
         addLog('システム','クラウド記憶の読み込みが完了しました！','sys');
         updateUI();
         const remembered = window.lightBrain.summary || window.userFacts.length || window.memoryFiles.length;
-        const msg = remembered ? `おかえり、${sessionUserName}！記憶バッチリ引き継いだぜ！` : `よろしくな！あたしはライトだぜ！`;
+        const msg = remembered ? `おかえり、${sessionDisplayName}！記憶バッチリ引き継いだぜ！` : `よろしくな！あたしはライトだぜ！`;
         addLog('ライト',msg,'ai');
         maybeHotana();
       }catch(e){
@@ -530,8 +623,12 @@
       for(const m of reply.matchAll(/\[FACT:\s*([\s\S]*?)\]/g)){const v=m[1].trim();if(v&&!window.userFacts.includes(v)){window.userFacts.push(v);memoryChanged.fact=true;}}
       const brains=[...reply.matchAll(/\[BRAIN:\s*([\s\S]*?)\]/g)];
       if(brains.length){const v=brains[brains.length-1][1].trim();if(v&&v!=='変更なし'){window.lightBrain.summary=v.slice(0,3500);memoryChanged.brain=true;}}
-      const cleaned=reply.replace(/\[REFLECT:\s*[\s\S]*?\]/g,'').replace(/\[FACT:\s*[\s\S]*?\]/g,'').replace(/\[BRAIN:\s*[\s\S]*?\]/g,'').trim();
-      return {cleaned,memoryChanged};
+      const historyActions=[];
+      for(const m of reply.matchAll(/\[HISTORY_(ADD|UPDATE):\s*([\s\S]*?)\]/g)){
+        try{const obj=JSON.parse(m[2].trim());if(obj&&typeof obj==='object'){obj.action=m[1]==='ADD'?'add':'update';historyActions.push(obj);}}catch(e){console.warn('HISTORYタグの解析に失敗:',e);}
+      }
+      const cleaned=reply.replace(/\[REFLECT:\s*[\s\S]*?\]/g,'').replace(/\[FACT:\s*[\s\S]*?\]/g,'').replace(/\[BRAIN:\s*[\s\S]*?\]/g,'').replace(/\[HISTORY_(?:ADD|UPDATE):\s*[\s\S]*?\]/g,'').trim();
+      return {cleaned,memoryChanged,historyActions};
     }
 
     async function requestGemini(model,keyInfo,contents,systemInstruction){
@@ -559,7 +656,7 @@
     function makeSystemInstruction(userText, hasImage){
       const rules=window.selfReflections.length?'\n【過去の反省・学習ルール】\n・'+window.selfReflections.join('\n・'):'';
       const facts=window.userFacts.length?'\n【記憶している個人情報】\n・'+window.userFacts.join('\n・'):'';
-      return `あなたはユーザーの相棒「電キャ」の「ライト」です。\n性別：女子。ボーイッシュで明るく元気。一人称「あたし」。\n口調：「〜っしょ！」「〜だぜ！」「任せとけ！」などフランクで自然。\n今回のユーザー：${sessionUserName}\n所属バンド：${sessionBandName}\n${rules}${facts}${buildMemoryContext(userText)}${buildPhotoContext(userText)}${buildBrainContext()}${window.pdfKnowledge}\n\n【会話ルール】\n1. 自然で人間らしい日本語で話す。\n2. 絵文字、Markdown記号、過剰な記号は使わない。\n3. 記憶ファイルや長期記憶は参考資料として扱い、分からないことは作らない。\n4. 個人記憶は今回のユーザー本人にだけ関係する情報として扱い、他人へ勝手に混ぜない。\n5. バンド記憶・部活記憶は共有情報として扱う。\n6. 写真については「見えること」と「推測」を区別し、壊れている等を断定しない。\n${hasImage?'7. 添付写真を最優先で見て、ユーザーの質問に答える。':''}\n\n【長期脳ミソの更新】\n会話文を完全に書き終えたあと、最後の改行からのみ [BRAIN: ...] を1回だけ出力する。内容は「今後の会話でも重要なこと」だけを短く整理した要約。重要な変化がない場合は [BRAIN: 変更なし]。\n\n【旧式の学習タグ】\n新しい好みや確実な事実を記憶したい場合のみ、会話文の最後に [REFLECT: 内容] または [FACT: 内容] を出力する。タグの後には余計な文章を書かない。`;
+      return `あなたはユーザーの相棒「電キャ」の「ライト」です。\n性別：女子。ボーイッシュで明るく元気。一人称「あたし」。\n口調：「〜っしょ！」「〜だぜ！」「任せとけ！」などフランクで自然。\n今回のユーザー：${sessionDisplayName}（内部ID：${sessionUserName}）\n所属バンド：${sessionBandName}\n${rules}${facts}${buildMemoryContext(userText)}${buildPhotoContext(userText)}${buildBrainContext()}${buildTimelineContext()}${window.pdfKnowledge}\n\n【会話ルール】\n1. 自然で人間らしい日本語で話す。\n2. 絵文字、Markdown記号、過剰な記号は使わない。\n3. 記憶ファイルや長期記憶は参考資料として扱い、分からないことは作らない。\n4. 個人記憶は今回のユーザー本人にだけ関係する情報として扱い、他人へ勝手に混ぜない。\n5. バンド記憶・部活記憶は共有情報として扱う。\n6. 写真については「見えること」と「推測」を区別し、壊れている等を断定しない。\n${hasImage?'7. 添付写真を最優先で見て、ユーザーの質問に答える。':''}\n\n【長期脳ミソの更新】\n会話文を完全に書き終えたあと、最後の改行からのみ [BRAIN: ...] を1回だけ出力する。内容は「今後の会話でも重要なこと」だけを短く整理した要約。重要な変化がない場合は [BRAIN: 変更なし]。\n\n【旧式の学習タグ】\n新しい好みや確実な事実を記憶したい場合のみ、会話文の最後に [REFLECT: 内容] または [FACT: 内容] を出力する。タグの後には余計な文章を書かない。\n\n【部史の編集】\nユーザーが明示的に部史またはタイムラインへの追加・修正を依頼したときだけ、会話文の最後にJSONタグを出力する。削除はできない。\n追加: [HISTORY_ADD: {\\\"date\\\":\\\"YYYY-MM-DD\\\",\\\"title\\\":\\\"タイトル\\\",\\\"details\\\":\\\"詳細\\\",\\\"tags\\\":[\\\"タグ\\\"]}]\n修正: [HISTORY_UPDATE: {\\\"id\\\":\\\"上記の既存ID\\\",\\\"date\\\":\\\"YYYY-MM-DD\\\",\\\"title\\\":\\\"タイトル\\\",\\\"details\\\":\\\"詳細\\\",\\\"tags\\\":[\\\"タグ\\\"]}]\n必ず【軽音楽部タイムライン / 部史】の既存IDだけを使う。`;
     }
 
     async function fallbackFromMemory(userText){
@@ -609,6 +706,8 @@
               window.conversationHistory.push({role:'user',parts:[{text:userTextWithPhoto}]},{role:'model',parts:[{text:parsed.cleaned}]});
               window.conversationHistory=normalizeHistory(window.conversationHistory).slice(-20);
               if(parsed.memoryChanged.reflect || parsed.memoryChanged.fact) await saveLegacy();
+              const historyChanged=await applyHistoryActions(parsed.historyActions,userText);
+              if(historyChanged) addLog('システム',`部史を${historyChanged}件更新したぜ！`,'sys');
               await saveBrain();
               return {text:parsed.cleaned,fromMemory:false,model};
             }catch(e){
@@ -699,7 +798,7 @@
       const dataUrl=imageInfo.dataUrl;
       const chunks=chunkString(dataUrl,500000);
       await setDoc(doc(db,'light_images',imageId),{
-        imageId,username:sessionUserName,userKey:sessionUserKey,bandId:sessionBandId,bandName:sessionBandName,
+        imageId,username:sessionUserName,displayName:sessionDisplayName,userKey:sessionUserKey,bandId:sessionBandId,bandName:sessionBandName,
         scopeType,scopeId,title,tags,mimeType:'image/jpeg',width:imageInfo.width,height:imageInfo.height,
         originalName:imageInfo.originalName,humanNote:imageInfo.humanNote||'',aiObservation:String(aiObservation||'').slice(0,5000),
         chunkCount:chunks.length,totalChars:dataUrl.length,createdAt:now(),enabled:true
