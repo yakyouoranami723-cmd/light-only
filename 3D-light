@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+<title>ライト 3D Generator</title>
+
+<style>
+*{
+  box-sizing:border-box;
+}
+
+html,body{
+  margin:0;
+  width:100%;
+  min-height:100%;
+  background:#08090d;
+  color:#eee;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+body{
+  overflow-x:hidden;
+}
+
+header{
+  padding:16px;
+  border-bottom:1px solid #292c38;
+  background:#0b0c10;
+}
+
+h1{
+  margin:0;
+  font-size:20px;
+}
+
+header p{
+  margin:5px 0 0;
+  color:#9297a5;
+  font-size:12px;
+}
+
+main{
+  width:min(100%,1000px);
+  margin:auto;
+  padding:12px;
+}
+
+#viewer{
+  width:100%;
+  height:min(72vh,700px);
+  min-height:430px;
+
+  border:1px solid #292c38;
+  border-radius:20px;
+
+  overflow:hidden;
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      #20232d 0%,
+      #11131a 42%,
+      #090a0e 100%
+    );
+
+  touch-action:none;
+}
+
+canvas{
+  display:block;
+  width:100%;
+  height:100%;
+}
+
+.panel{
+  margin-top:12px;
+  padding:15px;
+
+  border:1px solid #292c38;
+  border-radius:16px;
+
+  background:#11131a;
+}
+
+.buttons{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+button{
+  min-height:44px;
+  padding:10px 15px;
+
+  border:0;
+  border-radius:12px;
+
+  background:#ff7eb3;
+  color:#171019;
+
+  font-weight:700;
+  cursor:pointer;
+}
+
+button.secondary{
+  background:#292c38;
+  color:#eee;
+}
+
+.controls{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:12px;
+}
+
+label{
+  display:block;
+  color:#c9ccd5;
+  font-size:13px;
+}
+
+input[type="range"]{
+  display:block;
+  width:100%;
+  margin-top:7px;
+}
+
+.value{
+  float:right;
+  color:#ff7eb3;
+  font-weight:700;
+}
+
+pre{
+  margin:10px 0 0;
+  padding:12px;
+
+  max-height:350px;
+  overflow:auto;
+
+  background:#08090d;
+  border-radius:10px;
+
+  color:#cfd2dc;
+  font-size:11px;
+  line-height:1.5;
+}
+
+.status{
+  margin-top:10px;
+  color:#969baa;
+  font-size:12px;
+}
+
+@media(max-width:600px){
+
+  .controls{
+    grid-template-columns:1fr;
+  }
+
+  #viewer{
+    min-height:460px;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>⚡ ライト 3D Generator</h1>
+  <p>
+    Light / mightyX character generator prototype
+  </p>
+</header>
+
+<main>
+
+<div id="viewer"></div>
+
+<section class="panel">
+
+  <div class="buttons">
+
+    <button id="front">
+      正面
+    </button>
+
+    <button id="side" class="secondary">
+      横
+    </button>
+
+    <button id="back" class="secondary">
+      背面
+    </button>
+
+    <button id="reset" class="secondary">
+      初期状態
+    </button>
+
+    <button id="export" class="secondary">
+      GLBを書き出す
+    </button>
+
+  </div>
+
+  <div class="controls">
+
+    <label>
+      身長
+      <span class="value" id="heightValue"></span>
+
+      <input
+        id="height"
+        type="range"
+        min="1.5"
+        max="2.0"
+        step="0.01"
+        value="1.70"
+      >
+    </label>
+
+    <label>
+      肩幅
+      <span class="value" id="shoulderValue"></span>
+
+      <input
+        id="shoulder"
+        type="range"
+        min="0.35"
+        max="0.60"
+        step="0.01"
+        value="0.44"
+      >
+    </label>
+
+    <label>
+      頭の大きさ
+      <span class="value" id="headValue"></span>
+
+      <input
+        id="head"
+        type="range"
+        min="0.18"
+        max="0.30"
+        step="0.005"
+        value="0.22"
+      >
+    </label>
+
+    <label>
+      バイザー角度
+      <span class="value" id="visorValue"></span>
+
+      <input
+        id="visor"
+        type="range"
+        min="-0.25"
+        max="0.25"
+        step="0.01"
+        value="0"
+      >
+    </label>
+
+    <label>
+      ポニーテール長
+      <span class="value" id="ponyValue"></span>
+
+      <input
+        id="pony"
+        type="range"
+        min="0.20"
+        max="0.55"
+        step="0.01"
+        value="0.38"
+      >
+    </label>
+
+    <label>
+      角張り具合
+      <span class="value" id="angularValue"></span>
+
+      <input
+        id="angular"
+        type="range"
+        min="0"
+        max="1"
+        step="0.01"
+        value="0.82"
+      >
+    </label>
+
+  </div>
+
+  <div class="status" id="status">
+    指一本で回転 / 2本指で拡大縮小
+  </div>
+
+</section>
+
+<section class="panel">
+
+  <strong>
+    LIGHT_DESIGN
+  </strong>
+
+  <pre id="design"></pre>
+
+</section>
+
+</main>
+
+
+<!-- Three.js -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+
+<!-- GLB exporter -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
+
+
+<script>
+
+(() => {
+
+"use strict";
+
+
+/* =========================================================
+   LIGHT DESIGN
+   ========================================================= */
+
+const LIGHT_DESIGN = {
+
+  character: "Light",
+
+  concept:
+    "軽音楽部の電キャ・電脳ストリート・人工拡張スーツ",
+
+  proportions: {
+
+    bodyType:
+      "human_feminine",
+
+    height:
+      1.70,
+
+    shoulderWidth:
+      0.44,
+
+    headSize:
+      0.22,
+
+    legRatio:
+      0.53
+  },
+
+
+  head: {
+
+    shape:
+      "human_angular",
+
+    lowerFace:
+      "human",
+
+    angularity:
+      0.82
+  },
+
+
+  hair: {
+
+    color:
+      "#ff4f9a",
+
+    style:
+      "high_ponytail",
+
+    length:
+      0.38,
+
+    rearShell:
+      false
+  },
+
+
+  visor: {
+
+    type:
+      "continuous_angular_upper_face",
+
+    material:
+      "matte_black",
+
+    centerFold:
+      true,
+
+    angularity:
+      0.95,
+
+    eyes: {
+
+      type:
+        "electronic_glyph",
+
+      color:
+        "#ff168f",
+
+      fixedPosition:
+        true,
+
+      expressionByGlyph:
+        true,
+
+      humanEyes:
+        false
+    }
+  },
+
+
+  body: {
+
+    type:
+      "artificial_expansion_suit",
+
+    material:
+      "matte_black",
+
+    normalClothing:
+      false,
+
+
+    chest: {
+
+      core:
+        "cut_octahedron",
+
+      schoolEmblem:
+        true
+    },
+
+
+    lowerBody: {
+
+      type:
+        "integrated_skirt_shell",
+
+      continuousWithTorso:
+        true,
+
+      belt:
+        false,
+
+      waistArmor:
+        false
+    },
+
+
+    innerLayer:
+      "black_tights"
+  },
+
+
+  jacket: {
+
+    color:
+      "#15161a",
+
+    type:
+      "normal_open_front_jacket",
+
+    collar:
+      "high",
+
+    hood:
+      "integrated_with_collar",
+
+    hoodDefault:
+      "down",
+
+    pinkStrap:
+      true,
+
+    backGraphic:
+      "top_down_PA_mixer_controls",
+
+    schoolEmblem:
+      false
+  },
+
+
+  footwear: {
+
+    type:
+      "chunky_geometric_boots",
+
+    color:
+      "#111216",
+
+    anklePiece:
+      true
+  },
+
+
+  communication: {
+
+    headset:
+      false,
+
+    microphone:
+      false,
+
+    radioGlyph:
+      true
+  },
+
+
+  silhouette: {
+
+    style:
+      "angular_faceted",
+
+    smoothness:
+      0.35,
+
+    mechanicalFeeling:
+      0.72,
+
+    humanFeeling:
+      0.65
+  }
+
+};
+
+
+/* =========================================================
+   THREE.JS
+   ========================================================= */
+
+const viewer =
+  document.getElementById("viewer");
+
+const scene =
+  new THREE.Scene();
+
+scene.background =
+  new THREE.Color(0x0c0e13);
+
+
+const camera =
+  new THREE.PerspectiveCamera(
+    32,
+    1,
+    0.01,
+    100
+  );
+
+camera.position.set(
+  0,
+  0.9,
+  3.3
+);
+
+
+const renderer =
+  new THREE.WebGLRenderer({
+    antialias:true,
+    alpha:true
+  });
+
+renderer.setPixelRatio(
+  Math.min(window.devicePixelRatio,2)
+);
+
+renderer.outputEncoding =
+  THREE.sRGBEncoding;
+
+viewer.appendChild(
+  renderer.domElement
+);
+
+
+/* =========================================================
+   LIGHTING
+   ========================================================= */
+
+scene.add(
+  new THREE.HemisphereLight(
+    0xffffff,
+    0x20232d,
+    1.8
+  )
+);
+
+
+const keyLight =
+  new THREE.DirectionalLight(
+    0xffffff,
+    2.2
+  );
+
+keyLight.position.set(
+  2,
+  3,
+  4
+);
+
+scene.add(keyLight);
+
+
+const rimLight =
+  new THREE.DirectionalLight(
+    0xff4f9a,
+    1.0
+  );
+
+rimLight.position.set(
+  -3,
+  2,
+  -3
+);
+
+scene.add(rimLight);
+
+
+/* =========================================================
+   MODEL
+   ========================================================= */
+
+const avatar =
+  new THREE.Group();
+
+avatar.name =
+  "LIGHT_mightyX";
+
+
+scene.add(
+  avatar
+);
+
+
+/* =========================================================
+   MATERIALS
+   ========================================================= */
+
+const skin =
+  new THREE.MeshStandardMaterial({
+
+    color:0xd6a38e,
+
+    roughness:0.78,
+
+    metalness:0.02
+  });
+
+
+const black =
+  new THREE.MeshStandardMaterial({
+
+    color:0x17181d,
+
+    roughness:0.62,
+
+    metalness:0.22
+  });
+
+
+const blackSoft =
+  new THREE.MeshStandardMaterial({
+
+    color:0x24262d,
+
+    roughness:0.72,
+
+    metalness:0.12
+  });
+
+
+const pink =
+  new THREE.MeshStandardMaterial({
+
+    color:0xff4f9a,
+
+    emissive:0x7a0038,
+
+    emissiveIntensity:1.2,
+
+    roughness:0.4
+  });
+
+
+const eyePink =
+  new THREE.MeshStandardMaterial({
+
+    color:0xff168f,
+
+    emissive:0xff168f,
+
+    emissiveIntensity:3.5,
+
+    roughness:0.25
+  });
+
+
+const white =
+  new THREE.MeshStandardMaterial({
+
+    color:0xf4f4f4,
+
+    roughness:0.5
+  });
+
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+
+function addBox(
+  name,
+  x,
+  y,
+  z,
+  sx,
+  sy,
+  sz,
+  material
+){
+
+  const mesh =
+    new THREE.Mesh(
+      new THREE.BoxGeometry(
+        sx,
+        sy,
+        sz
+      ),
+      material
+    );
+
+  mesh.name =
+    name;
+
+  mesh.position.set(
+    x,
+    y,
+    z
+  );
+
+  avatar.add(mesh);
+
+  return mesh;
+}
+
+
+function addSphere(
+  name,
+  x,
+  y,
+  z,
+  sx,
+  sy,
+  sz,
+  material
+){
+
+  const mesh =
+    new THREE.Mesh(
+      new THREE.SphereGeometry(
+        1,
+        24,
+        16
+      ),
+      material
+    );
+
+  mesh.name =
+    name;
+
+  mesh.position.set(
+    x,
+    y,
+    z
+  );
+
+  mesh.scale.set(
+    sx,
+    sy,
+    sz
+  );
+
+  avatar.add(mesh);
+
+  return mesh;
+}
+
+
+function addCylinder(
+  name,
+  x,
+  y,
+  z,
+  radius,
+  depth,
+  material
+){
+
+  const mesh =
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        radius,
+        radius,
+        depth,
+        16
+      ),
+      material
+    );
+
+  mesh.name =
+    name;
+
+  mesh.position.set(
+    x,
+    y,
+    z
+  );
+
+  avatar.add(mesh);
+
+  return mesh;
+}
+
+
+function addOctahedron(
+  name,
+  x,
+  y,
+  z,
+  sx,
+  sy,
+  sz,
+  material
+){
+
+  const mesh =
+    new THREE.Mesh(
+      new THREE.OctahedronGeometry(
+        1,
+        0
+      ),
+      material
+    );
+
+  mesh.name =
+    name;
+
+  mesh.position.set(
+    x,
+    y,
+    z
+  );
+
+  mesh.scale.set(
+    sx,
+    sy,
+    sz
+  );
+
+  avatar.add(mesh);
+
+  return mesh;
+}
+
+
+/* =========================================================
+   CLEAR MODEL
+   ========================================================= */
+
+function clearAvatar(){
+
+  while(
+    avatar.children.length
+  ){
+
+    const object =
+      avatar.children.pop();
+
+    object.traverse(
+      child => {
+
+        if(
+          child.geometry
+        ){
+
+          child.geometry.dispose();
+        }
+
+      }
+    );
+  }
+}
+
+
+/* =========================================================
+   BUILD LIGHT
+   ========================================================= */
+
+function buildLight(){
+
+  clearAvatar();
+
+
+  const height =
+    Number(
+      document.getElementById(
+        "height"
+      ).value
+    );
+
+
+  const shoulder =
+    Number(
+      document.getElementById(
+        "shoulder"
+      ).value
+    );
+
+
+  const headSize =
+    Number(
+      document.getElementById(
+        "head"
+      ).value
+    );
+
+
+  const visorAngle =
+    Number(
+      document.getElementById(
+        "visor"
+      ).value
+    );
+
+
+  const ponyLength =
+    Number(
+      document.getElementById(
+        "pony"
+      ).value
+    );
+
+
+  const angularity =
+    Number(
+      document.getElementById(
+        "angular"
+      ).value
+    );
+
+
+  /* =========================
+     BODY
+     ========================= */
+
+  addBox(
+    "ArtificialBody",
+    0,
+    0.25,
+    0,
+    0.36,
+    0.58,
+    0.25,
+    black
+  );
+
+
+  /* =========================
+     LEGS
+     ========================= */
+
+  addBox(
+    "LeftLeg",
+    -0.105,
+    -0.38,
+    0,
+    0.145,
+    0.72,
+    0.15,
+    black
+  );
+
+
+  addBox(
+    "RightLeg",
+    0.105,
+    -0.38,
+    0,
+    0.145,
+    0.72,
+    0.15,
+    black
+  );
+
+
+  /* =========================
+     BOOTS
+     ========================= */
+
+  addBox(
+    "LeftGeometricBoot",
+    -0.105,
+    -0.78,
+    -0.025,
+    0.22,
+    0.18,
+    0.34,
+    black
+  );
+
+
+  addBox(
+    "RightGeometricBoot",
+    0.105,
+    -0.78,
+    -0.025,
+    0.22,
+    0.18,
+    0.34,
+    black
+  );
+
+
+  /* ankle geometry */
+
+  addOctahedron(
+    "LeftAnkle",
+    -0.105,
+    -0.69,
+    -0.04,
+    0.10,
+    0.09,
+    0.12,
+    blackSoft
+  );
+
+
+  addOctahedron(
+    "RightAnkle",
+    0.105,
+    -0.69,
+    -0.04,
+    0.10,
+    0.09,
+    0.12,
+    blackSoft
+  );
+
+
+  /* =========================
+     INTEGRATED LOWER SHELL
+     ========================= */
+
+  addOctahedron(
+    "IntegratedLowerShell",
+    0,
+    -0.04,
+    0,
+    0.30,
+    0.28,
+    0.24,
+    black
+  );
+
+
+  /* =========================
+     ARMS
+     ========================= */
+
+  const armX =
+    shoulder / 2;
+
+
+  addBox(
+    "LeftArm",
+    -armX,
+    0.28,
+    0,
+    0.13,
+    0.56,
+    0.14,
+    black
+  );
+
+
+  addBox(
+    "RightArm",
+    armX,
+    0.28,
+    0,
+    0.13,
+    0.56,
+    0.14,
+    black
+  );
+
+
+  /* =========================
+     NECK
+     ========================= */
+
+  addCylinder(
+    "Neck",
+    0,
+    0.62,
+    0,
+    0.075,
+    0.16,
+    skin
+  );
+
+
+  /* =========================
+     HEAD
+     ========================= */
+
+  const head =
+    addSphere(
+      "HumanAngularHead",
+      0,
+      0.84,
+      0,
+      headSize * 1.45,
+      headSize * 1.62,
+      headSize * 1.28,
+      skin
+    );
+
+
+  /*
+    angularityを使って
+    頭の丸さを少し抑える
+  */
+
+  const angularScale =
+    1 -
+    angularity * 0.10;
+
+  head.scale.x *=
+    angularScale;
+
+
+  /* =========================
+     HAIR
+     ========================= */
+
+  addBox(
+    "PinkHairTop",
+    0,
+    0.98,
+    -0.015,
+    headSize * 1.52,
+    0.18,
+    headSize * 1.36,
+    pink
+  );
+
+
+  /* ponytail base */
+
+  addSphere(
+    "PonytailBase",
+    0.17,
+    0.98,
+    -0.035,
+    0.10,
+    0.10,
+    0.10,
+    pink
+  );
+
+
+  /* ponytail */
+
+  const pony =
+    addSphere(
+      "HighPonytail",
+      0.18,
+      0.98 - ponyLength / 2,
+      0.015,
+      0.085,
+      ponyLength,
+      0.085,
+      pink
+    );
+
+
+  pony.rotation.z =
+    -0.12;
+
+
+  /* =========================
+     VISOR
+     ========================= */
+
+  const visor =
+    addBox(
+      "ContinuousAngularVisor",
+      0,
+      0.865,
+      -headSize * 1.18,
+      headSize * 1.58,
+      0.13,
+      0.055,
+      black
+    );
+
+
+  visor.rotation.z =
+    visorAngle;
+
+
+  /*
+    中央の「く」の字っぽい折れ
+  */
+
+  const visorCenter =
+    addOctahedron(
+      "VisorCenterFold",
+      0,
+      0.865,
+      -headSize * 1.215,
+      0.045,
+      0.065,
+      0.025,
+      black
+    );
+
+
+  visorCenter.rotation.z =
+    -0.15;
+
+
+  /* =========================
+     ELECTRONIC EYES
+     ========================= */
+
+  const eyeWidth =
+    headSize * 0.48;
+
+
+  addBox(
+    "LeftEyeGlyph",
+    -0.065,
+    0.87,
+    -headSize * 1.235,
+    eyeWidth,
+    0.018,
+    0.014,
+    eyePink
+  );
+
+
+  addBox(
+    "RightEyeGlyph",
+    0.065,
+    0.87,
+    -headSize * 1.235,
+    eyeWidth,
+    0.018,
+    0.014,
+    eyePink
+  );
+
+
+  /* =========================
+     CHEST CORE
+     ========================= */
+
+  addOctahedron(
+    "ChestCutOctahedron",
+    0,
+    0.37,
+    -0.16,
+    0.115,
+    0.14,
+    0.09,
+    blackSoft
+  );
+
+
+  /* =========================
+     SCHOOL EMBLEM
+     ========================= */
+
+  addOctahedron(
+    "WhiteSchoolEmblem",
+    0,
+    0.37,
+    -0.255,
+    0.048,
+    0.048,
+    0.018,
+    white
+  );
+
+
+  /* =========================
+     PINK STRAP
+     ========================= */
+
+  const strap =
+    addOctahedron(
+      "PinkRegularOctahedronStrap",
+      0.18,
+      0.38,
+      -0.17,
+      0.045,
+      0.25,
+      0.035,
+      pink
+    );
+
+
+  strap.rotation.z =
+    -0.05;
+
+
+  /* =========================
+     JACKET
+     ========================= */
+
+  addBox(
+    "JacketLeft",
+    -0.105,
+    0.42,
+    -0.01,
+    0.18,
+    0.52,
+    0.28,
+    blackSoft
+  );
+
+
+  addBox(
+    "JacketRight",
+    0.105,
+    0.42,
+    -0.01,
+    0.18,
+    0.52,
+    0.28,
+    blackSoft
+  );
+
+
+  /* high collar */
+
+  addBox(
+    "HighCollar",
+    0,
+    0.61,
+    -0.015,
+    0.27,
+    0.14,
+    0.26,
+    blackSoft
+  );
+
+
+  /* =========================
+     HOOD DOWN
+     ========================= */
+
+  addSphere(
+    "IntegratedHood",
+    0,
+    0.61,
+    0.075,
+    0.23,
+    0.17,
+    0.16,
+    blackSoft
+  );
+
+
+  /* =========================
+     HANDS
+     ========================= */
+
+  addSphere(
+    "LeftHand",
+    -shoulder / 2,
+    0.00,
+    0,
+    0.075,
+    0.075,
+    0.075,
+    skin
+  );
+
+
+  addSphere(
+    "RightHand",
+    shoulder / 2,
+    0.00,
+    0,
+    0.075,
+    0.075,
+    0.075,
+    skin
+  );
+
+
+  /* =========================
+     SCALE TO HEIGHT
+     ========================= */
+
+  const bounds =
+    new THREE.Box3()
+      .setFromObject(avatar);
+
+
+  const currentHeight =
+    bounds.max.y -
+    bounds.min.y;
+
+
+  const scale =
+    height /
+    currentHeight;
+
+
+  avatar.scale.setScalar(
+    scale
+  );
+
+
+  avatar.position.y =
+    -bounds.min.y *
+    scale -
+    0.86;
+
+
+  updateDesignDisplay();
+}
+
+
+/* =========================================================
+   DESIGN DISPLAY
+   ========================================================= */
+
+function getCurrentDesign(){
+
+  return {
+
+    ...LIGHT_DESIGN,
+
+    proportions:{
+      ...LIGHT_DESIGN.proportions,
+
+      height:
+        Number(
+          document.getElementById(
+            "height"
+          ).value
+        ),
+
+      shoulderWidth:
+        Number(
+          document.getElementById(
+            "shoulder"
+          ).value
+        ),
+
+      headSize:
+        Number(
+          document.getElementById(
+            "head"
+          ).value
+        )
+    },
+
+    visor:{
+      ...LIGHT_DESIGN.visor,
+
+      angle:
+        Number(
+          document.getElementById(
+            "visor"
+          ).value
+        )
+    },
+
+    hair:{
+      ...LIGHT_DESIGN.hair,
+
+      length:
+        Number(
+          document.getElementById(
+            "pony"
+          ).value
+        )
+    },
+
+    silhouette:{
+      ...LIGHT_DESIGN.silhouette,
+
+      angularity:
+        Number(
+          document.getElementById(
+            "angular"
+          ).value
+        )
+    }
+
+  };
+}
+
+
+function updateDesignDisplay(){
+
+  document.getElementById(
+    "design"
+  ).textContent =
+    JSON.stringify(
+      getCurrentDesign(),
+      null,
+      2
+    );
+
+
+  document.getElementById(
+    "heightValue"
+  ).textContent =
+    Number(
+      document.getElementById(
+        "height"
+      ).value
+    ).toFixed(2);
+
+
+  document.getElementById(
+    "shoulderValue"
+  ).textContent =
+    Number(
+      document.getElementById(
+        "shoulder"
+      ).value
+    ).toFixed(2);
+
+
+  document.getElementById(
+    "headValue"
+  ).textContent =
+    Number(
+      document.getElementById(
+        "head"
+      ).value
+    ).toFixed(3);
+
+
+  document.getElementById(
+    "visorValue"
+  ).textContent =
+    Number(
+      document.getElementById(
+        "visor"
+      ).value
+    ).toFixed(2);
+
+
+  document.getElementById(
+    "ponyValue"
+  ).textContent =
+    Number(
+      document.getElementById(
+        "pony"
+      ).value
+    ).toFixed(2);
+
+
+  document.getElementById(
+    "angularValue"
+  ).textContent =
+    Number(
+      document.getElementById(
+        "angular"
+      ).value
+    ).toFixed(2);
+}
+
+
+/* =========================================================
+   CONTROLS
+   ========================================================= */
+
+[
+  "height",
+  "shoulder",
+  "head",
+  "visor",
+  "pony",
+  "angular"
+
+].forEach(
+
+  id => {
+
+    document
+      .getElementById(id)
+      .addEventListener(
+        "input",
+        buildLight
+      );
+
+  }
+
+);
+
+
+/* =========================================================
+   CAMERA
+   ========================================================= */
+
+let rotationY = 0;
+
+let rotationX = 0.03;
+
+let distance = 3.3;
+
+let dragging = false;
+
+let lastX = 0;
+
+let lastY = 0;
+
+let pinchDistance = null;
+
+
+/* =========================
+   FRONT
+   ========================= */
+
+document
+  .getElementById("front")
+  .onclick = () => {
+
+    rotationY = 0;
+
+    rotationX = 0.03;
+
+    distance = 3.3;
+  };
+
+
+/* =========================
+   SIDE
+   ========================= */
+
+document
+  .getElementById("side")
+  .onclick = () => {
+
+    rotationY =
+      Math.PI / 2;
+
+    rotationX =
+      0.03;
+
+    distance =
+      3.3;
+  };
+
+
+/* =========================
+   BACK
+   ========================= */
+
+document
+  .getElementById("back")
+  .onclick = () => {
+
+    rotationY =
+      Math.PI;
+
+    rotationX =
+      0.03;
+
+    distance =
+      3.3;
+  };
+
+
+/* =========================
+   RESET
+   ========================= */
+
+document
+  .getElementById("reset")
+  .onclick = () => {
+
+    document.getElementById(
+      "height"
+    ).value = "1.70";
+
+    document.getElementById(
+      "shoulder"
+    ).value = "0.44";
+
+    document.getElementById(
+      "head"
+    ).value = "0.22";
+
+    document.getElementById(
+      "visor"
+    ).value = "0";
+
+    document.getElementById(
+      "pony"
+    ).value = "0.38";
+
+    document.getElementById(
+      "angular"
+    ).value = "0.82";
+
+    rotationY = 0;
+
+    rotationX = 0.03;
+
+    distance = 3.3;
+
+    buildLight();
+  };
+
+
+/* =========================================================
+   MOUSE / TOUCH ROTATION
+   ========================================================= */
+
+renderer.domElement.addEventListener(
+  "pointerdown",
+  event => {
+
+    dragging = true;
+
+    lastX =
+      event.clientX;
+
+    lastY =
+      event.clientY;
+
+    renderer.domElement
+      .setPointerCapture(
+        event.pointerId
+      );
+
+  }
+);
+
+
+renderer.domElement.addEventListener(
+  "pointermove",
+  event => {
+
+    if(!dragging)
+      return;
+
+
+    const dx =
+      event.clientX -
+      lastX;
+
+
+    const dy =
+      event.clientY -
+      lastY;
+
+
+    rotationY +=
+      dx * 0.01;
+
+
+    rotationX +=
+      dy * 0.006;
+
+
+    rotationX =
+      Math.max(
+        -0.8,
+        Math.min(
+          0.8,
+          rotationX
+        )
+      );
+
+
+    lastX =
+      event.clientX;
+
+    lastY =
+      event.clientY;
+
+  }
+);
+
+
+renderer.domElement.addEventListener(
+  "pointerup",
+  () => {
+
+    dragging = false;
+
+  }
+);
+
+
+/* =========================================================
+   WHEEL
+   ========================================================= */
+
+renderer.domElement.addEventListener(
+  "wheel",
+  event => {
+
+    event.preventDefault();
+
+    distance +=
+      event.deltaY * 0.002;
+
+    distance =
+      Math.max(
+        1.5,
+        Math.min(
+          6,
+          distance
+        )
+      );
+
+  },
+  {
+    passive:false
+  }
+);
+
+
+/* =========================================================
+   PINCH ZOOM
+   ========================================================= */
+
+renderer.domElement.addEventListener(
+  "touchstart",
+  event => {
+
+    if(
+      event.touches.length === 2
+    ){
+
+      const a =
+        event.touches[0];
+
+      const b =
+        event.touches[1];
+
+      pinchDistance =
+        Math.hypot(
+          a.clientX - b.clientX,
+          a.clientY - b.clientY
+        );
+    }
+
+  },
+  {
+    passive:true
+  }
+);
+
+
+renderer.domElement.addEventListener(
+  "touchmove",
+  event => {
+
+    if(
+      event.touches.length !== 2 ||
+      pinchDistance === null
+    ){
+
+      return;
+    }
+
+
+    const a =
+      event.touches[0];
+
+    const b =
+      event.touches[1];
+
+
+    const current =
+      Math.hypot(
+        a.clientX - b.clientX,
+        a.clientY - b.clientY
+      );
+
+
+    distance -=
+      (current - pinchDistance)
+      * 0.006;
+
+
+    distance =
+      Math.max(
+        1.5,
+        Math.min(
+          6,
+          distance
+        )
+      );
+
+
+    pinchDistance =
+      current;
+
+  },
+  {
+    passive:true
+  }
+);
+
+
+renderer.domElement.addEventListener(
+  "touchend",
+  () => {
+
+    pinchDistance = null;
+
+  }
+);
+
+
+/* =========================================================
+   GLB EXPORT
+   ========================================================= */
+
+document
+  .getElementById("export")
+  .onclick = () => {
+
+    const exporter =
+      new THREE.GLTFExporter();
+
+
+    exporter.parse(
+
+      avatar,
+
+      result => {
+
+        const blob =
+          new Blob(
+            [result],
+            {
+              type:
+                "application/octet-stream"
+            }
+          );
+
+
+        const url =
+          URL.createObjectURL(
+            blob
+          );
+
+
+        const link =
+          document.createElement(
+            "a"
+          );
+
+
+        link.href =
+          url;
+
+
+        link.download =
+          "light_mightyX.glb";
+
+
+        link.click();
+
+
+        setTimeout(
+          () =>
+            URL.revokeObjectURL(
+              url
+            ),
+          1000
+        );
+
+
+        document.getElementById(
+          "status"
+        ).textContent =
+          "GLBを書き出しました。";
+
+      },
+
+      {
+        binary:true
+      }
+
+    );
+
+  };
+
+
+/* =========================================================
+   RESIZE
+   ========================================================= */
+
+function resize(){
+
+  const rect =
+    viewer.getBoundingClientRect();
+
+
+  renderer.setSize(
+    rect.width,
+    rect.height,
+    false
+  );
+
+
+  camera.aspect =
+    rect.width /
+    rect.height;
+
+
+  camera.updateProjectionMatrix();
+}
+
+
+window.addEventListener(
+  "resize",
+  resize
+);
+
+
+/* =========================================================
+   LOOP
+   ========================================================= */
+
+function animate(){
+
+  requestAnimationFrame(
+    animate
+  );
+
+
+  avatar.rotation.y =
+    rotationY;
+
+
+  avatar.rotation.x =
+    rotationX;
+
+
+  camera.position.z =
+    distance;
+
+
+  camera.lookAt(
+    0,
+    0.15,
+    0
+  );
+
+
+  renderer.render(
+    scene,
+    camera
+  );
+}
+
+
+/* =========================================================
+   START
+   ========================================================= */
+
+buildLight();
+
+resize();
+
+animate();
+
+})();
+
+</script>
+
+</body>
+</html>
