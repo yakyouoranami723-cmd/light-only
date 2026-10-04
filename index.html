@@ -70,6 +70,7 @@ let avatarConfig={betaEnabled:false,liveDayEnabled:false,lightUrl:'',otoUrl:''};
 const $=id=>document.getElementById(id),chatLog=$('chat-log'),chatInput=$('chat-input'),sendBtn=$('send-btn'),talkBtn=$('talk-btn'),settingsModal=$('settings-modal'),loginScreen=$('login-screen'),mainApp=$('main-app');
 const now=()=>Date.now(), esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s])); const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function canonical(v){return String(v||'').trim().toLowerCase();}
+function safeBandId(name){return canonical(name).replace(/[^a-z0-9\u3040-\u30ff\u4e00-\u9fff_-]/g,'_').slice(0,80)||'band';}
 function romanToKatakana(input){let s=String(input||'').toLowerCase().replace(/[^a-z]/g,'');if(!s)return '';const overrides={ryusei:'リュウセイ',ryuusei:'リュウセイ',souta:'ソウタ',shota:'ショウタ',shouta:'ショウタ',yuuki:'ユウキ',yuuta:'ユウタ',yuya:'ユウヤ',kouki:'コウキ',kouya:'コウヤ',kouta:'コウタ',yuto:'ユウト',yuto:'ユウト',haruto:'ハルト',kaito:'カイト',ren:'レン',rin:'リン',yuna:'ユナ',hina:'ヒナ'};if(overrides[s])return overrides[s];const map={rya:'リャ',ryu:'リュウ',ryo:'リョ',kya:'キャ',kyu:'キュ',kyo:'キョ',gya:'ギャ',gyu:'ギュ',gyo:'ギョ',sha:'シャ',shu:'シュ',she:'シェ',sho:'ショ',cha:'チャ',chu:'チュ',che:'チェ',cho:'チョ',nya:'ニャ',nyu:'ニュ',nyo:'ニョ',hya:'ヒャ',hyu:'ヒュ',hyo:'ヒョ',bya:'ビャ',byu:'ビュ',byo:'ビョ',pya:'ピャ',pyu:'ピュ',pyo:'ピョ',mya:'ミャ',myu:'ミュ',myo:'ミョ',fya:'フャ',fyu:'フュ',fyo:'フョ',fa:'ファ',fi:'フィ',fe:'フェ',fo:'フォ',va:'ヴァ',vi:'ヴィ',vu:'ヴ',ve:'ヴェ',vo:'ヴォ',shi:'シ',chi:'チ',tsu:'ツ',ji:'ジ',fu:'フ',kwa:'クァ',kwi:'クィ',kwe:'クェ',kwo:'クォ',gwa:'グァ',gwi:'グィ',gwe:'グェ',gwo:'グォ',we:'ウェ',wi:'ウィ',wo:'ウォ',ye:'イェ',aa:'アー',ii:'イー',uu:'ウー',ee:'エー',oo:'オー',ou:'オウ',ei:'エイ',ka:'カ',ki:'キ',ku:'ク',ke:'ケ',ko:'コ',ga:'ガ',gi:'ギ',gu:'グ',ge:'ゲ',go:'ゴ',sa:'サ',si:'シ',su:'ス',se:'セ',so:'ソ',za:'ザ',zi:'ジ',zu:'ズ',ze:'ゼ',zo:'ゾ',ta:'タ',ti:'チ',tu:'ツ',te:'テ',to:'ト',da:'ダ',di:'ヂ',du:'ヅ',de:'デ',do:'ド',na:'ナ',ni:'ニ',nu:'ヌ',ne:'ネ',no:'ノ',ha:'ハ',hi:'ヒ',he:'ヘ',ho:'ホ',ba:'バ',bi:'ビ',bu:'ブ',be:'ベ',bo:'ボ',pa:'パ',pi:'ピ',pu:'プ',pe:'ペ',po:'ポ',ma:'マ',mi:'ミ',mu:'ム',me:'メ',mo:'モ',ya:'ヤ',yu:'ユ',yo:'ヨ',ra:'ラ',ri:'リ',ru:'ル',re:'レ',ro:'ロ',wa:'ワ',n:'ン'};const keys=Object.keys(map).sort((a,b)=>b.length-a.length);let out='',i=0;while(i<s.length){if(i+1<s.length&&s[i]===s[i+1]&&/[bcdfghjklmpqrstvwxyz]/.test(s[i])&&s[i]!=='n'){out+='ッ';i++;continue}if(s[i]==='n'&&(i===s.length-1||!/[aiueoy]/.test(s[i+1]))){out+='ン';i++;continue}let found='';for(const k of keys){if(s.startsWith(k,i)){found=k;break}}if(found){out+=map[found];i+=found.length}else{i++;}}return out||String(input||'');}
 function validPassphrase(raw){const v=String(raw||'').trim();return v.length>=12&&v.length<=128&&!/[\0-\x1F\/\\]/.test(v);}
 function normalizeBirthday(v){const s=String(v||'').trim(),m=s.match(/^(\d{2})-(\d{2})$/);if(!m)return '';const mo=Number(m[1]),d=Number(m[2]);return mo>=1&&mo<=12&&d>=1&&d<=31?s:'';}
@@ -174,6 +175,9 @@ async function completeProfile(){
   localStorage.setItem('light_last_login',sessionUserKey);
   return true;
 }
+function normalizeHistory(h){return(Array.isArray(h)?h:[]).filter(x=>x&&(x.role==='user'||x.role==='model')&&Array.isArray(x.parts));}
+function textFromParts(p){return(Array.isArray(p)?p:[]).map(x=>String(x?.text||'')).join('');}
+function queueBrainSave(){brainSaveQueue=brainSaveQueue.then(()=>saveBrain()).catch(e=>{console.debug('brain save skipped',e);});return brainSaveQueue;}
 function currentBandCreatedAt(){return now();}
 async function startWithPassphrase(){
   const passphrase=$('login-id-input').value.trim();
