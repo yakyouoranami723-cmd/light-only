@@ -65,7 +65,7 @@ const ARCHIVE_CATEGORIES={
 };
 const STAFF_ROLES={pa:'PA',roady:'ローディ',promoter:'プロモーター',lighting:'照明'};
 window.isMuted=true;window.selfReflections=[];window.userFacts=[];window.pdfKnowledge='';window.conversationHistory=[];window.memoryFiles=[];window.photoMemories=[];window.timelineEntries=[];window.lightBrain={summary:'',recentHistory:[]};window.apiConfig={modelMode:'server'};window.recentConversationImages=[];let apiConfigLoaded=false;let brainSaveQueue=Promise.resolve();
-let sessionUserKey='',sessionUserName='',sessionDisplayName='',sessionBirthday='',sessionBandId='',sessionBandName='';let attachedPhotos=[];let pendingProfile={};let authReady=false;let booting=false;let voiceMode=localStorage.getItem('light_voice_mode')==='1';
+let sessionUserKey='',sessionUserName='',sessionDisplayName='',sessionBirthday='',sessionBandId='',sessionBandName='';let attachedPhotos=[];let pendingProfile={};let authReady=false;let booting=false;let registrationInProgress=false;let voiceMode=localStorage.getItem('light_voice_mode')==='1';
 let avatarConfig={betaEnabled:false,liveDayEnabled:false,lightUrl:'',otoUrl:''};let avatarRuntime={vrm:null,lightObject:null,otoObject:null,mode:'light',loaded:false};
 const $=id=>document.getElementById(id),chatLog=$('chat-log'),chatInput=$('chat-input'),sendBtn=$('send-btn'),talkBtn=$('talk-btn'),settingsModal=$('settings-modal'),loginScreen=$('login-screen'),mainApp=$('main-app');
 const now=()=>Date.now(), esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s])); const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -124,30 +124,37 @@ async function authRegister(passphrase){
   if(!name)return setProfileMessage('名前を入力してください。'),false;
   if(!birthday)return setProfileMessage('誕生日は MM-DD 形式で入力してください。'),false;
   if(!bandName)return setProfileMessage('現在のバンド名を入力してください。'),false;
+  setProfileMessage('登録コードを確認中...');
   const gate=await checkRegistrationCode(joinCode);
   const gateSnap=await getDoc(doc(db,'light_public_settings','registration'));
   if(gateSnap.exists()&&gateSnap.data()?.enabled===true&&!gate) return setProfileMessage('初回登録コードが違います。'),false;
+  setProfileMessage('認証アカウントを作成中...');
   const email=await authEmailForPassphrase(passphrase);
   const cred=await createUserWithEmailAndPassword(auth,email,passphrase);
+  setProfileMessage('プロフィールを保存中...');
   const bandId=safeBandId(bandName);
   const profile={
     userKey:passphrase,credentialKey:passphrase,authUid:cred.user.uid,
     username:canonical(name),name,displayName:name,birthday,bandId,bandName,
     createdAt:now(),lastLoginAt:now(),loginCount:1
   };
+  // まず本人プロフィールだけを確実に保存してログインを完了させる。
   await setDoc(doc(db,'light_users',passphrase),profile,{merge:true});
-  const bandRef=doc(db,'light_bands',bandId);
-  const bandSnap=await getDoc(bandRef);
-  if(!bandSnap.exists()) await setDoc(bandRef,{
-    bandId,name:bandName,normalizedName:canonical(bandName),createdAt:now(),updatedAt:now(),
-    createdByUid:cred.user.uid
-  });
-  await setDoc(doc(db,'light_band_members',`${bandId}_${cred.user.uid}`),{
-    uid:cred.user.uid,userKey:passphrase,bandId,bandName,updatedAt:now()
-  },{merge:true});
   localStorage.setItem('light_last_login',passphrase);
   applyProfile(profile);
   hideProfileModal();
+  // バンド/所属情報は後処理。ここで画面を待たせない。
+  void (async()=>{
+    try{
+      const bandRef=doc(db,'light_bands',bandId);
+      const bandSnap=await getDoc(bandRef);
+      if(!bandSnap.exists()) await setDoc(bandRef,{bandId,name:bandName,normalizedName:canonical(bandName),createdAt:now(),updatedAt:now(),createdByUid:cred.user.uid});
+      await setDoc(doc(db,'light_band_members',`${bandId}_${cred.user.uid}`),{uid:cred.user.uid,userKey:passphrase,bandId,bandName,updatedAt:now()},{merge:true});
+    }catch(e){
+      console.error('band association save failed',e);
+      addLog('システム','プロフィール登録は完了したけど、バンド所属情報の保存に失敗しました。後で再試行できます。','error');
+    }
+  })();
   return true;
 }
 async function completeProfile(){
@@ -162,17 +169,25 @@ async function completeProfile(){
   const oldBandId=String(current.bandId||'');
   const bandId=safeBandId(bandName);
   const profile={name,displayName:name,birthday,bandName,bandId,authUid:auth.currentUser?.uid||'',userKey:sessionUserKey,username:current.username||canonical(name),updatedAt:now()};
+  setProfileMessage('プロフィールを保存中...');
   await setDoc(doc(db,'light_users',sessionUserKey),profile,{merge:true});
-  if(auth.currentUser?.uid){
-    const bandRef=doc(db,'light_bands',bandId);
-    const bandSnap=await getDoc(bandRef);
-    if(!bandSnap.exists()) await setDoc(bandRef,{bandId,name:bandName,normalizedName:canonical(bandName),createdAt:now(),updatedAt:now(),createdByUid:auth.currentUser.uid},{merge:true});
-    await setDoc(doc(db,'light_band_members',`${bandId}_${auth.currentUser.uid}`),{uid:auth.currentUser.uid,userKey:sessionUserKey,bandId,bandName,updatedAt:now()},{merge:true});
-  }
-  if(oldBandId&&oldBandId!==bandId&&auth.currentUser?.uid) await deleteDoc(doc(db,'light_band_members',`${oldBandId}_${auth.currentUser.uid}`)).catch(()=>{});
   applyProfile({...current,...profile});
   hideProfileModal();
   localStorage.setItem('light_last_login',sessionUserKey);
+  if(auth.currentUser?.uid){
+    void (async()=>{
+      try{
+        const bandRef=doc(db,'light_bands',bandId);
+        const bandSnap=await getDoc(bandRef);
+        if(!bandSnap.exists()) await setDoc(bandRef,{bandId,name:bandName,normalizedName:canonical(bandName),createdAt:now(),updatedAt:now(),createdByUid:auth.currentUser.uid},{merge:true});
+        await setDoc(doc(db,'light_band_members',`${bandId}_${auth.currentUser.uid}`),{uid:auth.currentUser.uid,userKey:sessionUserKey,bandId,bandName,updatedAt:now()},{merge:true});
+        if(oldBandId&&oldBandId!==bandId) await deleteDoc(doc(db,'light_band_members',`${oldBandId}_${auth.currentUser.uid}`)).catch(()=>{});
+      }catch(e){
+        console.error('band association update failed',e);
+        addLog('システム','プロフィールは更新したけど、バンド所属情報の更新に失敗しました。','error');
+      }
+    })();
+  }
   return true;
 }
 function normalizeHistory(h){return(Array.isArray(h)?h:[]).filter(x=>x&&(x.role==='user'||x.role==='model')&&Array.isArray(x.parts));}
@@ -210,13 +225,19 @@ $('generate-passphrase-btn').addEventListener('click',()=>{
 $('profile-cancel-btn').addEventListener('click',()=>{hideProfileModal();setAuthMessage('');});
 $('profile-edit-btn').addEventListener('click',()=>{showProfileModal({name:sessionDisplayName,birthday:sessionBirthday,bandName:sessionBandName},false);});
 $('profile-save-btn').addEventListener('click',async()=>{
-  const btn=$('profile-save-btn');btn.disabled=true;setProfileMessage('保存中...');
+  const btn=$('profile-save-btn');btn.disabled=true;registrationInProgress=true;
   try{
-    if($('join-code-field').style.display!=='none') await authRegister(String($('login-id-input').value||pendingProfile.userKey||'').trim());
-    else await completeProfile();
-    await resetAndBoot();
+    setProfileMessage('保存を開始します...');
+    let ok=false;
+    if($('join-code-field').style.display!=='none') ok=await authRegister(String($('login-id-input').value||pendingProfile.userKey||'').trim());
+    else ok=await completeProfile();
+    if(!ok){return;}
+    setProfileMessage('登録完了。ライトを起動中...');
+    // authRegister/completeProfile already updated the current session; avoid a second profile race.
+    loginScreen.style.display='none';mainApp.style.display='flex';resetState();await bootCloud();
+    setProfileMessage('');
   }catch(e){console.error(e);setProfileMessage(friendlyAuthError(e));}
-  finally{btn.disabled=false;}
+  finally{registrationInProgress=false;btn.disabled=false;}
 });
 async function loadCurrentProfile(){
   const user=auth.currentUser;if(!user)return false;
@@ -245,6 +266,7 @@ function addLog(name,text,type='user',images=[]){
 }
 async function initAuth(){
   onAuthStateChanged(auth,async user=>{
+    if(registrationInProgress)return;
     if(!user){authReady=true;loginScreen.style.display='flex';mainApp.style.display='none';return;}
     try{
       const result=await loadCurrentProfile();
