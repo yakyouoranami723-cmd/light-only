@@ -25,9 +25,9 @@
 <div id="bootstrapScreen" class="login hidden">
   <div class="card">
     <h1>🔐 管理者登録</h1>
-    <div class="notice">このFirebaseアカウントにはまだ管理者権限がありません。管理者登録コードは初回だけ使います。</div>
-    <input id="bootstrapCode" type="password" placeholder="管理者登録コード" style="width:100%">
-    <div class="row" style="margin-top:12px"><button id="bootstrapBtn" class="primary">管理者として有効化</button><button id="logoutAuthBtn">ログアウト</button></div>
+    <div class="notice">このFirebaseアカウントにはまだ管理者権限がありません。非課金版では、最初の1回だけFirebase Consoleで管理者UIDを登録します。</div>
+    <div id="bootstrapCode" class="notice" style="margin-top:10px">確認ボタンを押して、管理者UIDが登録済みか確認してください。</div>
+    <div class="row" style="margin-top:12px"><button id="bootstrapBtn" class="primary">管理者権限を確認</button><button id="logoutAuthBtn">ログアウト</button></div>
     <div id="bootstrapMessage" class="small" style="margin-top:10px"></div>
   </div>
 </div>
@@ -35,15 +35,15 @@
 <div id="app" class="hidden">
 <div class="wrap">
   <div class="header">
-    <div><div class="title">✨ ライト OS 管理者</div><div class="sub">本番版 / Authentication + Cloud Functions + Firestore + Storage</div></div>
+    <div><div class="title">✨ ライト OS 管理者</div><div class="sub">非課金版 / Authentication + Firestore</div></div>
     <div class="row"><span id="adminIdentity" class="small"></span><button id="reloadBtn">🔄 更新</button><button id="logoutBtn">ログアウト</button></div>
   </div>
 
-  <div class="notice"><strong>本番版の重要事項：</strong> AIキーはブラウザやFirestoreに平文保存しません。管理者が入力したキーはCloud Functions側で暗号化保存し、学生サイトはAI APIへ直接アクセスせずFunctions経由で利用します。旧 <code>light_config/main</code> に平文APIキーが残っている場合は、移行後にFirebase Consoleで旧データを削除してください。</div>
+  <div class="notice"><strong>非課金版の重要事項：</strong> Cloud Functions / Blazeは使いません。AIは学生ブラウザから直接利用するため、登録したAI APIキーは認証済みユーザーから取得可能です。AIキーは<strong>必ず各プロバイダー側でHTTPリファラ制限・利用上限を設定</strong>してください。</div>
 
   <div class="card">
     <div class="section">🤖 AIプロバイダー / APIキー管理</div>
-    <div class="muted">Gemini / OpenAI / Anthropic / OpenAI互換エンドポイントに対応。複数登録すると優先順位順に自動フォールバックします。APIキー本体はこの画面に再表示しません。</div>
+    <div class="muted">Gemini / OpenAI / Anthropic / OpenAI互換エンドポイントに対応。複数登録すると優先順位順に自動フォールバックします。非課金構成のため、キーはFirestoreの認証済み利用者向け設定に保存されます。</div>
     <div class="profile-grid" style="margin-top:12px">
       <div><div class="small">種類</div><select id="providerType" style="width:100%"><option value="gemini">Gemini</option><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="openai_compatible">OpenAI互換</option></select></div>
       <div><div class="small">表示名</div><input id="providerLabel" style="width:100%" placeholder="例：Gemini メイン"></div>
@@ -59,7 +59,17 @@
     <div class="item"><div class="small">AI接続テスト</div><div class="row" style="margin-top:8px"><select id="testProviderId" class="grow"><option value="">テスト対象を選択</option></select><button id="testProviderBtn" class="blue">🩺 接続テスト</button></div><div id="providerTestResult" class="small" style="margin-top:8px"></div></div>
   </div>
 
-  <div class="card">
+  
+<div class="card">
+  <div class="section">🔑 初回登録コード</div>
+  <div class="notice">非課金版ではサーバー秘密鍵が使えないため、このコードは「入部/部内登録の目印」であり、強い秘密情報ではありません。長い文字列を使うことを推奨します。</div>
+  <div class="row"><label class="checkbox"><input type="checkbox" id="registrationEnabled"> 初回登録コードを必須にする</label></div>
+  <input id="registrationCode" type="password" autocomplete="off" placeholder="例：部内だけに共有する長いコード" style="width:100%;margin-top:8px">
+  <div class="row" style="margin-top:10px"><button id="saveRegistrationBtn" class="primary">登録コード設定を保存</button><button id="clearRegistrationBtn" class="danger">コードを無効化</button></div>
+  <div id="registrationMessage" class="small" style="margin-top:8px"></div>
+</div>
+
+<div class="card">
     <div class="section">👥 ユーザー / プロフィール / 🎸 バンド</div>
     <div class="row"><button class="blue" id="loadUsersBtn">ユーザー一覧を更新</button><span id="userListMeta" class="small"></span></div>
     <div id="userList" class="scroll" style="margin-top:10px"><div class="muted">読み込み中...</div></div>
@@ -121,12 +131,19 @@
   </div>
 
   <div class="card">
+    <div class="section">🧠 自動記憶候補 / 承認待ち</div>
+    <div class="muted">会話から長期的に覚える価値がありそうな情報を、いったん候補として保留します。管理者が承認したものだけ正式な個人記憶になります。</div>
+    <div class="row" style="margin-top:10px"><button class="blue" id="loadCandidatesBtn">候補を更新</button><span id="candidateListMeta" class="small"></span></div>
+    <div id="candidateList" class="scroll" style="margin-top:10px"><div class="muted">まだ読み込んでいません。</div></div>
+  </div>
+
+  <div class="card">
     <div class="section">🤖 アバター / ベータ版（途中追加対応）</div>
-    <div class="muted">Lightは先に登録して使い始め、Otoは後から追加できます。Light/Otoのファイル差し替えだけで済み、学生サイトのHTMLを作り直す必要はありません。</div>
+    <div class="muted">Lightは先に登録して使い始め、Otoは後から追加できます。Light/Otoのファイル差し替えだけで済み、学生サイトのHTMLを作り直す必要はありません。Cloud FunctionsやBlazeは使いません。</div>
     <div class="avatar-box" style="margin-top:12px"><div class="row"><label class="checkbox" style="font-weight:bold"><input type="checkbox" id="avatarBetaEnabled"> アバターモード ベータ版</label><span id="avatarBetaState" class="tag">OFF</span></div><div class="small" style="margin-top:6px">ONにすると学生サイトの再読み込み後、チャット画面の代わりにアバター会話が使用されます。</div></div>
     <div class="avatar-box" style="margin-top:10px"><div class="row"><label class="checkbox" style="font-weight:bold"><input type="checkbox" id="avatarLiveDayEnabled"> ライブデーモードを許可</label><span id="avatarLiveDayState" class="tag">OFF</span></div><div class="small" style="margin-top:6px">「デイブレイク」でLight ⇄ Otoを切り替えるための条件です。</div></div>
     <div class="grid2" style="margin-top:10px">
-      <div class="avatar-box"><div class="item-title">Light アバター</div><div class="small">VRM / GLB / 100MB未満</div><input type="file" id="lightAvatarFile" accept=".vrm,.glb,model/gltf-binary,application/octet-stream" style="width:100%;margin-top:8px"><div id="lightAvatarInfo" class="small" style="margin-top:6px">未登録</div></div>
+      <div class="avatar-box"><div class="item-title">Light アバター</div><div class="small">VRM / GLB / 15MB未満（Firestore分割保存）</div><input type="file" id="lightAvatarFile" accept=".vrm,.glb,model/gltf-binary,application/octet-stream" style="width:100%;margin-top:8px"><div id="lightAvatarInfo" class="small" style="margin-top:6px">未登録</div></div>
       <div class="avatar-box"><div class="item-title">Oto アバター</div><div class="small">後から追加可能</div><input type="file" id="otoAvatarFile" accept=".vrm,.glb,model/gltf-binary,application/octet-stream" style="width:100%;margin-top:8px"><div id="otoAvatarInfo" class="small" style="margin-top:6px">未登録</div></div>
     </div>
     <div class="row" style="margin-top:10px"><button class="primary" id="saveAvatarConfigBtn">アバター設定を保存</button><button id="removeLightAvatarBtn" class="danger">Light削除</button><button id="removeOtoAvatarBtn" class="danger">Oto削除</button><button id="reloadAvatarConfigBtn">状態を再読み込み</button></div>
@@ -141,7 +158,7 @@
 
   <div class="card">
     <div class="section">💾 バックアップ / 復元</div>
-    <div class="notice">セキュリティ上、<strong>AIプロバイダーの秘密情報・Authentication情報・管理者情報はバックアップ対象外</strong>です。写真本体は任意で含められます。</div>
+    <div class="notice">セキュリティ上、<strong>AIプロバイダーのAPIキー・Authentication情報・管理者権限はバックアップ対象外</strong>です。写真本体は任意で含められます。</div>
     <div class="row"><label class="checkbox"><input type="checkbox" id="backupIncludePhotos"> 写真本体を含める</label><button class="blue" id="exportBtn">JSONバックアップを作る</button><input type="file" id="restoreInput" accept="application/json"><button id="restoreBtn">復元</button></div>
     <div id="backupResult" class="small" style="margin-top:8px"></div>
   </div>
@@ -162,12 +179,10 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore,doc,getDoc,setDoc,addDoc,collection,getDocs,updateDoc,deleteDoc,query,where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getStorage,ref,uploadBytes,getDownloadURL,deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 import { getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFunctions,httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
 
 const firebaseConfig={apiKey:"AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",authDomain:"light-65413.firebaseapp.com",projectId:"light-65413",storageBucket:"light-65413.firebasestorage.app",messagingSenderId:"116819261632",appId:"1:116819261632:web:9d9144aa125a55371d5525"};
-const app=initializeApp(firebaseConfig),db=getFirestore(app),storage=getStorage(app),auth=getAuth(app),functions=getFunctions(app);
+const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);
 const $=id=>document.getElementById(id),now=()=>Date.now();
 const esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
 const listTags=v=>String(v||'').split(',').map(x=>x.trim()).filter(Boolean).slice(0,20);
@@ -179,38 +194,147 @@ function show(id){$(id).classList.remove('hidden');}
 function hide(id){$(id).classList.add('hidden');}
 function validBirthday(v){const m=String(v||'').trim().match(/^(\d{2})-(\d{2})$/);if(!m)return false;const mo=Number(m[1]),d=Number(m[2]);return mo>=1&&mo<=12&&d>=1&&d<=31;}
 function safeBandId(v){const s=String(v||'').trim().toLowerCase().replace(/[^a-z0-9\u3040-\u30ff\u4e00-\u9fff_-]/g,'_');return s.slice(0,80)||'band';}
-async function callFn(name,data){const fn=httpsCallable(functions,name);const r=await fn(data||{});return r.data||{};}
 
-function updateProviderTypeUI(){const compatible=$('providerType').value==='openai_compatible';$('baseUrlWrap').classList.toggle('hidden',!compatible);}
-$('providerType').addEventListener('change',updateProviderTypeUI);updateProviderTypeUI();
-
-async function checkAdminClaim(user){if(!user)return false;try{const t=await user.getIdTokenResult(true);return t.claims?.role==='admin';}catch(e){return false;}}
-async function finishAdmin(){adminReady=true;hide('authScreen');hide('bootstrapScreen');show('app');setText('adminIdentity',auth.currentUser?.email||'管理者');setText('authState','OK');setText('adminState','ADMIN');await reloadAll();}
-
-$('adminLoginBtn').addEventListener('click',async()=>{const email=$('adminEmail').value.trim(),pass=$('adminPassword').value;if(!email||!pass){msg('authMessage','メールアドレスとパスワードを入力してください。','error');return;}const b=$('adminLoginBtn');b.disabled=true;msg('authMessage','ログイン中...');try{await signInWithEmailAndPassword(auth,email,pass);const ok=await checkAdminClaim(auth.currentUser);if(ok)await finishAdmin();else{hide('authScreen');show('bootstrapScreen');msg('bootstrapMessage','このアカウントはまだ管理者権限がありません。');}}catch(e){console.error(e);msg('authMessage',e?.message||'ログインに失敗しました。','error');}finally{b.disabled=false;}});
-$('adminCreateBtn').addEventListener('click',async()=>{const email=$('adminEmail').value.trim(),pass=$('adminPassword').value;if(!email||pass.length<8){msg('authMessage','メールアドレスと8文字以上のパスワードを入力してください。','error');return;}const b=$('adminCreateBtn');b.disabled=true;msg('authMessage','アカウント作成中...');try{await createUserWithEmailAndPassword(auth,email,pass);hide('authScreen');show('bootstrapScreen');msg('bootstrapMessage','アカウントを作成しました。管理者登録コードを入力してください。');}catch(e){console.error(e);msg('authMessage',e?.message||'アカウント作成に失敗しました。','error');}finally{b.disabled=false;}});
-$('bootstrapBtn').addEventListener('click',async()=>{const code=$('bootstrapCode').value.trim();if(!code){msg('bootstrapMessage','管理者登録コードを入力してください。','error');return;}const b=$('bootstrapBtn');b.disabled=true;msg('bootstrapMessage','管理者権限を設定中...');try{await callFn('bootstrapAdmin',{bootstrapCode:code});await auth.currentUser?.getIdToken(true);const ok=await checkAdminClaim(auth.currentUser);if(!ok)throw new Error('管理者権限の反映を確認できませんでした。数秒後に再試行してください。');await finishAdmin();}catch(e){console.error(e);msg('bootstrapMessage',e?.message||'管理者登録に失敗しました。','error');}finally{b.disabled=false;}});
+async function sha256Hex(value){
+  const data=new TextEncoder().encode(String(value||''));
+  const hash=await crypto.subtle.digest('SHA-256',data);
+  return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function checkAdminDocument(user){
+  if(!user)return false;
+  try{
+    const s=await getDoc(doc(db,'light_admins',user.uid));
+    return s.exists()&&s.data()?.enabled!==false;
+  }catch(e){return false;}
+}
+function adminSetupHint(){
+  const uid=auth.currentUser?.uid||'';
+  $('bootstrapMessage').innerHTML=`このアカウントにはまだ管理者権限がありません。<br><br>Firebase Console → Firestore Database → コレクション「light_admins」→ ドキュメントIDを <code>${esc(uid)}</code> にして作成し、<code>enabled: true</code> を登録してください。<br><br>一度だけこの作業を行えば、以後は管理画面だけで運用できます。`;
+}
+async function finishAdmin(){
+  adminReady=true;hide('authScreen');hide('bootstrapScreen');show('app');
+  setText('adminIdentity',auth.currentUser?.email||'管理者');
+  setText('authState','OK');setText('adminState','ADMIN');
+  await reloadAll();
+}
+$('adminLoginBtn').addEventListener('click',async()=>{
+  const email=$('adminEmail').value.trim(),pass=$('adminPassword').value;
+  if(!email||!pass){msg('authMessage','メールアドレスとパスワードを入力してください。','error');return;}
+  const b=$('adminLoginBtn');b.disabled=true;msg('authMessage','ログイン中...');
+  try{await signInWithEmailAndPassword(auth,email,pass);if(await checkAdminDocument(auth.currentUser))await finishAdmin();else{hide('authScreen');show('bootstrapScreen');adminSetupHint();}}
+  catch(e){console.error(e);msg('authMessage',e?.message||'ログインに失敗しました。','error');}
+  finally{b.disabled=false;}
+});
+$('adminCreateBtn').addEventListener('click',async()=>{
+  const email=$('adminEmail').value.trim(),pass=$('adminPassword').value;
+  if(!email||pass.length<8){msg('authMessage','メールアドレスと8文字以上のパスワードを入力してください。','error');return;}
+  const b=$('adminCreateBtn');b.disabled=true;msg('authMessage','アカウント作成中...');
+  try{const cred=await createUserWithEmailAndPassword(auth,email,pass);hide('authScreen');show('bootstrapScreen');adminSetupHint();msg('bootstrapMessage',`アカウント作成済み。Firebase ConsoleでUIDを管理者として登録してください。`);}
+  catch(e){console.error(e);msg('authMessage',e?.message||'アカウント作成に失敗しました。','error');}
+  finally{b.disabled=false;}
+});
+$('bootstrapBtn').addEventListener('click',async()=>{
+  const b=$('bootstrapBtn');b.disabled=true;msg('bootstrapMessage','権限を確認中...');
+  try{
+    if(await checkAdminDocument(auth.currentUser))await finishAdmin();
+    else{adminSetupHint();}
+  }finally{b.disabled=false;}
+});
 $('logoutAuthBtn').addEventListener('click',async()=>{await signOut(auth);show('authScreen');hide('bootstrapScreen');hide('app');});
 $('logoutBtn').addEventListener('click',async()=>{await signOut(auth);show('authScreen');hide('app');});
-onAuthStateChanged(auth,async user=>{if(!user){adminReady=false;show('authScreen');hide('bootstrapScreen');hide('app');return;}const ok=await checkAdminClaim(user);if(ok){await finishAdmin();}else{hide('authScreen');show('bootstrapScreen');hide('app');}});
+onAuthStateChanged(auth,async user=>{
+  if(!user){adminReady=false;show('authScreen');hide('bootstrapScreen');hide('app');return;}
+  if(await checkAdminDocument(user))await finishAdmin();
+  else{hide('authScreen');show('bootstrapScreen');hide('app');adminSetupHint();}
+});
 
-function resetProviderForm(){$('editingProviderId').value='';$('providerType').value='gemini';$('providerLabel').value='';$('providerModel').value='';$('providerPriority').value='100';$('providerBaseUrl').value='';$('providerApiKey').value='';$('providerEnabled').checked=true;updateProviderTypeUI();msg('providerFormMessage','');$('saveProviderBtn').textContent='プロバイダーを保存';}
-function renderProviders(){setText('providerCountState',providers.filter(p=>p.hasKey).length);$('providerList').innerHTML=providers.length?providers.map(p=>`<div class="item"><div class="item-head"><div><div class="item-title">${esc(p.label||p.type)}</div><div class="small">${esc(p.type)} / model: ${esc(p.model||'')} / 優先 ${Number(p.priority||100)}</div><div style="margin-top:5px"><span class="tag ${p.enabled?'ok':'danger'}">${p.enabled?'有効':'無効'}</span><span class="tag ${p.hasKey?'ok':'danger'}">${p.hasKey?'キー登録済み':'キーなし'}</span>${p.keyHint?`<span class="tag">${esc(p.keyHint)}</span>`:''}</div></div><div class="small">${p.updatedAt?new Date(p.updatedAt).toLocaleString('ja-JP'):''}</div></div><div class="row" style="margin-top:8px"><button data-provider="edit" data-id="${esc(p.id)}">編集</button><button data-provider="test" class="blue" data-id="${esc(p.id)}">テスト</button><button data-provider="delete" class="danger" data-id="${esc(p.id)}">削除</button></div></div>`).join(''):'<div class="muted">登録されたAIプロバイダーはありません。</div>';$('testProviderId').innerHTML='<option value="">テスト対象を選択</option>'+providers.map(p=>`<option value="${esc(p.id)}">${esc(p.label||p.id)} / ${esc(p.model||'')}</option>`).join('');}
-$('saveProviderBtn').addEventListener('click',async()=>{const b=$('saveProviderBtn');b.disabled=true;msg('providerFormMessage','保存中...');try{const r=await callFn('adminSaveProvider',{id:$('editingProviderId').value.trim(),type:$('providerType').value,label:$('providerLabel').value.trim(),model:$('providerModel').value.trim(),baseUrl:$('providerBaseUrl').value.trim(),apiKey:$('providerApiKey').value,enabled:$('providerEnabled').checked,priority:Number($('providerPriority').value||100)});providers=providers.filter(x=>x.id!==r.provider.id).concat(r.provider).sort((a,b)=>Number(a.priority||100)-Number(b.priority||100));renderProviders();resetProviderForm();msg('providerFormMessage','🟢 保存しました。','good');}catch(e){console.error(e);msg('providerFormMessage',e?.message||'保存に失敗しました。','error');}finally{b.disabled=false;}});
+
+function resetProviderForm(){$('editingProviderId').value='';$('providerType').value='gemini';$('providerLabel').value='';$('providerModel').value='gemini-3.8-flash';$('providerPriority').value='100';$('providerBaseUrl').value='';$('providerApiKey').value='';$('providerEnabled').checked=true;updateProviderTypeUI();msg('providerFormMessage','');$('saveProviderBtn').textContent='プロバイダーを保存';}
+function renderProviders(){
+  setText('providerCountState',providers.filter(p=>p.apiKey).length);
+  $('providerList').innerHTML=providers.length?providers.map(p=>`<div class="item"><div class="item-head"><div><div class="item-title">${esc(p.label||p.type)}</div><div class="small">${esc(p.type)} / model: ${esc(p.model||'')} / 優先 ${Number(p.priority||100)}</div><div style="margin-top:5px"><span class="tag ${p.enabled?'ok':'danger'}">${p.enabled?'有効':'無効'}</span><span class="tag ${p.apiKey?'ok':'danger'}">${p.apiKey?'キー登録済み':'キーなし'}</span>${p.keyHint?`<span class="tag">${esc(p.keyHint)}</span>`:''}</div></div><div class="small">${p.updatedAt?new Date(p.updatedAt).toLocaleString('ja-JP'):''}</div></div><div class="row" style="margin-top:8px"><button data-provider="edit" data-id="${esc(p.id)}">編集</button><button data-provider="test" class="blue" data-id="${esc(p.id)}">テスト</button><button data-provider="delete" class="danger" data-id="${esc(p.id)}">削除</button></div></div>`).join(''):'<div class="muted">登録されたAIプロバイダーはありません。</div>';
+  $('testProviderId').innerHTML='<option value="">テスト対象を選択</option>'+providers.map(p=>`<option value="${esc(p.id)}">${esc(p.label||p.id)} / ${esc(p.model||'')}</option>`).join('');
+}
+async function loadProviders(){const s=await getDocs(collection(db,'light_ai_providers'));providers=[];s.forEach(d=>providers.push({id:d.id,...(d.data()||{})}));providers.sort((a,b)=>Number(a.priority||100)-Number(b.priority||100));renderProviders();}
+function makeProviderId(label){return `prov_${String(label||'ai').toLowerCase().replace(/[^a-z0-9_-]+/g,'_').slice(0,24)}_${Date.now().toString(36)}`;}
+async function testClientProvider(p){
+  if(!p?.apiKey)return {ok:false,status:0};
+  try{
+    const payload={system:'日本語で「OK」だけを返してください。',messages:[{role:'user',text:'接続テスト'}],maxOutputTokens:20,jsonMode:false};
+    const type=p.type,url=type==='gemini'?`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(p.model)}:generateContent`:type==='openai'?`https://api.openai.com/v1/chat/completions`:type==='openai_compatible'?`${(p.baseUrl||'').replace(/\/+$/,'')}/chat/completions`:'https://api.anthropic.com/v1/messages';
+    let headers={'Content-Type':'application/json'},body={};
+    if(type==='gemini'){headers['x-goog-api-key']=p.apiKey;body={contents:[{role:'user',parts:[{text:'接続テスト'}]}],generationConfig:{maxOutputTokens:20}};}
+    else if(type==='openai'||type==='openai_compatible'){headers.Authorization=`Bearer ${p.apiKey}`;body={model:p.model,messages:[{role:'user',content:'接続テスト'}],max_tokens:20};}
+    else{headers['x-api-key']=p.apiKey;headers['anthropic-version']='2023-06-01';headers['anthropic-dangerous-direct-browser-access']='true';body={model:p.model,max_tokens:20,messages:[{role:'user',content:[{type:'text',text:'接続テスト'}]}]};}
+    const res=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});return{ok:res.ok,status:res.status};
+  }catch(e){return{ok:false,status:0};}
+}
+$('saveProviderBtn').addEventListener('click',async()=>{
+  const b=$('saveProviderBtn');b.disabled=true;msg('providerFormMessage','保存中...');
+  try{
+    const id=$('editingProviderId').value.trim()||makeProviderId($('providerLabel').value.trim()||$('providerType').value);
+    const existing=providers.find(x=>x.id===id)||{};
+    const apiKey=$('providerApiKey').value.trim()||existing.apiKey||'';
+    if(!apiKey)throw new Error('APIキーを入力してください。');
+    const type=$('providerType').value,label=$('providerLabel').value.trim()||type,model=$('providerModel').value.trim();
+    if(!model)throw new Error('モデル名を入力してください。');
+    if(type==='openai_compatible'&&!/^https:\/\//i.test($('providerBaseUrl').value.trim()))throw new Error('OpenAI互換Base URLはHTTPSで入力してください。');
+    const data={type,label,model,baseUrl:$('providerBaseUrl').value.trim(),apiKey,enabled:$('providerEnabled').checked,priority:Number($('providerPriority').value||100),keyHint:`••••${apiKey.slice(-4)}`,updatedAt:now(),updatedBy:auth.currentUser.uid};
+    await setDoc(doc(db,'light_ai_providers',id),data,{merge:true});
+    await loadProviders();resetProviderForm();msg('providerFormMessage','🟢 保存しました。','good');
+  }catch(e){console.error(e);msg('providerFormMessage',e?.message||'保存に失敗しました。','error');}
+  finally{b.disabled=false;}
+});
 $('cancelProviderBtn').addEventListener('click',resetProviderForm);
-$('providerList').addEventListener('click',async e=>{const b=e.target.closest('button[data-provider]');if(!b)return;const id=b.dataset.id,p=providers.find(x=>x.id===id);if(!p)return;try{if(b.dataset.provider==='edit'){$('editingProviderId').value=p.id;$('providerType').value=p.type;$('providerLabel').value=p.label||'';$('providerModel').value=p.model||'';$('providerPriority').value=Number(p.priority||100);$('providerBaseUrl').value=p.baseUrl||'';$('providerApiKey').value='';$('providerEnabled').checked=p.enabled!==false;$('saveProviderBtn').textContent='このプロバイダーを更新';updateProviderTypeUI();window.scrollTo({top:0,behavior:'smooth'});}
-else if(b.dataset.provider==='test'){msg('providerTestResult','接続テスト中...');const r=await callFn('adminTestProvider',{id});msg('providerTestResult',r.ok?`🟢 接続OK：${r.provider?.label||id}`:`🔴 接続失敗：HTTP ${r.status||500}` ,r.ok?'good':'error');}
-else if(b.dataset.provider==='delete'){if(!confirm('このAIプロバイダーを削除しますか？'))return;await callFn('adminDeleteProvider',{id});providers=providers.filter(x=>x.id!==id);renderProviders();msg('providerFormMessage','削除しました。','good');}}
-catch(err){console.error(err);msg('providerTestResult',err?.message||'操作に失敗しました。','error');}});
-$('testProviderBtn').addEventListener('click',async()=>{const id=$('testProviderId').value;if(!id){msg('providerTestResult','テスト対象を選択してください。','error');return;}msg('providerTestResult','接続テスト中...');try{const r=await callFn('adminTestProvider',{id});msg('providerTestResult',r.ok?`🟢 接続OK：${r.provider?.label||id}`:`🔴 接続失敗：HTTP ${r.status||500}`,r.ok?'good':'error');}catch(e){msg('providerTestResult',e?.message||'テストに失敗しました。','error');}});
+$('providerList').addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-provider]');if(!b)return;
+  const id=b.dataset.id,p=providers.find(x=>x.id===id);if(!p)return;
+  try{
+    if(b.dataset.provider==='edit'){
+      $('editingProviderId').value=p.id;$('providerType').value=p.type;$('providerLabel').value=p.label||'';$('providerModel').value=p.model||'';$('providerPriority').value=Number(p.priority||100);$('providerBaseUrl').value=p.baseUrl||'';$('providerApiKey').value='';$('providerEnabled').checked=p.enabled!==false;$('saveProviderBtn').textContent='このプロバイダーを更新';updateProviderTypeUI();window.scrollTo({top:0,behavior:'smooth'});
+    }else if(b.dataset.provider==='test'){
+      msg('providerTestResult','接続テスト中...');const r=await testClientProvider(p);msg('providerTestResult',r.ok?`🟢 接続OK：${p.label||id}`:`🔴 接続失敗：HTTP ${r.status||0}`,r.ok?'good':'error');
+    }else if(b.dataset.provider==='delete'){
+      if(!confirm('このAIプロバイダーを削除しますか？'))return;
+      await deleteDoc(doc(db,'light_ai_providers',id));providers=providers.filter(x=>x.id!==id);renderProviders();msg('providerFormMessage','削除しました。','good');
+    }
+  }catch(err){console.error(err);msg('providerTestResult',err?.message||'操作に失敗しました。','error');}
+});
+$('testProviderBtn').addEventListener('click',async()=>{
+  const id=$('testProviderId').value;if(!id){msg('providerTestResult','テスト対象を選択してください。','error');return;}
+  const p=providers.find(x=>x.id===id);msg('providerTestResult','接続テスト中...');
+  const r=await testClientProvider(p);msg('providerTestResult',r.ok?`🟢 接続OK：${p.label||id}`:`🔴 接続失敗：HTTP ${r.status||0}`,r.ok?'good':'error');
+});
 
-async function loadProviders(){providers=(await callFn('adminListProviders')).providers||[];providers.sort((a,b)=>Number(a.priority||100)-Number(b.priority||100));renderProviders();}
+
+async function loadRegistrationSetting(){
+  try{
+    const s=await getDoc(doc(db,'light_public_settings','registration'));
+    if(s.exists()&&s.data()?.enabled===true){
+      $('registrationEnabled').checked=true;
+      $('registrationCode').value='';
+    }else{$('registrationEnabled').checked=false;$('registrationCode').value='';}
+  }catch(e){msg('registrationMessage','読み込みに失敗しました。','error');}
+}
+$('saveRegistrationBtn').addEventListener('click',async()=>{
+  try{
+    const enabled=$('registrationEnabled').checked,code=$('registrationCode').value.trim();
+    if(enabled&&!code)throw new Error('コードを入力してください。');
+    const codeHash=enabled?await sha256Hex(code):'';
+    await setDoc(doc(db,'light_public_settings','registration'),{enabled,codeHash,updatedAt:now(),updatedBy:auth.currentUser.uid},{merge:true});
+    $('registrationCode').value='';msg('registrationMessage','🟢 登録コード設定を保存しました。','good');
+  }catch(e){msg('registrationMessage',e.message||'保存に失敗しました。','error');}
+});
+$('clearRegistrationBtn').addEventListener('click',async()=>{
+  try{await setDoc(doc(db,'light_public_settings','registration'),{enabled:false,codeHash:'',updatedAt:now(),updatedBy:auth.currentUser.uid},{merge:true});$('registrationEnabled').checked=false;$('registrationCode').value='';msg('registrationMessage','無効化しました。','good');}
+  catch(e){msg('registrationMessage',e.message||'無効化に失敗しました。','error');}
+});
 
 async function loadUsers(){const s=await getDocs(collection(db,'light_users'));users=[];s.forEach(d=>users.push({id:d.id,...(d.data()||{})}));users.sort((a,b)=>Number(b.lastLoginAt||0)-Number(a.lastLoginAt||0));setText('userCountState',users.length);setText('userListMeta',`${users.length}人`);$('userList').innerHTML=users.length?users.map(u=>`<div class="item"><div class="item-head"><div><div class="item-title">${esc(u.name||u.displayName||u.username||u.id)}</div><div class="small">合言葉: ${esc(u.id)}</div><div class="small">誕生日: ${esc(u.birthday||'未登録')} / バンド: ${esc(u.bandName||'未所属')}</div></div><div><span class="tag ok">${Number(u.loginCount||0)}回</span></div></div><div class="row" style="margin-top:8px"><button class="blue" data-user="brain" data-id="${esc(u.id)}">脳ミソ</button><button data-user="memory" data-id="${esc(u.id)}">個人記憶</button><button data-user="edit" data-id="${esc(u.id)}">プロフィール編集</button></div></div>`).join(''):'<div class="muted">ユーザーはいません。</div>';refreshScopeTargets();}
 async function loadBands(){const s=await getDocs(collection(db,'light_bands'));bands=[];s.forEach(d=>bands.push({id:d.id,...(d.data()||{})}));bands.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ja'));setText('bandCountState',bands.length);setText('bandListMeta',`${bands.length}組`);$('bandList').innerHTML=bands.length?bands.map(b=>`<div class="item"><div class="item-head"><div><div class="item-title">${esc(b.name||b.id)}</div><div class="small">ID: ${esc(b.id)}</div></div><span class="tag ok">${users.filter(u=>u.bandId===b.id).length}人</span></div><div class="row" style="margin-top:8px"><button class="blue" data-band="memory" data-id="${esc(b.id)}">共有記憶を見る</button></div></div>`).join(''):'<div class="muted">バンドはいません。</div>';refreshScopeTargets();}
 $('loadUsersBtn').addEventListener('click',()=>loadUsers().catch(e=>msg('systemMessage',e.message,'error')));
 $('loadBandsBtn').addEventListener('click',()=>loadBands().catch(e=>msg('systemMessage',e.message,'error')));
-$('userList').addEventListener('click',async e=>{const b=e.target.closest('button[data-user]');if(!b)return;const id=b.dataset.id, u=users.find(x=>x.id===id);if(!u)return;if(b.dataset.user==='brain'){$('brainUserId').value=id;await loadBrain(id);$('brainUserId').scrollIntoView({behavior:'smooth',block:'center'});}else if(b.dataset.user==='memory'){await loadMemories();renderMemories(memories.filter(m=>m.scopeType==='personal'&&m.scopeId===id));$('memoryList').scrollIntoView({behavior:'smooth',block:'center'});}else if(b.dataset.user==='edit'){openProfileModal(u);}});
+$('userList').addEventListener('click',async e=>{const b=e.target.closest('button[data-user]');if(!b)return;const id=b.dataset.id, u=users.find(x=>x.id===id);if(!u)return;if(b.dataset.user==='brain'){$('brainUserId').value=id;await loadBrain(id);$('brainUserId').scrollIntoView({behavior:'smooth',block:'center'});}else if(b.dataset.user==='memory'){await loadMemories();renderMemories(memories.filter(m=>m.scopeType==='personal'&&(m.scopeId===id||m.scopeId===u.authUid)));$('memoryList').scrollIntoView({behavior:'smooth',block:'center'});}else if(b.dataset.user==='edit'){openProfileModal(u);}});
 $('bandList').addEventListener('click',async e=>{const b=e.target.closest('button[data-band]');if(!b)return;if(b.dataset.band==='memory'){await loadMemories();renderMemories(memories.filter(m=>m.scopeType==='band'&&m.scopeId===b.dataset.id));$('memoryList').scrollIntoView({behavior:'smooth',block:'center'});}});
 
 async function loadBrain(uid){const s=await getDoc(doc(db,'light_brains',uid));if(!s.exists()){$('brainSummary').value='';$('brainHistory').innerHTML='<div class="muted">脳ミソはまだありません。</div>';setText('brainMeta','');return;}const d=s.data()||{};$('brainSummary').value=String(d.summary||'');const h=Array.isArray(d.recentHistory)?d.recentHistory:[];setText('brainMeta',`${d.updatedAt?new Date(d.updatedAt).toLocaleString('ja-JP'):'不明'} / ${h.length}メッセージ`);$('brainHistory').innerHTML=h.length?h.map(x=>`<div style="margin:7px 0"><strong>${x.role==='user'?'あなた':'AI'}:</strong> ${esc(Array.isArray(x.parts)?x.parts.map(p=>p.text||'').join(''):x.text||'').replace(/\n/g,'<br>')}</div>`).join(''):'<div class="muted">会話履歴なし</div>';}
@@ -218,10 +342,10 @@ $('loadBrainBtn').addEventListener('click',async()=>{const uid=$('brainUserId').
 $('saveBrainBtn').addEventListener('click',async()=>{const uid=$('brainUserId').value.trim();if(!uid)return msg('brainMeta','ユーザーの合言葉を入力してください。','error');try{const s=await getDoc(doc(db,'light_brains',uid));const old=s.exists()?s.data()||{}:{};await setDoc(doc(db,'light_brains',uid),{summary:$('brainSummary').value.trim().slice(0,3500),recentHistory:Array.isArray(old.recentHistory)?old.recentHistory.slice(-20):[],userKey:uid,updatedAt:now(),editedBy:auth.currentUser.uid},{merge:true});await loadBrain(uid);msg('brainMeta','🟢 長期記憶を保存しました。','good');}catch(e){msg('brainMeta',e.message,'error');}});
 $('clearBrainBtn').addEventListener('click',async()=>{const uid=$('brainUserId').value.trim();if(!uid)return msg('brainMeta','ユーザーの合言葉を入力してください。','error');if(!confirm(`「${uid}」の長期記憶と直近会話を削除しますか？`))return;try{await setDoc(doc(db,'light_brains',uid),{summary:'',recentHistory:[],updatedAt:now(),editedBy:auth.currentUser.uid},{merge:true});await loadBrain(uid);msg('brainMeta','🟢 消去しました。','good');}catch(e){msg('brainMeta',e.message,'error');}});
 
-function refreshScopeTargets(){const type=$('memoryScopeType').value,sel=$('memoryScopeTarget');if(type==='club'){sel.disabled=true;sel.innerHTML='<option value="club">全部員</option>';}else if(type==='band'){sel.disabled=false;sel.innerHTML='<option value="">バンドを選択</option>'+bands.map(b=>`<option value="${esc(b.id)}">${esc(b.name||b.id)}</option>`).join('');}else{sel.disabled=false;sel.innerHTML='<option value="">ユーザーを選択</option>'+users.map(u=>`<option value="${esc(u.id)}">${esc(u.name||u.username||u.id)} / ${esc(u.bandName||'')}</option>`).join('');}}
+function refreshScopeTargets(){const type=$('memoryScopeType').value,sel=$('memoryScopeTarget');if(type==='club'){sel.disabled=true;sel.innerHTML='<option value="club">全部員</option>';}else if(type==='band'){sel.disabled=false;sel.innerHTML='<option value="">バンドを選択</option>'+bands.map(b=>`<option value="${esc(b.id)}">${esc(b.name||b.id)}</option>`).join('');}else{sel.disabled=false;sel.innerHTML='<option value="">ユーザーを選択</option>'+users.map(u=>`<option value="${esc(u.authUid||u.id)}">${esc(u.name||u.username||u.id)} / ${esc(u.bandName||'')} </option>`).join('');}}
 $('memoryScopeType').addEventListener('change',refreshScopeTargets);refreshScopeTargets();
 function clearMemoryForm(){$('editingMemoryId').value='';$('memoryTitle').value='';$('memoryDetails').value='';$('memoryTrouble').value='';$('memoryCountermeasure').value='';$('memoryEventId').value='';$('memorySource').value='';$('memoryKeywords').value='';$('directAnswer').checked=false;$('memoryEnabled').checked=true;$('memoryCategory').value='band';$('memoryStaffRole').value='none';$('memoryCertainty').value='confirmed';$('memoryValidity').value='current';$('memoryKind').value='text';refreshScopeTargets();$('memoryScopeType').value='band';refreshScopeTargets();$('saveMemoryBtn').textContent='記憶ファイルを保存';}
-function memoryScopeLabel(m){if(m.scopeType==='club')return '部活共通';if(m.scopeType==='band')return `バンド：${esc(bands.find(b=>b.id===m.scopeId)?.name||m.scopeId)}`;if(m.scopeType==='personal')return `個人：${esc(users.find(u=>u.id===m.scopeId)?.name||m.scopeId)}`;return esc(m.scopeType||'不明');}
+function memoryScopeLabel(m){if(m.scopeType==='club')return '部活共通';if(m.scopeType==='band')return `バンド：${esc(bands.find(b=>b.id===m.scopeId)?.name||m.scopeId)}`;if(m.scopeType==='personal'){const u=users.find(x=>x.id===m.scopeId||x.authUid===m.scopeId);return `個人：${esc(u?.name||u?.username||m.scopeId)}`;}return esc(m.scopeType||'不明');}
 async function loadMemories(){const s=await getDocs(collection(db,'light_memory_files'));memories=[];s.forEach(d=>memories.push({id:d.id,...(d.data()||{})}));memories.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));setText('memoryCountState',memories.length);renderMemories(memories);refreshScopeTargets();return memories;}
 function renderMemories(arr){$('memoryList').innerHTML=arr.length?arr.map(m=>`<div class="item"><div class="item-head"><div><div class="item-title">${esc(m.title||'無題')}</div><div class="small">${memoryScopeLabel(m)} / ${esc(m.category||'')} / ${esc(m.kind||'text')} / 担当:${esc(m.staffRole||'none')}</div><div style="margin-top:4px"><span class="tag ${m.certainty==='confirmed'?'ok':m.certainty==='unverified'?'warn':''}">${esc(m.certainty||'confirmed')}</span><span class="tag">${esc(m.validity||'current')}</span>${m.directAnswer?'<span class="tag ok">直接回答</span>':''}${m.enabled===false?'<span class="tag danger">無効</span>':''}</div></div></div><div style="white-space:pre-wrap;margin-top:8px">${esc(m.details||'')}</div>${m.trouble?`<div class="small" style="margin-top:7px">起きたトラブル：${esc(m.trouble)}</div>`:''}${m.countermeasure?`<div class="small" style="margin-top:5px">対処：${esc(m.countermeasure)}</div>`:''}${m.eventId?`<div class="small" style="margin-top:5px">eventId: ${esc(m.eventId)}</div>`:''}<div style="margin-top:6px">${(m.keywords||m.tags||[]).map(k=>`<span class="tag">${esc(k)}</span>`).join('')}</div><div class="row" style="margin-top:8px"><button data-memory="edit" data-id="${esc(m.id)}">編集</button><button data-memory="delete" class="danger" data-id="${esc(m.id)}">削除</button></div></div>`).join(''):'<div class="muted">該当する記憶ファイルはありません。</div>';}
 $('clearMemoryFormBtn').addEventListener('click',clearMemoryForm);
@@ -230,7 +354,7 @@ $('memoryList').addEventListener('click',async e=>{const b=e.target.closest('but
 
 async function loadPhotos(){const s=await getDocs(collection(db,'light_images'));photos=[];s.forEach(d=>photos.push({id:d.id,...(d.data()||{})}));photos.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));setText('photoCountState',photos.length);renderPhotos();}
 function photoMatches(p){const scope=$('photoScopeFilter').value,q=$('photoSearch').value.trim().toLowerCase();if(scope!=='all'&&p.scopeType!==scope)return false;if(!q)return true;const hay=[p.title,p.username,p.name,p.bandName,p.category,p.staffRole,p.humanNote,p.aiObservation,p.aiSummary,p.eventTitle,p.date,...(p.tags||[])].join(' ').toLowerCase();return hay.includes(q);}
-function renderPhotos(){const arr=photos.filter(photoMatches);setText('photoListMeta',`${arr.length}件 / 全${photos.length}件`);$('photoList').innerHTML=arr.length?arr.map(p=>`<div class="item"><div style="display:flex;gap:12px;align-items:flex-start"><img class="thumb" src="" alt="写真" data-thumb="${esc(p.id)}"><div class="grow"><div class="item-title">${esc(p.title||'写真')}</div><div class="small">${esc(p.name||p.username||'')} / ${esc(p.bandName||'')} / ${esc(p.category||'')} / ${esc(p.staffRole||'none')} / ${esc(p.date||'')}</div><div style="margin-top:6px">${(p.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="small" style="margin-top:6px">AI観察：${esc(p.aiObservation||'なし')}</div><div class="small" style="margin-top:5px">人間メモ：${esc(p.humanNote||'なし')}</div>${p.eventId?`<div class="small" style="margin-top:5px">eventId: ${esc(p.eventId)}</div>`:''}<div class="row" style="margin-top:8px"><button data-photo="view" data-id="${esc(p.id)}">写真を見る</button><button data-photo="delete" class="danger" data-id="${esc(p.id)}">写真を削除</button></div></div></div></div>`).join(''):'<div class="muted">該当する写真がありません。</div>';for(const img of [...document.querySelectorAll('[data-thumb]')].slice(0,24)){loadPhotoDataUrl(img.dataset.thumb).then(u=>{if(u)img.src=u;}).catch(()=>{});}}
+function renderPhotos(){const arr=photos.filter(photoMatches);setText('photoListMeta',`${arr.length}件 / 全${photos.length}件`);$('photoList').innerHTML=arr.length?arr.map(p=>`<div class="item"><div style="display:flex;gap:12px;align-items:flex-start"><img class="thumb" src="" alt="写真" data-thumb="${esc(p.id)}"><div class="grow"><div class="item-title">${esc(p.title||'写真')}</div><div class="small">${esc(p.name||p.username||'')} / ${esc(p.bandName||'')} / ${esc(p.category||'')} / ${esc(p.staffRole||'none')} / ${esc(p.date||'')}</div><div style="margin-top:6px">${(p.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="small" style="margin-top:6px">AI観察：${esc(p.aiObservation||'なし')}</div><div class="small" style="margin-top:5px">人間メモ：${esc(p.humanNote||'なし')}</div>${p.eventId?`<div class="small" style="margin-top:5px">eventId: ${esc(p.eventId)}</div>`:''}${p.userConfirmedPersonLabels?.length?`<div class="small" style="margin-top:5px">ユーザー確認人物：${p.userConfirmedPersonLabels.map(x=>esc(x)).join(' / ')}</div>`:''}<div class="row" style="margin-top:8px"><button data-photo="view" data-id="${esc(p.id)}">写真を見る</button><button data-photo="delete" class="danger" data-id="${esc(p.id)}">写真を削除</button></div></div></div></div>`).join(''):'<div class="muted">該当する写真がありません。</div>';for(const img of [...document.querySelectorAll('[data-thumb]')].slice(0,24)){loadPhotoDataUrl(img.dataset.thumb).then(u=>{if(u)img.src=u;}).catch(()=>{});}}
 async function loadPhotoDataUrl(imageId){const s=await getDocs(collection(db,'light_images',imageId,'chunks'));const arr=[];s.forEach(d=>arr.push({i:Number(d.data()?.index??d.id),data:String(d.data()?.data||'')}));arr.sort((a,b)=>a.i-b.i);return arr.map(x=>x.data).join('');}
 $('photoSearch').addEventListener('input',renderPhotos);$('photoScopeFilter').addEventListener('change',renderPhotos);$('loadPhotosBtn').addEventListener('click',()=>loadPhotos().catch(e=>msg('systemMessage',e.message,'error')));
 $('photoList').addEventListener('click',async e=>{const b=e.target.closest('button[data-photo]');if(!b)return;const id=b.dataset.id;if(b.dataset.photo==='view'){const url=await loadPhotoDataUrl(id);if(url)window.open(url,'_blank','noopener');else alert('写真本体を読み込めませんでした。');return;}if(!confirm('写真と写真に紐づく記憶を削除しますか？'))return;try{const s=await getDocs(collection(db,'light_images',id,'chunks'));await Promise.all(s.docs.map(d=>deleteDoc(d.ref)));await deleteDoc(doc(db,'light_images',id));const fs=await getDocs(collection(db,'light_memory_files'));await Promise.all(fs.docs.filter(d=>d.data()?.imageId===id).map(d=>deleteDoc(d.ref)));await loadPhotos();await loadMemories();}catch(err){alert(err.message||'削除に失敗しました。');}});
@@ -240,15 +364,69 @@ function renderTimeline(){ $('timelineList').innerHTML=timelines.length?timeline
 $('saveTimelineBtn').addEventListener('click',async()=>{const date=$('timelineDate').value,title=$('timelineTitle').value.trim(),details=$('timelineDetails').value.trim();if(!date||!title||!details){alert('日付・タイトル・詳細を入力してください。');return;}try{await addDoc(collection(db,'light_history'),{date,title,details,tags:listTags($('timelineTags').value),bandId:'club',bandName:'軽音楽部',scopeType:'club',createdAt:now(),createdBy:auth.currentUser.email||auth.currentUser.uid,createdByName:auth.currentUser.email||'管理者',authUid:auth.currentUser.uid});$('timelineDate').value='';$('timelineTitle').value='';$('timelineDetails').value='';$('timelineTags').value='';await loadTimeline();}catch(e){alert(e.message||'部史追加に失敗しました。');}});
 $('timelineList').addEventListener('click',async e=>{const id=e.target.closest('[data-timeline-delete]')?.dataset.timelineDelete;if(!id)return;if(!confirm('この部史を削除しますか？'))return;try{await deleteDoc(doc(db,'light_history',id));await loadTimeline();}catch(err){alert(err.message||'削除に失敗しました。');}});
 
-async function removeAvatarRole(role){const paths=[`avatars/${role}.vrm`,`avatars/${role}.glb`];for(const path of paths){try{await deleteObject(ref(storage,path));}catch(_){}}avatarData[role+'Url']='';avatarData[role+'Name']='';}
-async function uploadAvatar(file,role){if(!file)return avatarData[role+'Url']||'';const ext=(file.name.split('.').pop()||'').toLowerCase();if(!['vrm','glb'].includes(ext))throw new Error('VRMまたはGLBを選択してください。');if(file.size>100*1024*1024)throw new Error('100MB未満のファイルにしてください。');await removeAvatarRole(role);const path=`avatars/${role}.${ext}`;const r=ref(storage,path);await uploadBytes(r,file,{contentType:'model/gltf-binary',cacheControl:'public,max-age=300'});return await getDownloadURL(r);}
+
+async function deleteAvatarRole(role){
+  try{const s=await getDocs(collection(db,'light_avatar_files',role,'chunks'));await Promise.all(s.docs.map(d=>deleteDoc(d.ref)));}catch(e){}
+  try{await deleteDoc(doc(db,'light_avatar_files',role));}catch(e){}
+  avatarData[role+'Name']='';
+}
+function fileToBase64(file){
+  return new Promise((resolve,reject)=>{
+    const r=new FileReader();r.onload=()=>resolve(String(r.result||'').split(',')[1]||'');r.onerror=()=>reject(new Error('ファイルの読み込みに失敗しました。'));r.readAsDataURL(file);
+  });
+}
+async function uploadAvatar(file,role){
+  if(!file)return false;
+  const ext=(file.name.split('.').pop()||'').toLowerCase();
+  if(!['vrm','glb'].includes(ext))throw new Error('VRMまたはGLBを選択してください。');
+  if(file.size>15*1024*1024)throw new Error('非課金版では15MB未満のアバターファイルにしてください。');
+  const base64=await fileToBase64(file),chunkSize=700000;
+  await deleteAvatarRole(role);
+  const chunks=[];for(let i=0;i<base64.length;i+=chunkSize)chunks.push(base64.slice(i,i+chunkSize));
+  await Promise.all(chunks.map((data,i)=>setDoc(doc(db,'light_avatar_files',role,'chunks',String(i)),{index:i,data,createdAt:now()})));
+  await setDoc(doc(db,'light_avatar_files',role),{
+    role,name:file.name,extension:ext,mimeType:'model/gltf-binary',size:file.size,
+    chunkCount:chunks.length,enabled:true,updatedAt:now(),updatedBy:auth.currentUser.uid
+  });
+  avatarData[role+'Name']=file.name;
+  return true;
+}
 function refreshAvatarBadges(){const on=$('avatarBetaEnabled').checked,live=$('avatarLiveDayEnabled').checked;$('avatarBetaState').textContent=on?'ON':'OFF';$('avatarBetaState').className='tag '+(on?'ok':'');$('avatarLiveDayState').textContent=live?'ON':'OFF';$('avatarLiveDayState').className='tag '+(live?'ok':'');}
-async function loadAvatarConfig(){const s=await getDoc(doc(db,'light_avatar_config','main'));avatarData=s.exists()?{betaEnabled:false,liveDayEnabled:false,lightUrl:'',otoUrl:'',lightName:'',otoName:'',...(s.data()||{})}:{betaEnabled:false,liveDayEnabled:false,lightUrl:'',otoUrl:'',lightName:'',otoName:'',updatedAt:0};$('avatarBetaEnabled').checked=!!avatarData.betaEnabled;$('avatarLiveDayEnabled').checked=!!avatarData.liveDayEnabled;$('lightAvatarInfo').textContent=avatarData.lightUrl?`登録済み：${avatarData.lightName||'Light avatar'}`:'未登録';$('otoAvatarInfo').textContent=avatarData.otoUrl?`登録済み：${avatarData.otoName||'Oto avatar'}`:'未登録';refreshAvatarBadges();}
+async function loadAvatarConfig(){
+  const s=await getDoc(doc(db,'light_avatar_config','main'));
+  avatarData=s.exists()?{betaEnabled:false,liveDayEnabled:false,lightName:'',otoName:'',updatedAt:0,...(s.data()||{})}:{betaEnabled:false,liveDayEnabled:false,lightName:'',otoName:'',updatedAt:0};
+  try{for(const role of ['light','oto']){const a=await getDoc(doc(db,'light_avatar_files',role));if(a.exists())avatarData[role+'Name']=a.data()?.name||'';}}catch(e){}
+  $('avatarBetaEnabled').checked=!!avatarData.betaEnabled;$('avatarLiveDayEnabled').checked=!!avatarData.liveDayEnabled;
+  $('lightAvatarInfo').textContent=avatarData.lightName?`登録済み：${avatarData.lightName}`:'未登録';
+  $('otoAvatarInfo').textContent=avatarData.otoName?`登録済み：${avatarData.otoName}`:'未登録';
+  refreshAvatarBadges();
+}
 $('avatarBetaEnabled').addEventListener('change',refreshAvatarBadges);$('avatarLiveDayEnabled').addEventListener('change',refreshAvatarBadges);
-$('saveAvatarConfigBtn').addEventListener('click',async()=>{const b=$('saveAvatarConfigBtn');b.disabled=true;setText('avatarUploadResult','保存中...');try{const lf=$('lightAvatarFile').files?.[0]||null,of=$('otoAvatarFile').files?.[0]||null;if(lf){avatarData.lightUrl=await uploadAvatar(lf,'light');avatarData.lightName=lf.name;}if(of){avatarData.otoUrl=await uploadAvatar(of,'oto');avatarData.otoName=of.name;}if($('avatarBetaEnabled').checked&&!avatarData.lightUrl)throw new Error('アバターモードをONにするにはLightアバターが必要です。');if(!$('avatarBetaEnabled').checked)$('avatarLiveDayEnabled').checked=false;avatarData.betaEnabled=$('avatarBetaEnabled').checked;avatarData.liveDayEnabled=$('avatarLiveDayEnabled').checked;avatarData.updatedAt=now();avatarData.updatedBy=auth.currentUser.uid;await setDoc(doc(db,'light_avatar_config','main'),avatarData,{merge:true});$('lightAvatarFile').value='';$('otoAvatarFile').value='';await loadAvatarConfig();setText('avatarUploadResult','🟢 保存完了。学生サイトを再読み込みすれば反映されます。');}catch(e){console.error(e);setText('avatarUploadResult','🔴 '+(e.message||'保存に失敗しました。'));}finally{b.disabled=false;}});
-$('removeLightAvatarBtn').addEventListener('click',async()=>{if(!confirm('Lightアバターを削除しますか？'))return;try{await removeAvatarRole('light');avatarData.betaEnabled=false;avatarData.liveDayEnabled=false;await setDoc(doc(db,'light_avatar_config','main'),avatarData,{merge:true});await loadAvatarConfig();setText('avatarUploadResult','Lightを削除し、アバターモードをOFFにしました。');}catch(e){setText('avatarUploadResult',e.message||'削除に失敗しました。');}});
-$('removeOtoAvatarBtn').addEventListener('click',async()=>{if(!confirm('Otoアバターを削除しますか？'))return;try{await removeAvatarRole('oto');await setDoc(doc(db,'light_avatar_config','main'),{...avatarData,otoUrl:'',otoName:'',updatedAt:now(),updatedBy:auth.currentUser.uid},{merge:true});await loadAvatarConfig();setText('avatarUploadResult','Otoを削除しました。');}catch(e){setText('avatarUploadResult',e.message||'削除に失敗しました。');}});
-$('reloadAvatarConfigBtn').addEventListener('click',()=>loadAvatarConfig().catch(e=>setText('avatarUploadResult',e.message||'読み込みに失敗しました。')));
+$('saveAvatarConfigBtn').addEventListener('click',async()=>{
+  const b=$('saveAvatarConfigBtn');b.disabled=true;setText('avatarUploadResult','保存中...');
+  try{
+    const lf=$('lightAvatarFile').files?.[0]||null,of=$('otoAvatarFile').files?.[0]||null;
+    if(lf)await uploadAvatar(lf,'light');if(of)await uploadAvatar(of,'oto');
+    if($('avatarBetaEnabled').checked&&! (await getDoc(doc(db,'light_avatar_files','light'))).exists())throw new Error('アバターモードをONにするにはLightアバターが必要です。');
+    if(!$('avatarBetaEnabled').checked)$('avatarLiveDayEnabled').checked=false;
+    await setDoc(doc(db,'light_avatar_config','main'),{betaEnabled:$('avatarBetaEnabled').checked,liveDayEnabled:$('avatarLiveDayEnabled').checked,updatedAt:now(),updatedBy:auth.currentUser.uid},{merge:true});
+    $('lightAvatarFile').value='';$('otoAvatarFile').value='';await loadAvatarConfig();
+    setText('avatarUploadResult','🟢 保存完了。学生サイトを再読み込みすれば反映されます。');
+  }catch(e){console.error(e);setText('avatarUploadResult','🔴 '+(e.message||'保存に失敗しました。'))}finally{b.disabled=false;}
+});
+$('removeLightAvatarBtn').addEventListener('click',async()=>{
+  if(!confirm('Lightアバターを削除しますか？'))return;
+  try{await deleteAvatarRole('light');await setDoc(doc(db,'light_avatar_config','main'),{betaEnabled:false,liveDayEnabled:false,updatedAt:now(),updatedBy:auth.currentUser.uid},{merge:true});await loadAvatarConfig();setText('avatarUploadResult','Lightを削除し、アバターモードをOFFにしました。');}catch(e){setText('avatarUploadResult',e.message||'削除に失敗しました。');}
+});
+$('removeOtoAvatarBtn').addEventListener('click',async()=>{
+  if(!confirm('Otoアバターを削除しますか？'))return;
+  try{await deleteAvatarRole('oto');await loadAvatarConfig();setText('avatarUploadResult','Otoを削除しました。');}catch(e){setText('avatarUploadResult',e.message||'削除に失敗しました。');}
+});
+$('reloadAvatarConfigBtn').addEventListener('click',()=>loadAvatarConfig().catch(e=>setText('avatarUploadResult',e.message||'読み込みに失敗しました.')));
+
+async function loadCandidates(){const s=await getDocs(collection(db,'light_memory_candidates'));const arr=[];s.forEach(d=>arr.push({id:d.id,...(d.data()||{})}));arr.sort((x,y)=>Number(y.createdAt||0)-Number(x.createdAt||0));const pending=arr.filter(x=>x.status==='pending');setText('candidateListMeta',`${pending.length}件待承認 / 全${arr.length}件`);$('candidateList').innerHTML=pending.length?pending.slice(0,80).map(c=>`<div class="item"><div class="item-head"><div><div class="item-title">${esc(c.userKey||'ユーザー')}</div><div class="small">${esc(c.bandName||'未所属')} / ${esc(c.createdAt?new Date(c.createdAt).toLocaleString('ja-JP'):'')}</div></div><span class="tag warn">承認待ち</span></div><div style="white-space:pre-wrap;margin-top:8px">${esc(c.candidateText||'')}</div><div class="row" style="margin-top:8px"><button class="primary" data-candidate="approve" data-id="${esc(c.id)}">✅ 正式記憶に採用</button><button class="danger" data-candidate="reject" data-id="${esc(c.id)}">却下</button></div></div>`).join(''):'<div class="muted">承認待ちの候補はありません。</div>';return arr;}
+async function approveCandidate(c){const ref=await addDoc(collection(db,'light_memory_files'),{title:`会話からの記憶：${String(c.candidateText||'').slice(0,60)}`,details:String(c.candidateText||'').slice(0,3000),scopeType:'personal',scopeId:c.scopeId,authUid:c.authUid,userKey:c.userKey,bandId:c.bandId||'',bandName:c.bandName||'',kind:'text',category:'personal',subcategory:'自動記憶候補',staffRole:'none',certainty:'confirmed',validity:'current',trouble:'',countermeasure:'',eventId:'',sourceName:'会話からの自動記憶候補（管理者承認）',keywords:['自動記憶','承認済み'],tags:['自動記憶','承認済み'],directAnswer:false,enabled:true,createdBy:'admin',createdAt:now(),updatedAt:now(),candidateId:c.id});await updateDoc(doc(db,'light_memory_candidates',c.id),{status:'approved',approvedAt:now(),approvedBy:auth.currentUser.uid,memoryId:ref.id});}
+$('loadCandidatesBtn').addEventListener('click',()=>loadCandidates().catch(e=>setText('systemMessage',e.message||'候補の読み込みに失敗しました。')));$('candidateList').addEventListener('click',async e=>{const b=e.target.closest('button[data-candidate]');if(!b)return;const id=b.dataset.id;try{const s=await getDoc(doc(db,'light_memory_candidates',id));if(!s.exists())return;const c={id,...(s.data()||{})};if(b.dataset.candidate==='approve'){if(!confirm('この候補を正式な個人記憶として保存しますか？'))return;await approveCandidate(c);}else{if(!confirm('この記憶候補を却下しますか？'))return;await updateDoc(doc(db,'light_memory_candidates',id),{status:'rejected',rejectedAt:now(),rejectedBy:auth.currentUser.uid});}await loadCandidates();await loadMemories();}catch(e){console.error(e);setText('systemMessage',e.message||'記憶候補の処理に失敗しました。');}});
 
 function openProfileModal(u){$('editProfileUserKey').value=u.id;$('editProfileKey').textContent=u.id;$('editProfileName').value=u.name||u.displayName||u.username||'';$('editProfileBirthday').value=u.birthday||'';$('editProfileBand').value=u.bandName||'';$('profileEditMessage').textContent='';$('profileModal').style.display='flex';}
 function closeProfileModal(){$('profileModal').style.display='none';}
@@ -258,11 +436,11 @@ $('saveProfileBtn').addEventListener('click',async()=>{const uid=$('editProfileU
 async function loadLegacy(uid){const s=await getDoc(doc(db,'light_memories',uid));if(!s.exists()){$('legacyView').innerHTML='<div class="muted">該当する旧記憶はありません。</div>';return;}const d=s.data()||{};$('legacyView').innerHTML=`<div class="provider-key"><strong>${esc(uid)}</strong></div><div style="margin-top:8px"><span class="tag">自己改善 ${Array.isArray(d.reflections)?d.reflections.length:0}件</span><span class="tag">事実 ${Array.isArray(d.facts)?d.facts.length:0}件</span></div><div style="margin-top:10px"><strong>反省・学習ルール</strong><div class="small" style="white-space:pre-wrap;margin-top:5px">${esc((d.reflections||[]).join('\n'))||'(なし)'}</div></div><div style="margin-top:10px"><strong>事実記憶</strong><div class="small" style="white-space:pre-wrap;margin-top:5px">${esc((d.facts||[]).join('\n'))||'(なし)'}</div></div>`;}
 $('loadLegacyBtn').addEventListener('click',async()=>{const uid=$('legacyUserId').value.trim();if(!uid)return;try{await loadLegacy(uid);}catch(e){msg('systemMessage',e.message,'error');}});
 
-async function exportBackup(){const collections=['light_users','light_bands','light_band_members','light_brains','light_memory_files','light_memories','light_history','light_history_edits','light_photo_edits','light_system','light_avatar_config','light_images'];const result={version:'mightyX-prod-1',exportedAt:new Date().toISOString(),notice:'AI provider secrets, Auth accounts and admin data are intentionally excluded.',collections:{},imageChunks:[]};for(const name of collections){const s=await getDocs(collection(db,name));result.collections[name]=[];s.forEach(d=>result.collections[name].push({id:d.id,data:d.data()||{}}));}if($('backupIncludePhotos').checked){for(const item of result.collections.light_images||[]){const s=await getDocs(collection(db,'light_images',item.id,'chunks'));s.forEach(d=>result.imageChunks.push({imageId:item.id,id:d.id,data:d.data()||{}}));}}const blob=new Blob([JSON.stringify(result)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`light-mightyX-prod-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);setText('backupResult',`🟢 バックアップ完了 ${(blob.size/1024/1024).toFixed(2)}MB`);}
+async function exportBackup(){const collections=['light_users','light_bands','light_band_members','light_brains','light_memory_files','light_memories','light_memory_candidates','light_history','light_history_edits','light_photo_edits','light_system','light_avatar_config','light_public_settings','light_images'];const result={version:'mightyX-prod-1',exportedAt:new Date().toISOString(),notice:'AI provider secrets, Auth accounts and admin data are intentionally excluded.',collections:{},imageChunks:[]};for(const name of collections){const s=await getDocs(collection(db,name));result.collections[name]=[];s.forEach(d=>result.collections[name].push({id:d.id,data:d.data()||{}}));}if($('backupIncludePhotos').checked){for(const item of result.collections.light_images||[]){const s=await getDocs(collection(db,'light_images',item.id,'chunks'));s.forEach(d=>result.imageChunks.push({imageId:item.id,id:d.id,data:d.data()||{}}));}}const blob=new Blob([JSON.stringify(result)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`light-mightyX-prod-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);setText('backupResult',`🟢 バックアップ完了 ${(blob.size/1024/1024).toFixed(2)}MB`);}
 $('exportBtn').addEventListener('click',async()=>{try{setText('backupResult','バックアップ作成中...');await exportBackup();}catch(e){setText('backupResult','🔴 '+(e.message||'バックアップ失敗'));}});
-$('restoreBtn').addEventListener('click',async()=>{const f=$('restoreInput').files?.[0];if(!f)return alert('JSONを選択してください。');if(!confirm('バックアップ対象データでFirestoreを上書きします。続けますか？'))return;try{const data=JSON.parse(await f.text()),allowed=['light_users','light_bands','light_band_members','light_brains','light_memory_files','light_memories','light_history','light_history_edits','light_photo_edits','light_system','light_avatar_config','light_images'];for(const name of allowed){for(const item of data.collections?.[name]||[]){await setDoc(doc(db,name,item.id),item.data||{});}}for(const ch of data.imageChunks||[]){await setDoc(doc(db,'light_images',ch.imageId,'chunks',ch.id),ch.data||{});}await reloadAll();setText('backupResult','🟢 復元が完了しました。');}catch(e){console.error(e);setText('backupResult','🔴 '+(e.message||'復元失敗'));}});
+$('restoreBtn').addEventListener('click',async()=>{const f=$('restoreInput').files?.[0];if(!f)return alert('JSONを選択してください。');if(!confirm('バックアップ対象データでFirestoreを上書きします。続けますか？'))return;try{const data=JSON.parse(await f.text()),allowed=['light_users','light_bands','light_band_members','light_brains','light_memory_files','light_memories','light_memory_candidates','light_history','light_history_edits','light_photo_edits','light_system','light_avatar_config','light_public_settings','light_images'];for(const name of allowed){for(const item of data.collections?.[name]||[]){await setDoc(doc(db,name,item.id),item.data||{});}}for(const ch of data.imageChunks||[]){await setDoc(doc(db,'light_images',ch.imageId,'chunks',ch.id),ch.data||{});}await reloadAll();setText('backupResult','🟢 復元が完了しました。');}catch(e){console.error(e);setText('backupResult','🔴 '+(e.message||'復元失敗'));}});
 
-async function reloadAll(){if(!adminReady&&auth.currentUser){const ok=await checkAdminClaim(auth.currentUser);if(!ok)return;}try{setText('systemMessage','読み込み中...');await Promise.all([loadProviders(),loadUsers(),loadBands(),loadMemories(),loadPhotos(),loadTimeline(),loadAvatarConfig()]);setText('authState','OK');setText('adminState','ADMIN');setText('systemMessage','🟢 本番管理画面は接続済みです。');}catch(e){console.error(e);setText('systemMessage','🔴 '+(e.message||'読み込みに失敗しました。'));}}
+async function reloadAll(){if(!adminReady&&auth.currentUser){const ok=await checkAdminClaim(auth.currentUser);if(!ok)return;}try{setText('systemMessage','読み込み中...');await Promise.all([loadProviders(),loadUsers(),loadBands(),loadMemories(),loadPhotos(),loadTimeline(),loadAvatarConfig(),loadRegistrationSetting(),loadCandidates()]);setText('authState','OK');setText('adminState','ADMIN');setText('systemMessage','🟢 非課金版の管理画面は接続済みです。');}catch(e){console.error(e);setText('systemMessage','🔴 '+(e.message||'読み込みに失敗しました。'));}}
 $('reloadBtn').addEventListener('click',()=>reloadAll());
 
 resetProviderForm();
