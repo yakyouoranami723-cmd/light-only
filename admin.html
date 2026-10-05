@@ -1,449 +1,83 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ライト OS 管理者 ver.mightyX</title>
+<!doctype html><html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ライト OS 管理者 ver.mightyX</title>
 <style>
-*{box-sizing:border-box}body{background:#0b0c10;color:#fff;font-family:'Helvetica Neue',Arial,sans-serif;margin:0;min-height:100vh;padding:24px}.wrap{width:94%;max-width:960px;margin:0 auto}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.title{color:#ff7eb3;font-weight:bold;font-size:22px;letter-spacing:2px}.sub{color:#88c0d0;font-size:12px;line-height:1.5}.card{background:#161823;border:1px solid rgba(255,126,179,.4);border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 0 25px rgba(255,126,179,.08)}.section{color:#88c0d0;font-size:13px;border-bottom:1px dashed #88c0d0;padding-bottom:6px;margin-bottom:12px}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.grow{flex:1;min-width:0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}@media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}.wrap{width:100%}.header{align-items:flex-start;flex-direction:column;gap:8px}}input,textarea,select,button{font:inherit;border-radius:10px;border:1px solid rgba(255,255,255,.18);padding:10px;background:rgba(0,0,0,.35);color:#fff;outline:none}input,select{min-height:40px}textarea{width:100%;min-height:120px;resize:vertical}button{cursor:pointer;font-weight:bold}button:disabled{opacity:.5;cursor:not-allowed}button.primary{background:linear-gradient(135deg,#ff758c,#ff7eb3);border:none}button.blue{background:linear-gradient(135deg,#4facfe,#00f2fe);border:none;color:#fff}.muted{color:#aaa;font-size:12px;line-height:1.6}.small{font-size:11px;color:#aaa;line-height:1.5}.item{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;margin-top:10px;background:rgba(255,255,255,.03)}.item-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.item-title{color:#ff7eb3;font-weight:bold}.tag{display:inline-block;font-size:10px;padding:3px 7px;border-radius:10px;border:1px solid #88c0d0;color:#88c0d0;margin:3px}.danger{border-color:#bf616a;color:#bf616a}.ok{border-color:#a3be8c;color:#a3be8c}.warn{border-color:#f1c40f;color:#f1c40f}.notice{padding:10px;border-radius:10px;background:rgba(241,196,15,.09);border:1px solid #f1c40f;color:#f1c40f;font-size:12px;line-height:1.6;margin-bottom:12px}.error{color:#bf616a}.good{color:#a3be8c}.scroll{max-height:360px;overflow:auto}.thumb{width:100px;height:75px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,126,179,.3);background:#0b0c10}.stat{display:inline-block;padding:8px 10px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.03);font-size:12px}.hidden{display:none!important}.login{max-width:460px;margin:8vh auto}.login h1{color:#ff7eb3;margin:0 0 10px}.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.profile-grid .full{grid-column:1/-1}@media(max-width:620px){.profile-grid{grid-template-columns:1fr}.profile-grid .full{grid-column:auto}}.checkbox{display:flex;align-items:center;gap:6px;font-size:12px}.checkbox input{min-height:0}.avatar-box{padding:12px;border:1px solid rgba(255,126,179,.22);border-radius:12px;background:rgba(255,255,255,.025)}.security-good{color:#a3be8c}.security-warn{color:#f1c40f}.provider-key{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;word-break:break-all}
-</style>
-</head>
-<body>
-<div id="authScreen" class="login">
-  <div class="card">
-    <h1>✨ ライト OS 管理者</h1>
-    <div class="muted" style="margin-bottom:15px">本番版。管理者認証後にAI・記憶・写真・部史・アバターを管理します。</div>
-    <div class="small">管理者メールアドレス</div>
-    <input id="adminEmail" type="email" autocomplete="username" placeholder="admin@example.com" style="width:100%;margin-top:6px">
-    <div class="small" style="margin-top:10px">パスワード</div>
-    <input id="adminPassword" type="password" autocomplete="current-password" placeholder="8文字以上" style="width:100%;margin-top:6px">
-    <div class="row" style="margin-top:12px"><button id="adminLoginBtn" class="primary">ログイン</button><button id="adminCreateBtn">管理者アカウントを作る</button></div>
-    <div id="authMessage" class="small" style="margin-top:10px"></div>
-  </div>
-</div>
+:root{--bg:#090b10;--panel:#11141d;--panel2:#171b26;--line:#2a3040;--pink:#ff7eb3;--cyan:#72d7ff;--green:#76e3a2;--yellow:#f4cf68;--red:#ff7185;--text:#f5f7fb;--muted:#8d96a8}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;height:100vh;overflow:hidden}button,input,select,textarea{font:inherit}button{border:1px solid var(--line);background:#151925;color:var(--text);border-radius:9px;padding:9px 12px;cursor:pointer}button:hover{border-color:#4a5268}button.primary{background:linear-gradient(135deg,#ff6f9f,#ff8aba);color:#170b11;border:0}button.danger{border-color:#6a2938;color:#ff9aaa}button.ghost{background:transparent}.app{height:100%;display:flex;flex-direction:column}.top{height:62px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:20px;padding:0 18px;background:#0c0f15}.brand{font-weight:800;color:var(--pink);letter-spacing:1px;white-space:nowrap}.top-tabs{display:flex;gap:4px;height:100%;overflow:auto}.top-tab{border:0;border-bottom:3px solid transparent;background:transparent;border-radius:0;color:#9ba4b6;padding:0 14px;white-space:nowrap}.top-tab.active{color:#fff;border-bottom-color:var(--pink)}.top-right{margin-left:auto;display:flex;align-items:center;gap:8px}.status{font-size:11px;color:var(--muted)}.shell{flex:1;display:grid;grid-template-columns:240px minmax(0,1fr);min-height:0}.side{border-right:1px solid var(--line);background:#0d1017;overflow:auto;padding:14px}.side-title{font-size:11px;color:#697285;text-transform:uppercase;letter-spacing:1px;margin:10px 8px}.side button{display:block;width:100%;text-align:left;border:0;background:transparent;margin:2px 0;color:#aeb6c6}.side button.active{background:#1c202d;color:#fff;border-left:3px solid var(--pink);padding-left:9px}.search{width:100%;background:#0a0d13;border:1px solid var(--line);color:#fff;border-radius:9px;padding:10px;margin-bottom:10px}.main{min-width:0;overflow:auto;padding:20px}.page-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}.page-head h1{font-size:22px;margin:0 0 5px}.page-head p{margin:0;color:var(--muted);font-size:12px}.actions{display:flex;gap:7px;flex-wrap:wrap}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px;min-width:0}.span12{grid-column:span 12}.span8{grid-column:span 8}.span6{grid-column:span 6}.span4{grid-column:span 4}.stat{font-size:24px;font-weight:800;margin-top:5px}.muted{color:var(--muted);font-size:12px}.list{display:flex;flex-direction:column;gap:8px;max-height:calc(100vh - 190px);overflow:auto}.item{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px}.item:hover{border-color:#41495d}.item-head{display:flex;justify-content:space-between;gap:10px}.title{font-weight:700}.small{font-size:11px;color:var(--muted);line-height:1.55}.tag{display:inline-block;padding:3px 7px;border-radius:999px;border:1px solid var(--line);font-size:10px;margin:2px 3px 2px 0;color:#c9d0dc}.ok{color:var(--green);border-color:#28583e}.warn{color:var(--yellow);border-color:#64531f}.bad{color:var(--red);border-color:#642837}.toolbar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}.toolbar input,.toolbar select,.field input,.field select,.field textarea{background:#0b0e15;border:1px solid var(--line);color:#fff;border-radius:8px;padding:9px;width:100%}.toolbar input{max-width:420px}.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:12px;overflow:auto}.inner-tab{border:0;border-bottom:2px solid transparent;background:transparent;border-radius:0;color:#9ca6b8;white-space:nowrap}.inner-tab.active{color:#fff;border-bottom-color:var(--cyan)}.detail{min-height:300px}.field{margin:10px 0}.field label{display:block;color:#9ea8b9;font-size:11px;margin-bottom:5px}.split{display:grid;grid-template-columns:1fr 1fr;gap:12px}.empty{padding:40px 10px;text-align:center;color:var(--muted)}.login{height:100%;display:grid;place-items:center;background:radial-gradient(circle at 50% 30%,#21131d 0,#090b10 50%)}.login-card{width:min(430px,92%);background:#11141d;border:1px solid #343b4b;border-radius:18px;padding:25px;box-shadow:0 20px 70px #0008}.login-card h1{color:var(--pink);margin:0 0 8px}.login-card input{width:100%;margin:7px 0;background:#090c12;border:1px solid var(--line);color:#fff;border-radius:10px;padding:12px}.login-card button{width:100%;margin-top:8px}.modal{position:fixed;inset:0;background:#000b;display:none;place-items:center;z-index:20;padding:18px}.modal.show{display:grid}.modal-card{width:min(720px,96vw);max-height:90vh;overflow:auto;background:#11141d;border:1px solid #3b4355;border-radius:16px;padding:18px}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.json{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;white-space:pre-wrap;background:#080a0f;border:1px solid var(--line);padding:12px;border-radius:9px;max-height:360px;overflow:auto}.notice{padding:10px;border-radius:9px;background:#141a23;border:1px solid var(--line);font-size:12px;color:#bdc5d4}.hide{display:none!important}@media(max-width:800px){body{overflow:auto}.top{height:auto;min-height:58px;flex-wrap:wrap;padding:8px}.top-tabs{order:3;width:100%;height:42px}.shell{grid-template-columns:1fr}.side{border-right:0;border-bottom:1px solid var(--line);max-height:190px}.main{padding:12px}.span8,.span6,.span4{grid-column:span 12}.split{grid-template-columns:1fr}.list{max-height:none}.top-right .status{display:none}}
 
-<div id="bootstrapScreen" class="login hidden">
-  <div class="card">
-    <h1>🔐 管理者登録</h1>
-    <div class="notice">このFirebaseアカウントにはまだ管理者権限がありません。非課金版では、最初の1回だけFirebase Consoleで管理者UIDを登録します。</div>
-    <div id="bootstrapCode" class="notice" style="margin-top:10px">確認ボタンを押して、管理者UIDが登録済みか確認してください。</div>
-    <div class="row" style="margin-top:12px"><button id="bootstrapBtn" class="primary">管理者権限を確認</button><button id="logoutAuthBtn">ログアウト</button></div>
-    <div id="bootstrapMessage" class="small" style="margin-top:10px"></div>
-  </div>
-</div>
-
-<div id="app" class="hidden">
-<div class="wrap">
-  <div class="header">
-    <div><div class="title">✨ ライト OS 管理者</div><div class="sub">非課金版 / Authentication + Firestore</div></div>
-    <div class="row"><span id="adminIdentity" class="small"></span><button id="reloadBtn">🔄 更新</button><button id="logoutBtn">ログアウト</button></div>
-  </div>
-
-  <div class="notice"><strong>非課金版の重要事項：</strong> Cloud Functions / Blazeは使いません。AIは学生ブラウザから直接利用するため、登録したAI APIキーは認証済みユーザーから取得可能です。AIキーは<strong>必ず各プロバイダー側でHTTPリファラ制限・利用上限を設定</strong>してください。</div>
-
-  <div class="card">
-    <div class="section">🤖 AIプロバイダー / APIキー管理</div>
-    <div class="muted">Gemini / OpenAI / Anthropic / OpenAI互換エンドポイントに対応。複数登録すると優先順位順に自動フォールバックします。非課金構成のため、キーはFirestoreの認証済み利用者向け設定に保存されます。</div>
-    <div class="profile-grid" style="margin-top:12px">
-      <div><div class="small">種類</div><select id="providerType" style="width:100%"><option value="gemini">Gemini</option><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="openai_compatible">OpenAI互換</option></select></div>
-      <div><div class="small">表示名</div><input id="providerLabel" style="width:100%" placeholder="例：Gemini メイン"></div>
-      <div><div class="small">モデル名</div><input id="providerModel" style="width:100%" placeholder="使用するモデル名をそのまま入力"></div>
-      <div><div class="small">優先順位</div><input id="providerPriority" type="number" min="1" max="9999" value="100" style="width:100%"></div>
-      <div id="baseUrlWrap" class="full hidden"><div class="small">OpenAI互換 Base URL（HTTPS）</div><input id="providerBaseUrl" style="width:100%" placeholder="https://example.com/v1"></div>
-      <div class="full"><div class="small">APIキー（新規登録・交換時だけ入力）</div><input id="providerApiKey" type="password" autocomplete="off" style="width:100%" placeholder="ここに貼り付け。保存後は再表示されません"></div>
-    </div>
-    <div class="row" style="margin-top:10px"><label class="checkbox"><input type="checkbox" id="providerEnabled" checked> 有効</label><button id="saveProviderBtn" class="primary">プロバイダーを保存</button><button id="cancelProviderBtn">入力をクリア</button></div>
-    <div id="providerFormMessage" class="small" style="margin-top:8px"></div>
-    <input type="hidden" id="editingProviderId">
-    <div id="providerList" class="scroll" style="margin-top:10px"></div>
-    <div class="item"><div class="small">AI接続テスト</div><div class="row" style="margin-top:8px"><select id="testProviderId" class="grow"><option value="">テスト対象を選択</option></select><button id="testProviderBtn" class="blue">🩺 接続テスト</button></div><div id="providerTestResult" class="small" style="margin-top:8px"></div></div>
-  </div>
-
-  
-<div class="card">
-  <div class="section">🔑 初回登録コード</div>
-  <div class="notice">非課金版ではサーバー秘密鍵が使えないため、このコードは「入部/部内登録の目印」であり、強い秘密情報ではありません。長い文字列を使うことを推奨します。</div>
-  <div class="row"><label class="checkbox"><input type="checkbox" id="registrationEnabled"> 初回登録コードを必須にする</label></div>
-  <input id="registrationCode" type="password" autocomplete="off" placeholder="例：部内だけに共有する長いコード" style="width:100%;margin-top:8px">
-  <div class="row" style="margin-top:10px"><button id="saveRegistrationBtn" class="primary">登録コード設定を保存</button><button id="clearRegistrationBtn" class="danger">コードを無効化</button></div>
-  <div id="registrationMessage" class="small" style="margin-top:8px"></div>
-</div>
-
-<div class="card">
-    <div class="section">👥 ユーザー / プロフィール / 🎸 バンド</div>
-    <div class="row"><button class="blue" id="loadUsersBtn">ユーザー一覧を更新</button><span id="userListMeta" class="small"></span></div>
-    <div id="userList" class="scroll" style="margin-top:10px"><div class="muted">読み込み中...</div></div>
-    <div class="row" style="margin-top:12px"><button class="blue" id="loadBandsBtn">バンド一覧を更新</button><span id="bandListMeta" class="small"></span></div>
-    <div id="bandList" class="scroll" style="margin-top:10px"><div class="muted">読み込み中...</div></div>
-  </div>
-
-  <div class="card">
-    <div class="section">🧠 長期記憶（脳ミソ）</div>
-    <div class="muted">ユーザーごとの長期要約と直近会話を管理します。モデルが変わってもここを共通記憶として使います。</div>
-    <div class="row" style="margin-top:10px"><input id="brainUserId" class="grow" placeholder="ユーザーの合言葉 / userKey"><button class="blue" id="loadBrainBtn">読み込む</button></div>
-    <textarea id="brainSummary" style="min-height:170px;margin-top:10px" placeholder="長期記憶"></textarea>
-    <div class="row" style="margin-top:10px"><button class="primary" id="saveBrainBtn">長期記憶を保存</button><button id="clearBrainBtn" class="danger">脳ミソを全消去</button></div>
-    <div id="brainMeta" class="small" style="margin-top:8px"></div>
-    <details style="margin-top:12px"><summary style="cursor:pointer;color:#88c0d0">直近の会話履歴</summary><div id="brainHistory" class="item" style="margin-top:8px"><div class="muted">まだ読み込んでいません。</div></div></details>
-  </div>
-
-  <div class="card">
-    <div class="section">🧠 記憶ファイル / 図書館</div>
-    <div class="grid3">
-      <div><div class="small">対象</div><select id="memoryScopeType" style="width:100%"><option value="club">部活共通</option><option value="band">バンド共有</option><option value="personal">個人</option></select></div>
-      <div><div class="small">対象先</div><select id="memoryScopeTarget" style="width:100%"></select></div>
-      <div><div class="small">種類</div><select id="memoryKind" style="width:100%"><option value="text">文章</option><option value="manual">マニュアル</option><option value="history">歴史</option><option value="event">イベント</option><option value="photo">写真</option><option value="staff">スタッフ</option></select></div>
-    </div>
-    <div class="grid2" style="margin-top:10px">
-      <div><div class="small">カテゴリ</div><select id="memoryCategory" style="width:100%"><option value="personal">個人</option><option value="band">バンド</option><option value="club">軽音楽部</option><option value="live_event">ライブでの出来事</option><option value="live_staff">ライブスタッフ</option><option value="staff_shared">スタッフ共有事項</option><option value="daily">日常</option></select></div>
-      <div><div class="small">スタッフ担当</div><select id="memoryStaffRole" style="width:100%"><option value="none">なし</option><option value="pa">PA</option><option value="roady">ローディ</option><option value="promoter">プロモーター</option><option value="lighting">照明</option></select></div>
-      <div><div class="small">確度</div><select id="memoryCertainty" style="width:100%"><option value="confirmed">確認済み</option><option value="historical">過去記録</option><option value="inferred">推定</option><option value="unverified">未確認</option></select></div>
-      <div><div class="small">有効性</div><select id="memoryValidity" style="width:100%"><option value="current">現在</option><option value="historical">過去</option><option value="both">現在＋過去</option></select></div>
-    </div>
-    <div style="margin-top:10px"><div class="small">タイトル</div><input id="memoryTitle" style="width:100%" placeholder="例：2026年度 文化祭 セトリ"></div>
-    <div style="margin-top:10px"><div class="small">詳細</div><textarea id="memoryDetails" placeholder="記憶の本文"></textarea></div>
-    <div class="grid2" style="margin-top:10px">
-      <div><div class="small">起きたトラブル</div><textarea id="memoryTrouble" style="min-height:90px" placeholder="あった問題"></textarea></div>
-      <div><div class="small">対処したトラブル</div><textarea id="memoryCountermeasure" style="min-height:90px" placeholder="どう対処したか"></textarea></div>
-      <div><div class="small">イベントID / リンク</div><input id="memoryEventId" style="width:100%" placeholder="必要なら部史・ライブID"></div>
-      <div><div class="small">出典 / メモ</div><input id="memorySource" style="width:100%" placeholder="資料名 / 記録者"></div>
-    </div>
-    <div style="margin-top:10px"><div class="small">検索用タグ（カンマ区切り）</div><input id="memoryKeywords" style="width:100%" placeholder="文化祭, PA, トラブル, 2026"></div>
-    <div class="row" style="margin-top:10px"><label class="checkbox"><input type="checkbox" id="directAnswer"> 明確一致ならAIを使わず直接回答</label><label class="checkbox"><input type="checkbox" id="memoryEnabled" checked> 有効</label></div>
-    <div class="row" style="margin-top:10px"><button class="blue" id="saveMemoryBtn">記憶ファイルを保存</button><button id="clearMemoryFormBtn">入力をクリア</button></div>
-    <input type="hidden" id="editingMemoryId">
-    <div id="memoryList" class="scroll" style="margin-top:10px"></div>
-  </div>
-
-  <div class="card">
-    <div class="section">📷 写真ライブラリ</div>
-    <div class="grid2"><input id="photoSearch" placeholder="タイトル・タグ・担当・バンドなど" style="width:100%"><select id="photoScopeFilter" style="width:100%"><option value="all">すべて</option><option value="club">部活共通</option><option value="band">バンド共有</option><option value="personal">個人</option></select></div>
-    <div class="row" style="margin-top:10px"><button class="blue" id="loadPhotosBtn">写真一覧を更新</button><span id="photoListMeta" class="small"></span></div>
-    <div id="photoList" class="scroll" style="margin-top:10px"></div>
-  </div>
-
-  <div class="card">
-    <div class="section">📜 軽音楽部タイムライン / 部史</div>
-    <div class="grid3"><input id="timelineDate" type="date" style="width:100%"><input id="timelineTitle" placeholder="タイトル" style="width:100%"><input id="timelineTags" placeholder="タグ" style="width:100%"></div>
-    <textarea id="timelineDetails" style="margin-top:10px" placeholder="出来事の詳細"></textarea>
-    <div class="row" style="margin-top:10px"><button class="primary" id="saveTimelineBtn">部史に追加</button></div>
-    <div id="timelineList" class="scroll" style="margin-top:10px"></div>
-  </div>
-
-  <div class="card">
-    <div class="section">🧠 自動記憶候補 / 承認待ち</div>
-    <div class="muted">会話から長期的に覚える価値がありそうな情報を、いったん候補として保留します。管理者が承認したものだけ正式な個人記憶になります。</div>
-    <div class="row" style="margin-top:10px"><button class="blue" id="loadCandidatesBtn">候補を更新</button><span id="candidateListMeta" class="small"></span></div>
-    <div id="candidateList" class="scroll" style="margin-top:10px"><div class="muted">まだ読み込んでいません。</div></div>
-  </div>
-
-  <div class="card">
-    <div class="section">🤖 アバター / ベータ版（途中追加対応）</div>
-    <div class="muted">Lightは先に登録して使い始め、Otoは後から追加できます。Light/Otoのファイル差し替えだけで済み、学生サイトのHTMLを作り直す必要はありません。Cloud FunctionsやBlazeは使いません。</div>
-    <div class="avatar-box" style="margin-top:12px"><div class="row"><label class="checkbox" style="font-weight:bold"><input type="checkbox" id="avatarBetaEnabled"> アバターモード ベータ版</label><span id="avatarBetaState" class="tag">OFF</span></div><div class="small" style="margin-top:6px">ONにすると学生サイトの再読み込み後、チャット画面の代わりにアバター会話が使用されます。</div></div>
-    <div class="avatar-box" style="margin-top:10px"><div class="row"><label class="checkbox" style="font-weight:bold"><input type="checkbox" id="avatarLiveDayEnabled"> ライブデーモードを許可</label><span id="avatarLiveDayState" class="tag">OFF</span></div><div class="small" style="margin-top:6px">「デイブレイク」でLight ⇄ Otoを切り替えるための条件です。</div></div>
-    <div class="grid2" style="margin-top:10px">
-      <div class="avatar-box"><div class="item-title">Light アバター</div><div class="small">VRM / GLB / 15MB未満（Firestore分割保存）</div><input type="file" id="lightAvatarFile" accept=".vrm,.glb,model/gltf-binary,application/octet-stream" style="width:100%;margin-top:8px"><div id="lightAvatarInfo" class="small" style="margin-top:6px">未登録</div></div>
-      <div class="avatar-box"><div class="item-title">Oto アバター</div><div class="small">後から追加可能</div><input type="file" id="otoAvatarFile" accept=".vrm,.glb,model/gltf-binary,application/octet-stream" style="width:100%;margin-top:8px"><div id="otoAvatarInfo" class="small" style="margin-top:6px">未登録</div></div>
-    </div>
-    <div class="row" style="margin-top:10px"><button class="primary" id="saveAvatarConfigBtn">アバター設定を保存</button><button id="removeLightAvatarBtn" class="danger">Light削除</button><button id="removeOtoAvatarBtn" class="danger">Oto削除</button><button id="reloadAvatarConfigBtn">状態を再読み込み</button></div>
-    <div id="avatarUploadResult" class="small" style="margin-top:8px"></div>
-  </div>
-
-  <div class="card">
-    <div class="section">🩺 システム状態</div>
-    <div class="row"><span class="stat">認証 <strong id="authState">確認中</strong></span><span class="stat">管理者 <strong id="adminState">確認中</strong></span><span class="stat">AI <strong id="providerCountState">0</strong></span><span class="stat">ユーザー <strong id="userCountState">0</strong></span><span class="stat">バンド <strong id="bandCountState">0</strong></span><span class="stat">記憶 <strong id="memoryCountState">0</strong></span><span class="stat">写真 <strong id="photoCountState">0</strong></span></div>
-    <div id="systemMessage" class="small" style="margin-top:10px"></div>
-  </div>
-
-  <div class="card">
-    <div class="section">💾 バックアップ / 復元</div>
-    <div class="notice">セキュリティ上、<strong>AIプロバイダーのAPIキー・Authentication情報・管理者権限はバックアップ対象外</strong>です。写真本体は任意で含められます。</div>
-    <div class="row"><label class="checkbox"><input type="checkbox" id="backupIncludePhotos"> 写真本体を含める</label><button class="blue" id="exportBtn">JSONバックアップを作る</button><input type="file" id="restoreInput" accept="application/json"><button id="restoreBtn">復元</button></div>
-    <div id="backupResult" class="small" style="margin-top:8px"></div>
-  </div>
-
-  <div class="card">
-    <div class="section">📚 従来方式の記憶を閲覧</div>
-    <div class="muted">旧バージョンの `light_memories/{旧userKey}` を確認できます。データ移行確認用です。</div>
-    <div class="row" style="margin-top:10px"><input id="legacyUserId" class="grow" value="shout" placeholder="旧合言葉 / userKey"><button class="blue" id="loadLegacyBtn">読み込む</button></div>
-    <div id="legacyView" class="item"><span class="muted">まだ読み込んでいません。</span></div>
-  </div>
-</div>
-</div>
-
-<div id="profileModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:5000;display:none;align-items:center;justify-content:center;padding:20px">
-  <div class="card" style="width:min(520px,96%);max-height:90vh;overflow:auto"><div class="section">👤 ユーザープロフィール編集</div><input type="hidden" id="editProfileUserKey"><div class="small">合言葉 / userKey</div><div id="editProfileKey" class="provider-key" style="margin-top:5px"></div><div class="grid2" style="margin-top:10px"><input id="editProfileName" placeholder="名前"><input id="editProfileBirthday" placeholder="MM-DD" inputmode="numeric"><input id="editProfileBand" class="full" placeholder="現在のバンド名"></div><div class="row" style="margin-top:10px"><button id="saveProfileBtn" class="primary">保存</button><button id="closeProfileBtn">閉じる</button></div><div id="profileEditMessage" class="small" style="margin-top:8px"></div></div>
-</div>
-
+/* ===== Responsive / smartphone admin layout ===== */
+html,body{width:100%;max-width:100%;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+button,input,select,textarea{touch-action:manipulation}
+@media (max-width:800px){
+  body{height:100dvh;overflow:hidden}
+  .app{height:100dvh;min-height:0}
+  .top{position:relative;min-height:56px;padding:7px 10px;gap:8px;align-items:center}
+  .brand{font-size:14px}.top-right{margin-left:auto}.top-right button{min-height:42px}
+  .top-tabs{order:3;flex-basis:100%;width:100%;height:40px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .top-tabs::-webkit-scrollbar,.tabs::-webkit-scrollbar{display:none}
+  .top-tab{height:40px;padding:0 13px;flex:0 0 auto}
+  .shell{display:flex;flex-direction:column;min-height:0;height:calc(100dvh - 96px)}
+  .side{flex:0 0 auto;width:100%;max-height:none;padding:8px 10px;border-right:0;border-bottom:1px solid var(--line);overflow:hidden}
+  .side-title{display:none}
+  .side .search{margin:0 0 7px;padding:9px 10px;font-size:16px}
+  .side nav{display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;padding-bottom:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .side nav::-webkit-scrollbar{display:none}
+  .side button{width:auto;min-width:max-content;display:block;margin:0;padding:9px 11px;border:1px solid var(--line);border-radius:9px;white-space:nowrap}
+  .side button.active{border-left:1px solid var(--pink);padding-left:11px;background:#1c202d}
+  .main{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px 10px calc(24px + env(safe-area-inset-bottom))}
+  .page-head{flex-direction:column;gap:10px;margin-bottom:12px}.page-head h1{font-size:20px}
+  .actions{width:100%}.actions button{flex:1;min-width:110px;min-height:42px}
+  .toolbar{display:grid;grid-template-columns:1fr;gap:7px}.toolbar input{max-width:none;min-width:0;font-size:16px}.toolbar button,.toolbar select{min-height:42px}
+  .tabs{overflow-x:auto;overflow-y:hidden;white-space:nowrap;-webkit-overflow-scrolling:touch;margin-bottom:10px}
+  .inner-tab{flex:0 0 auto;min-height:42px;padding:9px 12px}
+  .grid{grid-template-columns:1fr;gap:10px}.span12,.span8,.span6,.span4{grid-column:span 1}
+  .card{padding:12px;border-radius:12px;overflow:hidden}.stat{font-size:21px}
+  .list{max-height:none;overflow:visible}.item{padding:11px}.item-head{align-items:flex-start}.item-head>div:last-child{flex:0 0 auto}
+  .split{grid-template-columns:1fr;gap:8px}
+  .field input,.field select,.field textarea{font-size:16px;min-height:44px}.field textarea{min-height:110px}
+  .json{max-height:45dvh;overflow:auto;word-break:break-word}
+  .modal{padding:10px;align-items:end}.modal-card{width:100%;max-width:none;max-height:92dvh;border-radius:16px 16px 0 0;padding:14px;margin:0}
+  .modal-head{position:sticky;top:0;background:#11141d;z-index:1;padding-bottom:10px}
+  .login{min-height:100dvh;padding:16px;box-sizing:border-box}.login-card{width:min(430px,100%);padding:20px}.login-card input{font-size:16px;min-height:46px}.login-card button{min-height:46px}
+}
+@media (max-width:430px){
+  .top{padding-left:8px;padding-right:8px}.brand{font-size:13px}.status{display:none}
+  .top-right button{padding:8px 10px}
+  .top-tabs{margin-left:-2px;margin-right:-2px}
+  .side{padding:7px 8px}.main{padding-left:8px;padding-right:8px}
+  .actions button{min-width:0;flex:1 1 45%}
+  .card{padding:10px}.page-head h1{font-size:18px}
+}
+</style></head><body><div id="root"></div>
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore,doc,getDoc,setDoc,addDoc,collection,getDocs,updateDoc,deleteDoc,query,where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-const firebaseConfig={apiKey:"AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",authDomain:"light-65413.firebaseapp.com",projectId:"light-65413",storageBucket:"light-65413.firebasestorage.app",messagingSenderId:"116819261632",appId:"1:116819261632:web:9d9144aa125a55371d5525"};
-const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);
-const $=id=>document.getElementById(id),now=()=>Date.now();
-const esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
-const listTags=v=>String(v||'').split(',').map(x=>x.trim()).filter(Boolean).slice(0,20);
-let providers=[],users=[],bands=[],memories=[],photos=[],timelines=[];let avatarData={betaEnabled:false,liveDayEnabled:false,lightUrl:'',otoUrl:'',lightName:'',otoName:'',updatedAt:0};let adminReady=false;
-
-function setText(id,v){$(id).textContent=String(v??'');}
-function msg(id,v,cls=''){const el=$(id);el.textContent=String(v||'');el.className='small '+cls;}
-function show(id){$(id).classList.remove('hidden');}
-function hide(id){$(id).classList.add('hidden');}
-function validBirthday(v){const m=String(v||'').trim().match(/^(\d{2})-(\d{2})$/);if(!m)return false;const mo=Number(m[1]),d=Number(m[2]);return mo>=1&&mo<=12&&d>=1&&d<=31;}
-function safeBandId(v){const s=String(v||'').trim().toLowerCase().replace(/[^a-z0-9\u3040-\u30ff\u4e00-\u9fff_-]/g,'_');return s.slice(0,80)||'band';}
-
-async function sha256Hex(value){
-  const data=new TextEncoder().encode(String(value||''));
-  const hash=await crypto.subtle.digest('SHA-256',data);
-  return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-async function checkAdminDocument(user){
-  if(!user)return false;
-  try{
-    const s=await getDoc(doc(db,'light_admins',user.uid));
-    return s.exists()&&s.data()?.enabled!==false;
-  }catch(e){return false;}
-}
-function adminSetupHint(){
-  const uid=auth.currentUser?.uid||'';
-  $('bootstrapMessage').innerHTML=`このアカウントにはまだ管理者権限がありません。<br><br>Firebase Console → Firestore Database → コレクション「light_admins」→ ドキュメントIDを <code>${esc(uid)}</code> にして作成し、<code>enabled: true</code> を登録してください。<br><br>一度だけこの作業を行えば、以後は管理画面だけで運用できます。`;
-}
-async function finishAdmin(){
-  adminReady=true;hide('authScreen');hide('bootstrapScreen');show('app');
-  setText('adminIdentity',auth.currentUser?.email||'管理者');
-  setText('authState','OK');setText('adminState','ADMIN');
-  await reloadAll();
-}
-$('adminLoginBtn').addEventListener('click',async()=>{
-  const email=$('adminEmail').value.trim(),pass=$('adminPassword').value;
-  if(!email||!pass){msg('authMessage','メールアドレスとパスワードを入力してください。','error');return;}
-  const b=$('adminLoginBtn');b.disabled=true;msg('authMessage','ログイン中...');
-  try{await signInWithEmailAndPassword(auth,email,pass);if(await checkAdminDocument(auth.currentUser))await finishAdmin();else{hide('authScreen');show('bootstrapScreen');adminSetupHint();}}
-  catch(e){console.error(e);msg('authMessage',e?.message||'ログインに失敗しました。','error');}
-  finally{b.disabled=false;}
-});
-$('adminCreateBtn').addEventListener('click',async()=>{
-  const email=$('adminEmail').value.trim(),pass=$('adminPassword').value;
-  if(!email||pass.length<8){msg('authMessage','メールアドレスと8文字以上のパスワードを入力してください。','error');return;}
-  const b=$('adminCreateBtn');b.disabled=true;msg('authMessage','アカウント作成中...');
-  try{const cred=await createUserWithEmailAndPassword(auth,email,pass);hide('authScreen');show('bootstrapScreen');adminSetupHint();msg('bootstrapMessage',`アカウント作成済み。Firebase ConsoleでUIDを管理者として登録してください。`);}
-  catch(e){console.error(e);msg('authMessage',e?.message||'アカウント作成に失敗しました。','error');}
-  finally{b.disabled=false;}
-});
-$('bootstrapBtn').addEventListener('click',async()=>{
-  const b=$('bootstrapBtn');b.disabled=true;msg('bootstrapMessage','権限を確認中...');
-  try{
-    if(await checkAdminDocument(auth.currentUser))await finishAdmin();
-    else{adminSetupHint();}
-  }finally{b.disabled=false;}
-});
-$('logoutAuthBtn').addEventListener('click',async()=>{await signOut(auth);show('authScreen');hide('bootstrapScreen');hide('app');});
-$('logoutBtn').addEventListener('click',async()=>{await signOut(auth);show('authScreen');hide('app');});
-onAuthStateChanged(auth,async user=>{
-  if(!user){adminReady=false;show('authScreen');hide('bootstrapScreen');hide('app');return;}
-  if(await checkAdminDocument(user))await finishAdmin();
-  else{hide('authScreen');show('bootstrapScreen');hide('app');adminSetupHint();}
-});
-
-
-function resetProviderForm(){$('editingProviderId').value='';$('providerType').value='gemini';$('providerLabel').value='';$('providerModel').value='gemini-3.8-flash';$('providerPriority').value='100';$('providerBaseUrl').value='';$('providerApiKey').value='';$('providerEnabled').checked=true;updateProviderTypeUI();msg('providerFormMessage','');$('saveProviderBtn').textContent='プロバイダーを保存';}
-function renderProviders(){
-  setText('providerCountState',providers.filter(p=>p.apiKey).length);
-  $('providerList').innerHTML=providers.length?providers.map(p=>`<div class="item"><div class="item-head"><div><div class="item-title">${esc(p.label||p.type)}</div><div class="small">${esc(p.type)} / model: ${esc(p.model||'')} / 優先 ${Number(p.priority||100)}</div><div style="margin-top:5px"><span class="tag ${p.enabled?'ok':'danger'}">${p.enabled?'有効':'無効'}</span><span class="tag ${p.apiKey?'ok':'danger'}">${p.apiKey?'キー登録済み':'キーなし'}</span>${p.keyHint?`<span class="tag">${esc(p.keyHint)}</span>`:''}</div></div><div class="small">${p.updatedAt?new Date(p.updatedAt).toLocaleString('ja-JP'):''}</div></div><div class="row" style="margin-top:8px"><button data-provider="edit" data-id="${esc(p.id)}">編集</button><button data-provider="test" class="blue" data-id="${esc(p.id)}">テスト</button><button data-provider="delete" class="danger" data-id="${esc(p.id)}">削除</button></div></div>`).join(''):'<div class="muted">登録されたAIプロバイダーはありません。</div>';
-  $('testProviderId').innerHTML='<option value="">テスト対象を選択</option>'+providers.map(p=>`<option value="${esc(p.id)}">${esc(p.label||p.id)} / ${esc(p.model||'')}</option>`).join('');
-}
-async function loadProviders(){const s=await getDocs(collection(db,'light_ai_providers'));providers=[];s.forEach(d=>providers.push({id:d.id,...(d.data()||{})}));providers.sort((a,b)=>Number(a.priority||100)-Number(b.priority||100));renderProviders();}
-function makeProviderId(label){return `prov_${String(label||'ai').toLowerCase().replace(/[^a-z0-9_-]+/g,'_').slice(0,24)}_${Date.now().toString(36)}`;}
-async function testClientProvider(p){
-  if(!p?.apiKey)return {ok:false,status:0};
-  try{
-    const payload={system:'日本語で「OK」だけを返してください。',messages:[{role:'user',text:'接続テスト'}],maxOutputTokens:20,jsonMode:false};
-    const type=p.type,url=type==='gemini'?`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(p.model)}:generateContent`:type==='openai'?`https://api.openai.com/v1/chat/completions`:type==='openai_compatible'?`${(p.baseUrl||'').replace(/\/+$/,'')}/chat/completions`:'https://api.anthropic.com/v1/messages';
-    let headers={'Content-Type':'application/json'},body={};
-    if(type==='gemini'){headers['x-goog-api-key']=p.apiKey;body={contents:[{role:'user',parts:[{text:'接続テスト'}]}],generationConfig:{maxOutputTokens:20}};}
-    else if(type==='openai'||type==='openai_compatible'){headers.Authorization=`Bearer ${p.apiKey}`;body={model:p.model,messages:[{role:'user',content:'接続テスト'}],max_tokens:20};}
-    else{headers['x-api-key']=p.apiKey;headers['anthropic-version']='2023-06-01';headers['anthropic-dangerous-direct-browser-access']='true';body={model:p.model,max_tokens:20,messages:[{role:'user',content:[{type:'text',text:'接続テスト'}]}]};}
-    const res=await fetch(url,{method:'POST',headers,body:JSON.stringify(body)});return{ok:res.ok,status:res.status};
-  }catch(e){return{ok:false,status:0};}
-}
-$('saveProviderBtn').addEventListener('click',async()=>{
-  const b=$('saveProviderBtn');b.disabled=true;msg('providerFormMessage','保存中...');
-  try{
-    const id=$('editingProviderId').value.trim()||makeProviderId($('providerLabel').value.trim()||$('providerType').value);
-    const existing=providers.find(x=>x.id===id)||{};
-    const apiKey=$('providerApiKey').value.trim()||existing.apiKey||'';
-    if(!apiKey)throw new Error('APIキーを入力してください。');
-    const type=$('providerType').value,label=$('providerLabel').value.trim()||type,model=$('providerModel').value.trim();
-    if(!model)throw new Error('モデル名を入力してください。');
-    if(type==='openai_compatible'&&!/^https:\/\//i.test($('providerBaseUrl').value.trim()))throw new Error('OpenAI互換Base URLはHTTPSで入力してください。');
-    const data={type,label,model,baseUrl:$('providerBaseUrl').value.trim(),apiKey,enabled:$('providerEnabled').checked,priority:Number($('providerPriority').value||100),keyHint:`••••${apiKey.slice(-4)}`,updatedAt:now(),updatedBy:auth.currentUser.uid};
-    await setDoc(doc(db,'light_ai_providers',id),data,{merge:true});
-    await loadProviders();resetProviderForm();msg('providerFormMessage','🟢 保存しました。','good');
-  }catch(e){console.error(e);msg('providerFormMessage',e?.message||'保存に失敗しました。','error');}
-  finally{b.disabled=false;}
-});
-$('cancelProviderBtn').addEventListener('click',resetProviderForm);
-$('providerList').addEventListener('click',async e=>{
-  const b=e.target.closest('button[data-provider]');if(!b)return;
-  const id=b.dataset.id,p=providers.find(x=>x.id===id);if(!p)return;
-  try{
-    if(b.dataset.provider==='edit'){
-      $('editingProviderId').value=p.id;$('providerType').value=p.type;$('providerLabel').value=p.label||'';$('providerModel').value=p.model||'';$('providerPriority').value=Number(p.priority||100);$('providerBaseUrl').value=p.baseUrl||'';$('providerApiKey').value='';$('providerEnabled').checked=p.enabled!==false;$('saveProviderBtn').textContent='このプロバイダーを更新';updateProviderTypeUI();window.scrollTo({top:0,behavior:'smooth'});
-    }else if(b.dataset.provider==='test'){
-      msg('providerTestResult','接続テスト中...');const r=await testClientProvider(p);msg('providerTestResult',r.ok?`🟢 接続OK：${p.label||id}`:`🔴 接続失敗：HTTP ${r.status||0}`,r.ok?'good':'error');
-    }else if(b.dataset.provider==='delete'){
-      if(!confirm('このAIプロバイダーを削除しますか？'))return;
-      await deleteDoc(doc(db,'light_ai_providers',id));providers=providers.filter(x=>x.id!==id);renderProviders();msg('providerFormMessage','削除しました。','good');
-    }
-  }catch(err){console.error(err);msg('providerTestResult',err?.message||'操作に失敗しました。','error');}
-});
-$('testProviderBtn').addEventListener('click',async()=>{
-  const id=$('testProviderId').value;if(!id){msg('providerTestResult','テスト対象を選択してください。','error');return;}
-  const p=providers.find(x=>x.id===id);msg('providerTestResult','接続テスト中...');
-  const r=await testClientProvider(p);msg('providerTestResult',r.ok?`🟢 接続OK：${p.label||id}`:`🔴 接続失敗：HTTP ${r.status||0}`,r.ok?'good':'error');
-});
-
-
-async function loadRegistrationSetting(){
-  try{
-    const s=await getDoc(doc(db,'light_public_settings','registration'));
-    if(s.exists()&&s.data()?.enabled===true){
-      $('registrationEnabled').checked=true;
-      $('registrationCode').value='';
-    }else{$('registrationEnabled').checked=false;$('registrationCode').value='';}
-  }catch(e){msg('registrationMessage','読み込みに失敗しました。','error');}
-}
-$('saveRegistrationBtn').addEventListener('click',async()=>{
-  try{
-    const enabled=$('registrationEnabled').checked,code=$('registrationCode').value.trim();
-    if(enabled&&!code)throw new Error('コードを入力してください。');
-    const codeHash=enabled?await sha256Hex(code):'';
-    await setDoc(doc(db,'light_public_settings','registration'),{enabled,codeHash,updatedAt:now(),updatedBy:auth.currentUser.uid},{merge:true});
-    $('registrationCode').value='';msg('registrationMessage','🟢 登録コード設定を保存しました。','good');
-  }catch(e){msg('registrationMessage',e.message||'保存に失敗しました。','error');}
-});
-$('clearRegistrationBtn').addEventListener('click',async()=>{
-  try{await setDoc(doc(db,'light_public_settings','registration'),{enabled:false,codeHash:'',updatedAt:now(),updatedBy:auth.currentUser.uid},{merge:true});$('registrationEnabled').checked=false;$('registrationCode').value='';msg('registrationMessage','無効化しました。','good');}
-  catch(e){msg('registrationMessage',e.message||'無効化に失敗しました。','error');}
-});
-
-async function loadUsers(){const s=await getDocs(collection(db,'light_users'));users=[];s.forEach(d=>users.push({id:d.id,...(d.data()||{})}));users.sort((a,b)=>Number(b.lastLoginAt||0)-Number(a.lastLoginAt||0));setText('userCountState',users.length);setText('userListMeta',`${users.length}人`);$('userList').innerHTML=users.length?users.map(u=>`<div class="item"><div class="item-head"><div><div class="item-title">${esc(u.name||u.displayName||u.username||u.id)}</div><div class="small">合言葉: ${esc(u.id)}</div><div class="small">誕生日: ${esc(u.birthday||'未登録')} / バンド: ${esc(u.bandName||'未所属')}</div></div><div><span class="tag ok">${Number(u.loginCount||0)}回</span></div></div><div class="row" style="margin-top:8px"><button class="blue" data-user="brain" data-id="${esc(u.id)}">脳ミソ</button><button data-user="memory" data-id="${esc(u.id)}">個人記憶</button><button data-user="edit" data-id="${esc(u.id)}">プロフィール編集</button></div></div>`).join(''):'<div class="muted">ユーザーはいません。</div>';refreshScopeTargets();}
-async function loadBands(){const s=await getDocs(collection(db,'light_bands'));bands=[];s.forEach(d=>bands.push({id:d.id,...(d.data()||{})}));bands.sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'ja'));setText('bandCountState',bands.length);setText('bandListMeta',`${bands.length}組`);$('bandList').innerHTML=bands.length?bands.map(b=>`<div class="item"><div class="item-head"><div><div class="item-title">${esc(b.name||b.id)}</div><div class="small">ID: ${esc(b.id)}</div></div><span class="tag ok">${users.filter(u=>u.bandId===b.id).length}人</span></div><div class="row" style="margin-top:8px"><button class="blue" data-band="memory" data-id="${esc(b.id)}">共有記憶を見る</button></div></div>`).join(''):'<div class="muted">バンドはいません。</div>';refreshScopeTargets();}
-$('loadUsersBtn').addEventListener('click',()=>loadUsers().catch(e=>msg('systemMessage',e.message,'error')));
-$('loadBandsBtn').addEventListener('click',()=>loadBands().catch(e=>msg('systemMessage',e.message,'error')));
-$('userList').addEventListener('click',async e=>{const b=e.target.closest('button[data-user]');if(!b)return;const id=b.dataset.id, u=users.find(x=>x.id===id);if(!u)return;if(b.dataset.user==='brain'){$('brainUserId').value=id;await loadBrain(id);$('brainUserId').scrollIntoView({behavior:'smooth',block:'center'});}else if(b.dataset.user==='memory'){await loadMemories();renderMemories(memories.filter(m=>m.scopeType==='personal'&&(m.scopeId===id||m.scopeId===u.authUid)));$('memoryList').scrollIntoView({behavior:'smooth',block:'center'});}else if(b.dataset.user==='edit'){openProfileModal(u);}});
-$('bandList').addEventListener('click',async e=>{const b=e.target.closest('button[data-band]');if(!b)return;if(b.dataset.band==='memory'){await loadMemories();renderMemories(memories.filter(m=>m.scopeType==='band'&&m.scopeId===b.dataset.id));$('memoryList').scrollIntoView({behavior:'smooth',block:'center'});}});
-
-async function loadBrain(uid){const s=await getDoc(doc(db,'light_brains',uid));if(!s.exists()){$('brainSummary').value='';$('brainHistory').innerHTML='<div class="muted">脳ミソはまだありません。</div>';setText('brainMeta','');return;}const d=s.data()||{};$('brainSummary').value=String(d.summary||'');const h=Array.isArray(d.recentHistory)?d.recentHistory:[];setText('brainMeta',`${d.updatedAt?new Date(d.updatedAt).toLocaleString('ja-JP'):'不明'} / ${h.length}メッセージ`);$('brainHistory').innerHTML=h.length?h.map(x=>`<div style="margin:7px 0"><strong>${x.role==='user'?'あなた':'AI'}:</strong> ${esc(Array.isArray(x.parts)?x.parts.map(p=>p.text||'').join(''):x.text||'').replace(/\n/g,'<br>')}</div>`).join(''):'<div class="muted">会話履歴なし</div>';}
-$('loadBrainBtn').addEventListener('click',async()=>{const uid=$('brainUserId').value.trim();if(!uid)return msg('brainMeta','ユーザーの合言葉を入力してください。','error');try{await loadBrain(uid);}catch(e){msg('brainMeta',e.message,'error');}});
-$('saveBrainBtn').addEventListener('click',async()=>{const uid=$('brainUserId').value.trim();if(!uid)return msg('brainMeta','ユーザーの合言葉を入力してください。','error');try{const s=await getDoc(doc(db,'light_brains',uid));const old=s.exists()?s.data()||{}:{};await setDoc(doc(db,'light_brains',uid),{summary:$('brainSummary').value.trim().slice(0,3500),recentHistory:Array.isArray(old.recentHistory)?old.recentHistory.slice(-20):[],userKey:uid,updatedAt:now(),editedBy:auth.currentUser.uid},{merge:true});await loadBrain(uid);msg('brainMeta','🟢 長期記憶を保存しました。','good');}catch(e){msg('brainMeta',e.message,'error');}});
-$('clearBrainBtn').addEventListener('click',async()=>{const uid=$('brainUserId').value.trim();if(!uid)return msg('brainMeta','ユーザーの合言葉を入力してください。','error');if(!confirm(`「${uid}」の長期記憶と直近会話を削除しますか？`))return;try{await setDoc(doc(db,'light_brains',uid),{summary:'',recentHistory:[],updatedAt:now(),editedBy:auth.currentUser.uid},{merge:true});await loadBrain(uid);msg('brainMeta','🟢 消去しました。','good');}catch(e){msg('brainMeta',e.message,'error');}});
-
-function refreshScopeTargets(){const type=$('memoryScopeType').value,sel=$('memoryScopeTarget');if(type==='club'){sel.disabled=true;sel.innerHTML='<option value="club">全部員</option>';}else if(type==='band'){sel.disabled=false;sel.innerHTML='<option value="">バンドを選択</option>'+bands.map(b=>`<option value="${esc(b.id)}">${esc(b.name||b.id)}</option>`).join('');}else{sel.disabled=false;sel.innerHTML='<option value="">ユーザーを選択</option>'+users.map(u=>`<option value="${esc(u.authUid||u.id)}">${esc(u.name||u.username||u.id)} / ${esc(u.bandName||'')} </option>`).join('');}}
-$('memoryScopeType').addEventListener('change',refreshScopeTargets);refreshScopeTargets();
-function clearMemoryForm(){$('editingMemoryId').value='';$('memoryTitle').value='';$('memoryDetails').value='';$('memoryTrouble').value='';$('memoryCountermeasure').value='';$('memoryEventId').value='';$('memorySource').value='';$('memoryKeywords').value='';$('directAnswer').checked=false;$('memoryEnabled').checked=true;$('memoryCategory').value='band';$('memoryStaffRole').value='none';$('memoryCertainty').value='confirmed';$('memoryValidity').value='current';$('memoryKind').value='text';refreshScopeTargets();$('memoryScopeType').value='band';refreshScopeTargets();$('saveMemoryBtn').textContent='記憶ファイルを保存';}
-function memoryScopeLabel(m){if(m.scopeType==='club')return '部活共通';if(m.scopeType==='band')return `バンド：${esc(bands.find(b=>b.id===m.scopeId)?.name||m.scopeId)}`;if(m.scopeType==='personal'){const u=users.find(x=>x.id===m.scopeId||x.authUid===m.scopeId);return `個人：${esc(u?.name||u?.username||m.scopeId)}`;}return esc(m.scopeType||'不明');}
-async function loadMemories(){const s=await getDocs(collection(db,'light_memory_files'));memories=[];s.forEach(d=>memories.push({id:d.id,...(d.data()||{})}));memories.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));setText('memoryCountState',memories.length);renderMemories(memories);refreshScopeTargets();return memories;}
-function renderMemories(arr){$('memoryList').innerHTML=arr.length?arr.map(m=>`<div class="item"><div class="item-head"><div><div class="item-title">${esc(m.title||'無題')}</div><div class="small">${memoryScopeLabel(m)} / ${esc(m.category||'')} / ${esc(m.kind||'text')} / 担当:${esc(m.staffRole||'none')}</div><div style="margin-top:4px"><span class="tag ${m.certainty==='confirmed'?'ok':m.certainty==='unverified'?'warn':''}">${esc(m.certainty||'confirmed')}</span><span class="tag">${esc(m.validity||'current')}</span>${m.directAnswer?'<span class="tag ok">直接回答</span>':''}${m.enabled===false?'<span class="tag danger">無効</span>':''}</div></div></div><div style="white-space:pre-wrap;margin-top:8px">${esc(m.details||'')}</div>${m.trouble?`<div class="small" style="margin-top:7px">起きたトラブル：${esc(m.trouble)}</div>`:''}${m.countermeasure?`<div class="small" style="margin-top:5px">対処：${esc(m.countermeasure)}</div>`:''}${m.eventId?`<div class="small" style="margin-top:5px">eventId: ${esc(m.eventId)}</div>`:''}<div style="margin-top:6px">${(m.keywords||m.tags||[]).map(k=>`<span class="tag">${esc(k)}</span>`).join('')}</div><div class="row" style="margin-top:8px"><button data-memory="edit" data-id="${esc(m.id)}">編集</button><button data-memory="delete" class="danger" data-id="${esc(m.id)}">削除</button></div></div>`).join(''):'<div class="muted">該当する記憶ファイルはありません。</div>';}
-$('clearMemoryFormBtn').addEventListener('click',clearMemoryForm);
-$('saveMemoryBtn').addEventListener('click',async()=>{const title=$('memoryTitle').value.trim(),details=$('memoryDetails').value.trim(),type=$('memoryScopeType').value,target=type==='club'?'club':$('memoryScopeTarget').value;if(!title||!details||!target){alert('タイトル・詳細・対象を入力してください。');return;}const id=$('editingMemoryId').value.trim();const data={title,details,scopeType:type,scopeId:target,kind:$('memoryKind').value,category:$('memoryCategory').value,staffRole:$('memoryStaffRole').value,certainty:$('memoryCertainty').value,validity:$('memoryValidity').value,trouble:$('memoryTrouble').value.trim(),countermeasure:$('memoryCountermeasure').value.trim(),eventId:$('memoryEventId').value.trim(),sourceName:$('memorySource').value.trim(),keywords:listTags($('memoryKeywords').value),tags:listTags($('memoryKeywords').value),directAnswer:$('directAnswer').checked,enabled:$('memoryEnabled').checked,updatedAt:now(),updatedBy:auth.currentUser.uid};try{if(id)await updateDoc(doc(db,'light_memory_files',id),data);else{data.createdAt=now();data.createdBy=auth.currentUser.email||auth.currentUser.uid;await addDoc(collection(db,'light_memory_files'),data);}await loadMemories();clearMemoryForm();alert('記憶ファイルを保存しました。');}catch(e){console.error(e);alert(e.message||'記憶ファイル保存に失敗しました。');}});
-$('memoryList').addEventListener('click',async e=>{const b=e.target.closest('button[data-memory]');if(!b)return;const m=memories.find(x=>x.id===b.dataset.id);if(!m)return;if(b.dataset.memory==='delete'){if(!confirm('この記憶ファイルを削除しますか？'))return;await deleteDoc(doc(db,'light_memory_files',m.id));await loadMemories();return;}$('editingMemoryId').value=m.id;$('memoryScopeType').value=m.scopeType||'band';refreshScopeTargets();$('memoryScopeTarget').value=m.scopeId||'club';$('memoryKind').value=m.kind||'text';$('memoryCategory').value=m.category||'band';$('memoryStaffRole').value=m.staffRole||'none';$('memoryCertainty').value=m.certainty||'confirmed';$('memoryValidity').value=m.validity||'current';$('memoryTitle').value=m.title||'';$('memoryDetails').value=m.details||'';$('memoryTrouble').value=m.trouble||'';$('memoryCountermeasure').value=m.countermeasure||'';$('memoryEventId').value=m.eventId||'';$('memorySource').value=m.sourceName||'';$('memoryKeywords').value=(m.keywords||m.tags||[]).join(', ');$('directAnswer').checked=!!m.directAnswer;$('memoryEnabled').checked=m.enabled!==false;$('saveMemoryBtn').textContent='この記憶ファイルを更新';$('memoryTitle').scrollIntoView({behavior:'smooth',block:'center'});});
-
-async function loadPhotos(){const s=await getDocs(collection(db,'light_images'));photos=[];s.forEach(d=>photos.push({id:d.id,...(d.data()||{})}));photos.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));setText('photoCountState',photos.length);renderPhotos();}
-function photoMatches(p){const scope=$('photoScopeFilter').value,q=$('photoSearch').value.trim().toLowerCase();if(scope!=='all'&&p.scopeType!==scope)return false;if(!q)return true;const hay=[p.title,p.username,p.name,p.bandName,p.category,p.staffRole,p.humanNote,p.aiObservation,p.aiSummary,p.eventTitle,p.date,...(p.tags||[])].join(' ').toLowerCase();return hay.includes(q);}
-function renderPhotos(){const arr=photos.filter(photoMatches);setText('photoListMeta',`${arr.length}件 / 全${photos.length}件`);$('photoList').innerHTML=arr.length?arr.map(p=>`<div class="item"><div style="display:flex;gap:12px;align-items:flex-start"><img class="thumb" src="" alt="写真" data-thumb="${esc(p.id)}"><div class="grow"><div class="item-title">${esc(p.title||'写真')}</div><div class="small">${esc(p.name||p.username||'')} / ${esc(p.bandName||'')} / ${esc(p.category||'')} / ${esc(p.staffRole||'none')} / ${esc(p.date||'')}</div><div style="margin-top:6px">${(p.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div><div class="small" style="margin-top:6px">AI観察：${esc(p.aiObservation||'なし')}</div><div class="small" style="margin-top:5px">人間メモ：${esc(p.humanNote||'なし')}</div>${p.eventId?`<div class="small" style="margin-top:5px">eventId: ${esc(p.eventId)}</div>`:''}${p.userConfirmedPersonLabels?.length?`<div class="small" style="margin-top:5px">ユーザー確認人物：${p.userConfirmedPersonLabels.map(x=>esc(x)).join(' / ')}</div>`:''}<div class="row" style="margin-top:8px"><button data-photo="view" data-id="${esc(p.id)}">写真を見る</button><button data-photo="delete" class="danger" data-id="${esc(p.id)}">写真を削除</button></div></div></div></div>`).join(''):'<div class="muted">該当する写真がありません。</div>';for(const img of [...document.querySelectorAll('[data-thumb]')].slice(0,24)){loadPhotoDataUrl(img.dataset.thumb).then(u=>{if(u)img.src=u;}).catch(()=>{});}}
-async function loadPhotoDataUrl(imageId){const s=await getDocs(collection(db,'light_images',imageId,'chunks'));const arr=[];s.forEach(d=>arr.push({i:Number(d.data()?.index??d.id),data:String(d.data()?.data||'')}));arr.sort((a,b)=>a.i-b.i);return arr.map(x=>x.data).join('');}
-$('photoSearch').addEventListener('input',renderPhotos);$('photoScopeFilter').addEventListener('change',renderPhotos);$('loadPhotosBtn').addEventListener('click',()=>loadPhotos().catch(e=>msg('systemMessage',e.message,'error')));
-$('photoList').addEventListener('click',async e=>{const b=e.target.closest('button[data-photo]');if(!b)return;const id=b.dataset.id;if(b.dataset.photo==='view'){const url=await loadPhotoDataUrl(id);if(url)window.open(url,'_blank','noopener');else alert('写真本体を読み込めませんでした。');return;}if(!confirm('写真と写真に紐づく記憶を削除しますか？'))return;try{const s=await getDocs(collection(db,'light_images',id,'chunks'));await Promise.all(s.docs.map(d=>deleteDoc(d.ref)));await deleteDoc(doc(db,'light_images',id));const fs=await getDocs(collection(db,'light_memory_files'));await Promise.all(fs.docs.filter(d=>d.data()?.imageId===id).map(d=>deleteDoc(d.ref)));await loadPhotos();await loadMemories();}catch(err){alert(err.message||'削除に失敗しました。');}});
-
-async function loadTimeline(){const s=await getDocs(collection(db,'light_history'));timelines=[];s.forEach(d=>timelines.push({id:d.id,...(d.data()||{})}));timelines.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.createdAt||0)-Number(a.createdAt||0));renderTimeline();}
-function renderTimeline(){ $('timelineList').innerHTML=timelines.length?timelines.map(t=>`<div class="item"><div class="item-head"><div><div class="item-title">${esc(t.date||'')} ${esc(t.title||'')}</div><div class="small">${(t.tags||[]).map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div></div><button class="danger" data-timeline-delete="${esc(t.id)}">削除</button></div><div style="white-space:pre-wrap;margin-top:8px">${esc(t.details||'')}</div></div>`).join(''):'<div class="muted">部史はありません。</div>';}
-$('saveTimelineBtn').addEventListener('click',async()=>{const date=$('timelineDate').value,title=$('timelineTitle').value.trim(),details=$('timelineDetails').value.trim();if(!date||!title||!details){alert('日付・タイトル・詳細を入力してください。');return;}try{await addDoc(collection(db,'light_history'),{date,title,details,tags:listTags($('timelineTags').value),bandId:'club',bandName:'軽音楽部',scopeType:'club',createdAt:now(),createdBy:auth.currentUser.email||auth.currentUser.uid,createdByName:auth.currentUser.email||'管理者',authUid:auth.currentUser.uid});$('timelineDate').value='';$('timelineTitle').value='';$('timelineDetails').value='';$('timelineTags').value='';await loadTimeline();}catch(e){alert(e.message||'部史追加に失敗しました。');}});
-$('timelineList').addEventListener('click',async e=>{const id=e.target.closest('[data-timeline-delete]')?.dataset.timelineDelete;if(!id)return;if(!confirm('この部史を削除しますか？'))return;try{await deleteDoc(doc(db,'light_history',id));await loadTimeline();}catch(err){alert(err.message||'削除に失敗しました。');}});
-
-
-async function deleteAvatarRole(role){
-  try{const s=await getDocs(collection(db,'light_avatar_files',role,'chunks'));await Promise.all(s.docs.map(d=>deleteDoc(d.ref)));}catch(e){}
-  try{await deleteDoc(doc(db,'light_avatar_files',role));}catch(e){}
-  avatarData[role+'Name']='';
-}
-function fileToBase64(file){
-  return new Promise((resolve,reject)=>{
-    const r=new FileReader();r.onload=()=>resolve(String(r.result||'').split(',')[1]||'');r.onerror=()=>reject(new Error('ファイルの読み込みに失敗しました。'));r.readAsDataURL(file);
-  });
-}
-async function uploadAvatar(file,role){
-  if(!file)return false;
-  const ext=(file.name.split('.').pop()||'').toLowerCase();
-  if(!['vrm','glb'].includes(ext))throw new Error('VRMまたはGLBを選択してください。');
-  if(file.size>15*1024*1024)throw new Error('非課金版では15MB未満のアバターファイルにしてください。');
-  const base64=await fileToBase64(file),chunkSize=700000;
-  await deleteAvatarRole(role);
-  const chunks=[];for(let i=0;i<base64.length;i+=chunkSize)chunks.push(base64.slice(i,i+chunkSize));
-  await Promise.all(chunks.map((data,i)=>setDoc(doc(db,'light_avatar_files',role,'chunks',String(i)),{index:i,data,createdAt:now()})));
-  await setDoc(doc(db,'light_avatar_files',role),{
-    role,name:file.name,extension:ext,mimeType:'model/gltf-binary',size:file.size,
-    chunkCount:chunks.length,enabled:true,updatedAt:now(),updatedBy:auth.currentUser.uid
-  });
-  avatarData[role+'Name']=file.name;
-  return true;
-}
-function refreshAvatarBadges(){const on=$('avatarBetaEnabled').checked,live=$('avatarLiveDayEnabled').checked;$('avatarBetaState').textContent=on?'ON':'OFF';$('avatarBetaState').className='tag '+(on?'ok':'');$('avatarLiveDayState').textContent=live?'ON':'OFF';$('avatarLiveDayState').className='tag '+(live?'ok':'');}
-async function loadAvatarConfig(){
-  const s=await getDoc(doc(db,'light_avatar_config','main'));
-  avatarData=s.exists()?{betaEnabled:false,liveDayEnabled:false,lightName:'',otoName:'',updatedAt:0,...(s.data()||{})}:{betaEnabled:false,liveDayEnabled:false,lightName:'',otoName:'',updatedAt:0};
-  try{for(const role of ['light','oto']){const a=await getDoc(doc(db,'light_avatar_files',role));if(a.exists())avatarData[role+'Name']=a.data()?.name||'';}}catch(e){}
-  $('avatarBetaEnabled').checked=!!avatarData.betaEnabled;$('avatarLiveDayEnabled').checked=!!avatarData.liveDayEnabled;
-  $('lightAvatarInfo').textContent=avatarData.lightName?`登録済み：${avatarData.lightName}`:'未登録';
-  $('otoAvatarInfo').textContent=avatarData.otoName?`登録済み：${avatarData.otoName}`:'未登録';
-  refreshAvatarBadges();
-}
-$('avatarBetaEnabled').addEventListener('change',refreshAvatarBadges);$('avatarLiveDayEnabled').addEventListener('change',refreshAvatarBadges);
-$('saveAvatarConfigBtn').addEventListener('click',async()=>{
-  const b=$('saveAvatarConfigBtn');b.disabled=true;setText('avatarUploadResult','保存中...');
-  try{
-    const lf=$('lightAvatarFile').files?.[0]||null,of=$('otoAvatarFile').files?.[0]||null;
-    if(lf)await uploadAvatar(lf,'light');if(of)await uploadAvatar(of,'oto');
-    if($('avatarBetaEnabled').checked&&! (await getDoc(doc(db,'light_avatar_files','light'))).exists())throw new Error('アバターモードをONにするにはLightアバターが必要です。');
-    if(!$('avatarBetaEnabled').checked)$('avatarLiveDayEnabled').checked=false;
-    await setDoc(doc(db,'light_avatar_config','main'),{betaEnabled:$('avatarBetaEnabled').checked,liveDayEnabled:$('avatarLiveDayEnabled').checked,updatedAt:now(),updatedBy:auth.currentUser.uid},{merge:true});
-    $('lightAvatarFile').value='';$('otoAvatarFile').value='';await loadAvatarConfig();
-    setText('avatarUploadResult','🟢 保存完了。学生サイトを再読み込みすれば反映されます。');
-  }catch(e){console.error(e);setText('avatarUploadResult','🔴 '+(e.message||'保存に失敗しました。'))}finally{b.disabled=false;}
-});
-$('removeLightAvatarBtn').addEventListener('click',async()=>{
-  if(!confirm('Lightアバターを削除しますか？'))return;
-  try{await deleteAvatarRole('light');await setDoc(doc(db,'light_avatar_config','main'),{betaEnabled:false,liveDayEnabled:false,updatedAt:now(),updatedBy:auth.currentUser.uid},{merge:true});await loadAvatarConfig();setText('avatarUploadResult','Lightを削除し、アバターモードをOFFにしました。');}catch(e){setText('avatarUploadResult',e.message||'削除に失敗しました。');}
-});
-$('removeOtoAvatarBtn').addEventListener('click',async()=>{
-  if(!confirm('Otoアバターを削除しますか？'))return;
-  try{await deleteAvatarRole('oto');await loadAvatarConfig();setText('avatarUploadResult','Otoを削除しました。');}catch(e){setText('avatarUploadResult',e.message||'削除に失敗しました。');}
-});
-$('reloadAvatarConfigBtn').addEventListener('click',()=>loadAvatarConfig().catch(e=>setText('avatarUploadResult',e.message||'読み込みに失敗しました.')));
-
-async function loadCandidates(){const s=await getDocs(collection(db,'light_memory_candidates'));const arr=[];s.forEach(d=>arr.push({id:d.id,...(d.data()||{})}));arr.sort((x,y)=>Number(y.createdAt||0)-Number(x.createdAt||0));const pending=arr.filter(x=>x.status==='pending');setText('candidateListMeta',`${pending.length}件待承認 / 全${arr.length}件`);$('candidateList').innerHTML=pending.length?pending.slice(0,80).map(c=>`<div class="item"><div class="item-head"><div><div class="item-title">${esc(c.userKey||'ユーザー')}</div><div class="small">${esc(c.bandName||'未所属')} / ${esc(c.createdAt?new Date(c.createdAt).toLocaleString('ja-JP'):'')}</div></div><span class="tag warn">承認待ち</span></div><div style="white-space:pre-wrap;margin-top:8px">${esc(c.candidateText||'')}</div><div class="row" style="margin-top:8px"><button class="primary" data-candidate="approve" data-id="${esc(c.id)}">✅ 正式記憶に採用</button><button class="danger" data-candidate="reject" data-id="${esc(c.id)}">却下</button></div></div>`).join(''):'<div class="muted">承認待ちの候補はありません。</div>';return arr;}
-async function approveCandidate(c){const ref=await addDoc(collection(db,'light_memory_files'),{title:`会話からの記憶：${String(c.candidateText||'').slice(0,60)}`,details:String(c.candidateText||'').slice(0,3000),scopeType:'personal',scopeId:c.scopeId,authUid:c.authUid,userKey:c.userKey,bandId:c.bandId||'',bandName:c.bandName||'',kind:'text',category:'personal',subcategory:'自動記憶候補',staffRole:'none',certainty:'confirmed',validity:'current',trouble:'',countermeasure:'',eventId:'',sourceName:'会話からの自動記憶候補（管理者承認）',keywords:['自動記憶','承認済み'],tags:['自動記憶','承認済み'],directAnswer:false,enabled:true,createdBy:'admin',createdAt:now(),updatedAt:now(),candidateId:c.id});await updateDoc(doc(db,'light_memory_candidates',c.id),{status:'approved',approvedAt:now(),approvedBy:auth.currentUser.uid,memoryId:ref.id});}
-$('loadCandidatesBtn').addEventListener('click',()=>loadCandidates().catch(e=>setText('systemMessage',e.message||'候補の読み込みに失敗しました。')));$('candidateList').addEventListener('click',async e=>{const b=e.target.closest('button[data-candidate]');if(!b)return;const id=b.dataset.id;try{const s=await getDoc(doc(db,'light_memory_candidates',id));if(!s.exists())return;const c={id,...(s.data()||{})};if(b.dataset.candidate==='approve'){if(!confirm('この候補を正式な個人記憶として保存しますか？'))return;await approveCandidate(c);}else{if(!confirm('この記憶候補を却下しますか？'))return;await updateDoc(doc(db,'light_memory_candidates',id),{status:'rejected',rejectedAt:now(),rejectedBy:auth.currentUser.uid});}await loadCandidates();await loadMemories();}catch(e){console.error(e);setText('systemMessage',e.message||'記憶候補の処理に失敗しました。');}});
-
-function openProfileModal(u){$('editProfileUserKey').value=u.id;$('editProfileKey').textContent=u.id;$('editProfileName').value=u.name||u.displayName||u.username||'';$('editProfileBirthday').value=u.birthday||'';$('editProfileBand').value=u.bandName||'';$('profileEditMessage').textContent='';$('profileModal').style.display='flex';}
-function closeProfileModal(){$('profileModal').style.display='none';}
-$('closeProfileBtn').addEventListener('click',closeProfileModal);
-$('saveProfileBtn').addEventListener('click',async()=>{const uid=$('editProfileUserKey').value,name=$('editProfileName').value.trim(),birthday=$('editProfileBirthday').value.trim(),bandName=$('editProfileBand').value.trim();if(!uid||!name||!validBirthday(birthday)||!bandName){setText('profileEditMessage','名前・誕生日(MM-DD)・バンド名を正しく入力してください。');return;}try{const u=users.find(x=>x.id===uid),oldBandId=String(u?.bandId||''),bandId=safeBandId(bandName);await setDoc(doc(db,'light_users',uid),{name,displayName:name,birthday,bandName,bandId,updatedAt:now(),updatedBy:auth.currentUser.uid},{merge:true});await setDoc(doc(db,'light_bands',bandId),{bandId,name:bandName,normalizedName:bandName.toLowerCase(),updatedAt:now(),createdAt:now()},{merge:true});if(u?.authUid)await setDoc(doc(db,'light_band_members',`${bandId}_${u.authUid}`),{uid:u.authUid,userKey:uid,bandId,bandName,updatedAt:now()},{merge:true});if(oldBandId&&oldBandId!==bandId&&u?.authUid)await deleteDoc(doc(db,'light_band_members',`${oldBandId}_${u.authUid}`)).catch(()=>{});closeProfileModal();await Promise.all([loadUsers(),loadBands()]);}catch(e){setText('profileEditMessage',e.message||'保存に失敗しました。');}});
-
-async function loadLegacy(uid){const s=await getDoc(doc(db,'light_memories',uid));if(!s.exists()){$('legacyView').innerHTML='<div class="muted">該当する旧記憶はありません。</div>';return;}const d=s.data()||{};$('legacyView').innerHTML=`<div class="provider-key"><strong>${esc(uid)}</strong></div><div style="margin-top:8px"><span class="tag">自己改善 ${Array.isArray(d.reflections)?d.reflections.length:0}件</span><span class="tag">事実 ${Array.isArray(d.facts)?d.facts.length:0}件</span></div><div style="margin-top:10px"><strong>反省・学習ルール</strong><div class="small" style="white-space:pre-wrap;margin-top:5px">${esc((d.reflections||[]).join('\n'))||'(なし)'}</div></div><div style="margin-top:10px"><strong>事実記憶</strong><div class="small" style="white-space:pre-wrap;margin-top:5px">${esc((d.facts||[]).join('\n'))||'(なし)'}</div></div>`;}
-$('loadLegacyBtn').addEventListener('click',async()=>{const uid=$('legacyUserId').value.trim();if(!uid)return;try{await loadLegacy(uid);}catch(e){msg('systemMessage',e.message,'error');}});
-
-async function exportBackup(){const collections=['light_users','light_bands','light_band_members','light_brains','light_memory_files','light_memories','light_memory_candidates','light_history','light_history_edits','light_photo_edits','light_system','light_avatar_config','light_public_settings','light_images'];const result={version:'mightyX-prod-1',exportedAt:new Date().toISOString(),notice:'AI provider secrets, Auth accounts and admin data are intentionally excluded.',collections:{},imageChunks:[]};for(const name of collections){const s=await getDocs(collection(db,name));result.collections[name]=[];s.forEach(d=>result.collections[name].push({id:d.id,data:d.data()||{}}));}if($('backupIncludePhotos').checked){for(const item of result.collections.light_images||[]){const s=await getDocs(collection(db,'light_images',item.id,'chunks'));s.forEach(d=>result.imageChunks.push({imageId:item.id,id:d.id,data:d.data()||{}}));}}const blob=new Blob([JSON.stringify(result)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`light-mightyX-prod-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);setText('backupResult',`🟢 バックアップ完了 ${(blob.size/1024/1024).toFixed(2)}MB`);}
-$('exportBtn').addEventListener('click',async()=>{try{setText('backupResult','バックアップ作成中...');await exportBackup();}catch(e){setText('backupResult','🔴 '+(e.message||'バックアップ失敗'));}});
-$('restoreBtn').addEventListener('click',async()=>{const f=$('restoreInput').files?.[0];if(!f)return alert('JSONを選択してください。');if(!confirm('バックアップ対象データでFirestoreを上書きします。続けますか？'))return;try{const data=JSON.parse(await f.text()),allowed=['light_users','light_bands','light_band_members','light_brains','light_memory_files','light_memories','light_memory_candidates','light_history','light_history_edits','light_photo_edits','light_system','light_avatar_config','light_public_settings','light_images'];for(const name of allowed){for(const item of data.collections?.[name]||[]){await setDoc(doc(db,name,item.id),item.data||{});}}for(const ch of data.imageChunks||[]){await setDoc(doc(db,'light_images',ch.imageId,'chunks',ch.id),ch.data||{});}await reloadAll();setText('backupResult','🟢 復元が完了しました。');}catch(e){console.error(e);setText('backupResult','🔴 '+(e.message||'復元失敗'));}});
-
-async function reloadAll(){if(!adminReady&&auth.currentUser){const ok=await checkAdminClaim(auth.currentUser);if(!ok)return;}try{setText('systemMessage','読み込み中...');await Promise.all([loadProviders(),loadUsers(),loadBands(),loadMemories(),loadPhotos(),loadTimeline(),loadAvatarConfig(),loadRegistrationSetting(),loadCandidates()]);setText('authState','OK');setText('adminState','ADMIN');setText('systemMessage','🟢 非課金版の管理画面は接続済みです。');}catch(e){console.error(e);setText('systemMessage','🔴 '+(e.message||'読み込みに失敗しました。'));}}
-$('reloadBtn').addEventListener('click',()=>reloadAll());
-
-resetProviderForm();
-</script>
-</body>
-</html>
+import{initializeApp}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js';import{getFirestore,doc,getDoc,setDoc,addDoc,collection,getDocs,updateDoc,deleteDoc,query,where}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';import{getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,onAuthStateChanged}from'https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js';
+const root=document.getElementById('root');const firebaseConfig={apiKey:'AIzaSyChocv7osID9Afz4b1cVcab74b15Xzoudo',authDomain:'light-65413.firebaseapp.com',projectId:'light-65413',storageBucket:'light-65413.firebasestorage.app',messagingSenderId:'116819261632',appId:'1:116819261632:web:9d9144aa125a55371d5525'};const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));const now=()=>Date.now();
+const C={users:'light_users',bands:'light_bands',members:'light_band_members',brains:'light_brains',memories:'light_memories',files:'light_memory_files',candidates:'light_memory_candidates',history:'light_history',historyEdits:'light_history_edits',photos:'light_images',photoEdits:'light_photo_edits',providers:'light_ai_providers',public:'light_public_settings',avatarConfig:'light_avatar_config',avatarFiles:'light_avatar_files',admins:'light_admins'};
+let adminReady=false,section='brain',sub='overview',selected=null,cache={users:[],bands:[],brains:[],memories:[],files:[],candidates:[],history:[],photos:[],providers:[]};
+function msg(t,good=false){$('status').textContent=t;$('status').style.color=good?'var(--green)':'var(--muted)'}
+async function checkAdmin(u){if(!u)return false;const s=await getDoc(doc(db,C.admins,u.uid));return s.exists()&&s.data()?.enabled===true}
+function loginView(){root.innerHTML=`<div class="login"><div class="login-card"><h1>✨ ライト OS 管理者</h1><p class="muted">mightyX 管理コンソール</p><input id="email" type="email" placeholder="管理者メールアドレス"><input id="pass" type="password" placeholder="パスワード"><button class="primary" id="login">ログイン</button><button id="newAdmin">管理者アカウントを作る</button><div id="loginMsg" class="small"></div></div></div>`;$('login').onclick=login;$('newAdmin').onclick=registerAdmin}
+async function login(){try{const e=$('email').value.trim(),p=$('pass').value;await signInWithEmailAndPassword(auth,e,p);if(!await checkAdmin(auth.currentUser))throw new Error('管理者権限がありません。Firebaseの light_admins にUIDを登録してください。');await boot()}catch(e){$('loginMsg').textContent=e.message||'ログインに失敗しました。'}}
+async function registerAdmin(){try{const e=$('email').value.trim(),p=$('pass').value;if(!e||p.length<6)throw new Error('メールアドレスと6文字以上のパスワードを入力してください。');const c=await createUserWithEmailAndPassword(auth,e,p);await setDoc(doc(db,C.admins,c.user.uid),{enabled:true,email:e,createdAt:now(),updatedAt:now()},{merge:true});await boot()}catch(e){$('loginMsg').textContent=e.message||'作成に失敗しました。'}}
+function shell(){root.innerHTML=`<div class="app"><header class="top"><div class="brand">✨ ライト OS 管理者</div><nav class="top-tabs" id="topTabs"></nav><div class="top-right"><span id="status" class="status">接続中…</span><button id="reload">↻</button><button id="logout">ログアウト</button></div></header><div class="shell"><aside class="side" id="side"></aside><main class="main" id="main"></main></div></div>`;$('reload').onclick=boot;$('logout').onclick=()=>signOut(auth);renderNav()}
+const sections=[['brain','AI頭脳','🧠'],['personal','個人記憶','👤'],['band','バンド記憶','🎸'],['live','ライブ・部活','🎪'],['system','システム','⚙️']];
+function renderNav(){ $('topTabs').innerHTML=sections.map(x=>`<button class="top-tab ${section===x[0]?'active':''}" data-section="${x[0]}">${x[2]} ${x[1]}</button>`).join('');$('topTabs').onclick=e=>{const b=e.target.closest('[data-section]');if(!b)return;section=b.dataset.section;sub='overview';selected=null;renderNav()};let groups={brain:[['overview','概要'],['light','ライト'],['oto','オト'],['explore','探索思考'],['memoryRules','記憶判断'],['providers','AIプロバイダ']],personal:[['overview','全ユーザー'],['people','人物'],['candidates','記憶候補']],band:[['overview','全バンド'],['members','メンバー'],['memories','共有記憶']],live:[['overview','タイムライン'],['events','ライブ'],['staff','スタッフ'],['troubles','トラブル・対処'],['photos','写真']],system:[['overview','状態'],['backup','バックアップ'],['settings','設定']]};$('side').innerHTML=`<div class="side-title">${sections.find(x=>x[0]===section)[1]}</div><input class="search" id="sideSearch" placeholder="検索…">${groups[section].map(x=>`<button class="${sub===x[0]?'active':''}" data-sub="${x[0]}">${x[1]}</button>`).join('')}`;$('side').onclick=e=>{const b=e.target.closest('[data-sub]');if(!b)return;sub=b.dataset.sub;selected=null;renderNav()};$('sideSearch').oninput=()=>renderMain();renderMain()}
+function page(title,desc,body,actions=''){main.innerHTML=`<div class="page-head"><div><h1>${title}</h1><p>${desc}</p></div><div class="actions">${actions}</div></div>${body}`}
+function cards(items){return `<div class="grid">${items.map(x=>`<div class="card span4"><div class="muted">${x[0]}</div><div class="stat">${x[1]}</div><div class="small">${x[2]||''}</div></div>`).join('')}</div>`}
+function filterList(arr,keys){const q=($('sideSearch')?.value||'').toLowerCase();if(!q)return arr;return arr.filter(x=>keys.some(k=>String(x[k]||'').toLowerCase().includes(q)))}
+function renderMain(){if(!adminReady)return;const main=$('main');const f=filterList; if(section==='brain')renderBrain();else if(section==='personal')renderPersonal(f);else if(section==='band')renderBand(f);else if(section==='live')renderLive(f);else renderSystem()}
+function renderBrain(){if(sub==='providers'){page('AIプロバイダ','現在のプロバイダ設定を一覧・編集できます.',`<div class="card"><div class="toolbar"><button class="primary" id="addProvider">＋プロバイダ追加</button><button id="reloadProviders">再読込</button></div><div class="list">${cache.providers.map(p=>`<div class="item"><div class="item-head"><div><div class="title">${esc(p.name||p.provider||p.id)}</div><div class="small">model: ${esc(p.model||'未設定')} / priority: ${esc(p.priority??'')}</div></div><span class="tag ${p.enabled===false?'bad':'ok'}">${p.enabled===false?'OFF':'ON'}</span></div><div class="small">APIキーは画面上では表示せず、保存値をそのまま編集する場合のみ入力します。</div><div class="actions" style="margin-top:8px"><button data-edit-provider="${esc(p.id)}">編集</button><button class="danger" data-del-provider="${esc(p.id)}">削除</button></div></div>`).join('')||'<div class="empty">プロバイダがありません。</div>'}</div></div>`);$('addProvider').onclick=()=>providerModal({});$('reloadProviders').onclick=loadData;document.querySelectorAll('[data-edit-provider]').forEach(b=>b.onclick=()=>providerModal(cache.providers.find(x=>x.id===b.dataset.editProvider)||{}));document.querySelectorAll('[data-del-provider]').forEach(b=>b.onclick=()=>deleteDoc(doc(db,C.providers,b.dataset.delProvider)).then(loadData));return}
+const title=sub==='explore'?'自発的会話・探索思考':sub==='memoryRules'?'記憶判断ルール':sub==='light'?'ライトAI':'オトAI';const data=cache.brains.filter(b=>sub==='overview'||b.mode===sub);page(title,'AIの人格・判断・探索設定を管理する領域です.',`${cards([['AIブレイン',cache.brains.length,'ユーザー別の長期脳情報'],['記憶候補',cache.candidates.length,'自動記憶の保留状態'],['AIプロバイダ',cache.providers.length,'接続設定']])}<div class="card detail" style="margin-top:12px"><div class="tabs"><button class="inner-tab active">設定</button><button class="inner-tab">ルール</button><button class="inner-tab">診断</button></div><div class="notice">ここは今後の「自発的会話・探索思考」「確実性判定」「情報源自動選択」を一元管理する場所です。既存のFirestoreデータを壊さず、設定値を追加できる構造にしています。</div><div class="split"><div><div class="field"><label>探索の積極性</label><select id="exploreLevel"><option>必要な場合のみ</option><option>普通</option><option>積極的</option></select></div><div class="field"><label>質問の方針</label><select id="questionPolicy"><option>必要な場合のみ質問</option><option>関連情報があれば質問</option><option>積極的に質問</option></select></div></div><div><div class="field"><label>確実性</label><select id="certaintyPolicy"><option>確認情報と推測を分離</option><option>厳格</option><option>標準</option></select></div><div class="field"><label>保存方針</label><select><option>候補化して管理者確認</option><option>自動保存</option></select></div></div></div><button class="primary" id="saveBrainRules">設定を保存</button><span id="saveBrainMsg" class="small"></span></div>`);$('saveBrainRules').onclick=async()=>{await setDoc(doc(db,C.public,'ai_brain_rules'),{exploreLevel:$('exploreLevel').value,questionPolicy:$('questionPolicy').value,certaintyPolicy:$('certaintyPolicy').value,updatedAt:now(),updatedBy:auth.currentUser.uid},{merge:true});$('saveBrainMsg').textContent='保存しました。'} }
+function renderPersonal(f){if(sub==='candidates'){const a=cache.candidates.filter(x=>x.status==='pending');page('記憶候補','会話から抽出された候補を確認・正式記憶化します.',`<div class="list">${a.map(c=>`<div class="item"><div class="item-head"><div><div class="title">${esc(c.userKey||'ユーザー')}</div><div class="small">${esc(c.bandName||'')} / ${c.createdAt?new Date(c.createdAt).toLocaleString('ja-JP'):''}</div></div><span class="tag warn">承認待ち</span></div><p>${esc(c.candidateText||'')}</p><div class="actions"><button class="primary" data-approve="${c.id}">正式記憶に採用</button><button class="danger" data-reject="${c.id}">却下</button></div></div>`).join('')||'<div class="empty">保留中の候補はありません。</div>'}</div>`);document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>approveCandidate(b.dataset.approve));document.querySelectorAll('[data-reject]').forEach(b=>b.onclick=()=>updateDoc(doc(db,C.candidates,b.dataset.reject),{status:'rejected',rejectedAt:now(),rejectedBy:auth.currentUser.uid}).then(loadData));return}const users=f(cache.users,['name','displayName','username','id','bandName']);page('個人記憶','ユーザーごとに人物・記憶・会話・写真・関連情報を掘り下げます.',`<div class="toolbar"><input id="userFilter" placeholder="ユーザー名・バンド名・合言葉で検索"><span class="tag ok">${users.length}人</span></div><div class="list">${users.map(u=>`<div class="item"><div class="item-head"><div><div class="title">${esc(u.name||u.displayName||u.username||u.id)}</div><div class="small">${esc(u.bandName||'未所属')} / ${esc(u.id)}</div></div><span class="tag">${Number(u.loginCount||0)}回</span></div><div class="actions" style="margin-top:8px"><button class="primary" data-open-user="${esc(u.id)}">開く</button><button data-edit-user="${esc(u.id)}">プロフィール編集</button></div></div>`).join('')||'<div class="empty">ユーザーがありません。</div>'}</div>`);$('userFilter').oninput=()=>{const q=$('userFilter').value.toLowerCase();document.querySelectorAll('#main .item').forEach(x=>x.style.display=x.textContent.toLowerCase().includes(q)?'':'none')};document.querySelectorAll('[data-open-user]').forEach(b=>b.onclick=()=>openUser(b.dataset.openUser));document.querySelectorAll('[data-edit-user]').forEach(b=>b.onclick=()=>profileModal(cache.users.find(x=>x.id===b.dataset.editUser)))}
+function openUser(id){const u=cache.users.find(x=>x.id===id);if(!u)return;const brain=cache.brains.find(x=>x.id===id)||{};const files=cache.files.filter(x=>x.scopeType==='personal'&&(x.scopeId===id||x.userKey===id));const photos=cache.photos.filter(x=>x.userKey===id||x.username===u.username);page(u.name||u.id,`${u.bandName||'未所属'} / ${u.birthday||'誕生日未登録'}`,`<div class="tabs"><button class="inner-tab active">概要</button><button class="inner-tab">記憶</button><button class="inner-tab">楽器・機材</button><button class="inner-tab">関係</button><button class="inner-tab">写真</button></div><div class="grid">${cards([['長期脳',brain.summary?'あり':'なし'],['個人記憶',files.length+'件'],['写真',photos.length+'件']])}</div><div class="card" style="margin-top:12px"><h3>基本情報</h3><div class="split"><div class="field"><label>名前</label><input id="duName" value="${esc(u.name||'')}"></div><div class="field"><label>バンド</label><input id="duBand" value="${esc(u.bandName||'')}"></div></div><div class="field"><label>誕生日</label><input id="duBirth" value="${esc(u.birthday||'')}"></div><button class="primary" id="saveDU">プロフィールを保存</button><div id="duMsg" class="small"></div></div><div class="card" style="margin-top:12px"><h3>長期記憶</h3><textarea id="brainSummary" rows="8">${esc(brain.summary||'')}</textarea><button class="primary" id="saveBrainSummary" style="margin-top:8px">長期記憶を保存</button></div><div class="card" style="margin-top:12px"><h3>関連情報</h3><div>${[u.bandName&&'🎸 '+u.bandName,files.length&&'🧠 '+files.length+'件の記憶',photos.length&&'📷 '+photos.length+'枚'].filter(Boolean).map(x=>`<span class="tag">${esc(x)}</span>`).join('')||'<span class="muted">関連情報なし</span>'}</div></div>`);$('saveDU').onclick=async()=>{await setDoc(doc(db,C.users,id),{name:$('duName').value.trim(),displayName:$('duName').value.trim(),bandName:$('duBand').value.trim(),birthday:$('duBirth').value.trim(),updatedAt:now(),updatedBy:auth.currentUser.uid},{merge:true});$('duMsg').textContent='保存しました。';await loadData()};$('saveBrainSummary').onclick=async()=>{await setDoc(doc(db,C.brains,id),{userKey:id,authUid:u.authUid||'',bandId:u.bandId||'',bandName:u.bandName||'',summary:$('brainSummary').value.slice(0,3500),updatedAt:now()},{merge:true});$('duMsg').textContent='長期記憶を保存しました。';await loadData()}}
+function renderBand(f){const bands=f(cache.bands,['name','id','normalizedName']);page('バンド記憶','バンド単位のメンバー・ライブ・機材・トラブルを管理します.',`<div class="toolbar"><input id="bandFilter" placeholder="バンド名で検索"><span class="tag ok">${bands.length}組</span></div><div class="list">${bands.map(b=>`<div class="item"><div class="item-head"><div><div class="title">${esc(b.name||b.id)}</div><div class="small">ID: ${esc(b.id)}</div></div><span class="tag">${cache.users.filter(u=>u.bandId===b.id).length}人</span></div><div class="actions" style="margin-top:8px"><button class="primary" data-open-band="${esc(b.id)}">開く</button></div></div>`).join('')||'<div class="empty">バンドがありません。</div>'}</div>`);$('bandFilter').oninput=()=>{const q=$('bandFilter').value.toLowerCase();document.querySelectorAll('#main .item').forEach(x=>x.style.display=x.textContent.toLowerCase().includes(q)?'':'none')};document.querySelectorAll('[data-open-band]').forEach(b=>b.onclick=()=>openBand(b.dataset.openBand))}
+function openBand(id){const b=cache.bands.find(x=>x.id===id);const ms=cache.users.filter(x=>x.bandId===id);const mem=cache.files.filter(x=>x.scopeType==='band'&&x.scopeId===id);const hist=cache.history.filter(x=>x.bandId===id);page(b?.name||id,'バンド詳細',`<div class="grid">${cards([['メンバー',ms.length],['共有記憶',mem.length],['ライブ履歴',hist.length]])}</div><div class="card" style="margin-top:12px"><h3>メンバー</h3><div class="list">${ms.map(u=>`<div class="item"><b>${esc(u.name||u.id)}</b><div class="small">${esc(u.id)} / ${esc(u.bandName||'')}</div></div>`).join('')||'<div class="empty">メンバーなし</div>'}</div></div><div class="card" style="margin-top:12px"><h3>共有記憶</h3><div class="list">${mem.map(m=>`<div class="item"><div class="title">${esc(m.title||'無題')}</div><div class="small">${esc(m.certainty||'未設定')} / ${esc(m.validity||'')}</div><div style="white-space:pre-wrap;margin-top:6px">${esc(m.details||'')}</div></div>`).join('')||'<div class="empty">共有記憶なし</div>'}</div></div>`)}
+function renderLive(f){if(sub==='photos'){const ps=f(cache.photos,['title','name','bandName','category','eventTitle','date']);page('写真','写真記憶をライブ・人物・バンドと関連づけて確認します.',`<div class="list">${ps.slice(0,100).map(p=>`<div class="item"><div class="title">${esc(p.title||'写真')}</div><div class="small">${esc(p.date||'')} / ${esc(p.name||p.username||'')} / ${esc(p.bandName||'')} / ${esc(p.category||'')}</div><div class="small" style="margin-top:5px">AI: ${esc(p.aiSummary||p.aiObservation||'なし')}</div></div>`).join('')||'<div class="empty">写真なし</div>'}</div>`);return}if(sub==='staff'||sub==='troubles'||sub==='events'){}const hs=f(cache.history,['title','date','details','bandName']);page('ライブ・部活','タイムライン・ライブ・スタッフ・トラブルをまとめて扱う領域です.',`<div class="toolbar"><span class="tag ok">${hs.length}件</span><button class="primary" id="addHistory">＋出来事</button></div><div class="list">${hs.slice(0,120).map(h=>`<div class="item"><div class="item-head"><div><div class="title">${esc(h.date||'')} ${esc(h.title||'')}</div><div class="small">${esc(h.bandName||'')} / ${esc(h.scopeType||'')}</div></div><span class="tag">${esc(h.category||'部史')}</span></div><div style="white-space:pre-wrap;margin-top:7px">${esc(h.details||'')}</div><div class="small" style="margin-top:6px">${(h.tags||[]).map(t=>`#${esc(t)} `).join('')}</div></div>`).join('')||'<div class="empty">履歴なし</div>'}</div>`);$('addHistory').onclick=()=>historyModal()}
+function renderSystem(){if(sub==='backup'){page('バックアップ','Firestoreの主要データをJSONとして書き出します。Authアカウントと管理者情報は対象外です.',`<div class="card"><div class="notice">既存データを壊さないため、復元は明示操作に限定します。写真チャンクも含める場合は容量に注意してください。</div><div class="actions" style="margin-top:12px"><button class="primary" id="export">JSONバックアップ作成</button><input id="restore" type="file" accept="application/json"></div><div id="backupMsg" class="small" style="margin-top:10px"></div></div>`);$('export').onclick=exportBackup;return}page('システム','接続状態・データ件数・現在のFirebase構成を確認します.',`${cards([['ユーザー',cache.users.length],['バンド',cache.bands.length],['記憶ファイル',cache.files.length],['写真',cache.photos.length],['履歴',cache.history.length],['AIプロバイダ',cache.providers.length]])}<div class="card" style="margin-top:12px"><h3>固定基盤</h3><div class="notice">Firebase projectId: <b>light-65413</b><br>Authentication: Email/Password<br>Firestore: 現行コレクションを使用<br>Cloud Functions / Firebase Storage: 使用しない<br>管理者権限: light_admins/{UID}.enabled</div></div>`)}
+function providerModal(p){modal('AIプロバイダ',`<div class="field"><label>表示名</label><input id="mpName" value="${esc(p.name||'')}"></div><div class="field"><label>provider</label><input id="mpProvider" value="${esc(p.provider||'gemini')}"></div><div class="field"><label>model</label><input id="mpModel" value="${esc(p.model||'gemini-3.8-flash')}"></div><div class="field"><label>APIキー（入力時のみ更新）</label><input id="mpKey" type="password" placeholder="変更しない場合は空欄"></div><div class="field"><label>priority</label><input id="mpPriority" type="number" value="${Number(p.priority||0)}"></div><div class="actions"><button class="primary" id="saveMP">保存</button></div>`);$('saveMP').onclick=async()=>{const data={name:$('mpName').value.trim(),provider:$('mpProvider').value.trim(),model:$('mpModel').value.trim(),priority:Number($('mpPriority').value||0),enabled:true,updatedAt:now(),updatedBy:auth.currentUser.uid};if($('mpKey').value)data.apiKey=$('mpKey').value;await setDoc(doc(db,C.providers,p.id||('provider_'+Date.now())),data,{merge:true});closeModal();await loadData()}}
+function profileModal(u={}){modal('プロフィール編集',`<div class="field"><label>合言葉キー</label><input id="muKey" value="${esc(u.id||'')}" disabled></div><div class="field"><label>名前</label><input id="muName" value="${esc(u.name||u.displayName||'')}"></div><div class="field"><label>誕生日 MM-DD</label><input id="muBirth" value="${esc(u.birthday||'')}"></div><div class="field"><label>バンド</label><input id="muBand" value="${esc(u.bandName||'')}"></div><button class="primary" id="saveMU">保存</button>`);$('saveMU').onclick=async()=>{await setDoc(doc(db,C.users,u.id),{name:$('muName').value.trim(),displayName:$('muName').value.trim(),birthday:$('muBirth').value.trim(),bandName:$('muBand').value.trim(),updatedAt:now(),updatedBy:auth.currentUser.uid},{merge:true});closeModal();await loadData()}}
+function historyModal(){modal('出来事を追加',`<div class="split"><div class="field"><label>日付</label><input id="mhDate" type="date"></div><div class="field"><label>タイトル</label><input id="mhTitle"></div></div><div class="field"><label>詳細</label><textarea id="mhDetails" rows="7"></textarea></div><div class="field"><label>タグ</label><input id="mhTags" placeholder="ライブ,トラブル,PA"></div><button class="primary" id="saveMH">保存</button>`);$('saveMH').onclick=async()=>{await addDoc(collection(db,C.history),{date:$('mhDate').value,title:$('mhTitle').value.trim(),details:$('mhDetails').value.trim(),tags:$('mhTags').value.split(',').map(x=>x.trim()).filter(Boolean),scopeType:'club',createdAt:now(),createdBy:auth.currentUser.uid});closeModal();await loadData()}}
+function modal(title,body){const m=document.createElement('div');m.className='modal show';m.id='modal';m.innerHTML=`<div class="modal-card"><div class="modal-head"><h2 style="margin:0;font-size:18px">${esc(title)}</h2><button id="closeM">✕</button></div>${body}</div>`;document.body.appendChild(m);$('closeM').onclick=closeModal}function closeModal(){$('modal')?.remove()}
+async function approveCandidate(id){const s=await getDoc(doc(db,C.candidates,id));if(!s.exists())return;const c={id,...s.data()};await addDoc(collection(db,C.files),{title:`会話からの記憶：${String(c.candidateText||'').slice(0,60)}`,details:String(c.candidateText||'').slice(0,3000),scopeType:'personal',scopeId:c.scopeId,authUid:c.authUid,userKey:c.userKey,bandId:c.bandId||'',bandName:c.bandName||'',kind:'text',category:'personal',subcategory:'自動記憶候補',certainty:'confirmed',validity:'current',enabled:true,createdBy:'admin',createdAt:now(),updatedAt:now(),candidateId:id});await updateDoc(doc(db,C.candidates,id),{status:'approved',approvedAt:now(),approvedBy:auth.currentUser.uid});await loadData()}
+async function exportBackup(){const names=[C.users,C.bands,C.members,C.brains,C.memories,C.files,C.candidates,C.history,C.historyEdits,C.photos,C.photoEdits,C.public,C.avatarConfig];const out={version:'mightyX-admin-browser-1',exportedAt:new Date().toISOString(),notice:'Auth accounts, admin records and AI secrets are excluded.',collections:{},imageChunks:[]};for(const n of names){const s=await getDocs(collection(db,n));out.collections[n]=s.docs.map(d=>({id:d.id,data:d.data()}))}for(const p of out.collections[C.photos]||[]){const s=await getDocs(collection(db,C.photos,p.id,'chunks'));s.forEach(d=>out.imageChunks.push({imageId:p.id,id:d.id,data:d.data()}))}const blob=new Blob([JSON.stringify(out)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`light-mightyX-admin-backup-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);$('backupMsg').textContent=`完了 ${(blob.size/1024/1024).toFixed(2)}MB`}
+async function loadData(){msg('データ読み込み中…');const read=async n=>(await getDocs(collection(db,n))).docs.map(d=>({id:d.id,...d.data()}));[cache.users,cache.bands,cache.brains,cache.memories,cache.files,cache.candidates,cache.history,cache.photos,cache.providers]=await Promise.all([read(C.users),read(C.bands),read(C.brains),read(C.memories),read(C.files),read(C.candidates),read(C.history),read(C.photos),read(C.providers)]);msg('接続済み',true);renderMain()}
+async function boot(){if(!auth.currentUser){loginView();return}if(!(await checkAdmin(auth.currentUser))){await signOut(auth);loginView();return}adminReady=true;shell();await loadData()}
+onAuthStateChanged(auth,u=>{if(u)boot().catch(e=>{console.error(e);loginView()});else{adminReady=false;loginView()}});
+</script></body></html>
