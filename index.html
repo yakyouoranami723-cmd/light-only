@@ -33,8 +33,47 @@ body.avatar-mode #talk-btn{width:92px;height:92px;border-radius:50%;font-size:30
 body.voice-mode:not(.avatar-mode) #chat-log,body.voice-mode:not(.avatar-mode) #attach-bar,body.voice-mode:not(.avatar-mode) #photo-btn,body.voice-mode:not(.avatar-mode) #chat-input,body.voice-mode:not(.avatar-mode) #send-btn{display:none}body.voice-mode:not(.avatar-mode) .controls{justify-content:center}body.voice-mode:not(.avatar-mode) #talk-btn{width:92px;height:92px;border-radius:50%;font-size:30px}
 #avatar-error{display:none;color:#bf616a;font-size:12px;max-width:320px;text-align:center;margin:5px auto 10px}
 .login-secondary{background:rgba(255,255,255,.06);color:#ddd;border:1px solid rgba(255,255,255,.16);width:80%;max-width:330px;padding:11px;border-radius:30px;margin-top:4px}.login-help{color:#999;font-size:11px;max-width:330px;line-height:1.55;margin-top:7px}.profile-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);justify-content:center;align-items:center;z-index:2500}.profile-card{width:88%;max-width:420px;background:#161823;border:1px solid #ff7eb3;border-radius:16px;padding:20px;box-sizing:border-box}.profile-card h3{color:#ff7eb3;margin:0 0 14px}.profile-card input{width:100%;margin-top:7px;background:rgba(255,255,255,.08);border:1px solid rgba(255,126,179,.45);color:#fff;padding:12px;border-radius:10px}.profile-card .field{margin:12px 0}.profile-card .small{color:#aaa;font-size:11px;line-height:1.5}.profile-actions{display:flex;gap:8px;margin-top:15px}.profile-actions button{flex:1;border-radius:10px}.auth-error{color:#bf616a;font-size:12px;margin-top:8px;min-height:18px}
+
+/* ===== Mobile / touch optimization ===== */
+html,body{width:100%;max-width:100%;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+button,input,textarea,select{touch-action:manipulation}
+@media (max-width:700px){
+  body{min-height:100dvh;height:100dvh;overflow:hidden}
+  #main-app{height:100dvh;min-height:0;justify-content:flex-start;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  #login-screen{height:100dvh;padding:max(18px,env(safe-area-inset-top)) 14px max(18px,env(safe-area-inset-bottom));box-sizing:border-box;overflow:auto}
+  .login-title{font-size:22px}.login-desc{font-size:13px;margin-bottom:22px}
+  #login-id-input,#execute-login-btn,.login-secondary,.login-warning,.login-help{width:min(100%,360px)}
+  #header-bar{width:calc(100% - 24px);margin:8px 0 6px;gap:8px}
+  .app-title{font-size:15px}.app-subtitle{max-width:52vw}
+  #avatar-container{width:min(46vw,200px);height:min(46vw,200px);margin-bottom:4px}
+  #avatar-container.avatar-beta{width:min(72vw,320px);height:min(78vw,360px);max-height:43vh;margin-bottom:4px}
+  #avatar-mode-badge{font-size:11px;margin-bottom:5px}
+  #chat-log{width:calc(100% - 20px);height:min(34dvh,270px);min-height:120px;padding:11px;margin-bottom:8px;font-size:14px}
+  #attach-bar{width:calc(100% - 20px);margin-bottom:7px;padding:8px}
+  .controls{width:calc(100% - 20px);max-width:none;gap:6px;align-items:stretch;flex-wrap:nowrap}
+  .controls button{padding:11px 10px;min-height:44px}
+  #talk-btn{min-width:48px}.controls #chat-input{min-width:0;width:auto;flex:1;padding:11px 13px;font-size:16px}
+  #send-btn{min-width:58px}
+  #photo-btn{min-width:46px}
+  .image-chat-card img{max-width:min(45vw,180px);max-height:130px}
+  .modal-content{width:calc(100% - 24px);max-width:430px;max-height:calc(100dvh - 24px);padding:14px}
+  .setting-row{gap:10px;align-items:flex-start}.setting-row>span{min-width:0}
+  .profile-card{width:calc(100% - 24px);max-width:430px;max-height:calc(100dvh - 24px);overflow:auto;padding:16px}
+  .profile-actions{position:sticky;bottom:0;background:#161823;padding-top:8px}
+  #camera-modal{padding:10px!important}.camera-modal .modal-content{width:100%}
+  #camera-video{max-height:55dvh!important}
+}
+@media (max-width:430px){
+  #header-bar{width:calc(100% - 16px)}
+  #chat-log,#attach-bar,.controls{width:calc(100% - 16px)}
+  .app-subtitle{display:none}
+  #avatar-container.avatar-beta{width:70vw;height:38vh}
+  body.avatar-mode #talk-btn,body.voice-mode:not(.avatar-mode) #talk-btn{width:78px;height:78px}
+  .controls button{padding-left:8px;padding-right:8px}
+  #photo-btn{display:none}
+}
 </style></head><body>
-<div id="login-screen"><div class="login-title">✨ ライト OS</div><div class="login-desc">専用の合言葉でログインしてね！</div><input id="login-id-input" placeholder="例：lx-8fK3..." autocomplete="off" autocapitalize="none" spellcheck="false"><button id="execute-login-btn">起動する</button><button id="generate-passphrase-btn" class="login-secondary">自分専用の合言葉を作る</button><button id="new-registration-btn" class="login-secondary">新しく登録する</button><div class="status-note" style="max-width:330px">非課金版はFirebase Authenticationで本人確認します。<br>合言葉は端末間で共有するための秘密情報なので、他人に見せないでください。</div><div class="login-help">初回登録コードが設定されている場合は必要です。既存の合言葉の移行にも対応します。</div><div id="auth-error" class="auth-error"></div></div>
+<div id="login-screen"><div class="login-title">✨ ライト OS</div><div class="login-desc">専用の合言葉でログインしてね！</div><input id="login-id-input" placeholder="例：lx-8fK3..." autocomplete="off" autocapitalize="none" spellcheck="false"><button id="execute-login-btn">起動する</button><button id="generate-passphrase-btn" class="login-secondary">自分専用の合言葉を作る</button><div class="status-note" style="max-width:330px">非課金版はFirebase Authenticationで本人確認します。<br>合言葉は端末間で共有するための秘密情報なので、他人に見せないでください。</div><div class="login-help">初回登録コードが設定されている場合は必要です。既存の合言葉の移行にも対応します。</div><div id="auth-error" class="auth-error"></div></div>
 <div id="profile-modal" class="profile-modal"><div class="profile-card"><h3>👤 プロフィール登録</h3><div class="small">名前と誕生日は合言葉とは別に保存します。バンドを変更しても個人記憶は残ります。</div><div class="field"><div class="small">名前</div><input id="profile-name" maxlength="60" placeholder="例：りゅうせい"></div><div class="field"><div class="small">誕生日</div><input id="profile-birthday" maxlength="5" placeholder="MM-DD" inputmode="numeric"></div><div class="field"><div class="small">現在のバンド名</div><input id="profile-band" maxlength="60" placeholder="例：Why's"></div><div class="field" id="join-code-field"><div class="small">初回登録コード</div><input id="profile-join-code" maxlength="120" placeholder="管理者から受け取ったコード" autocomplete="off"></div><div class="profile-actions"><button id="profile-cancel-btn">キャンセル</button><button id="profile-save-btn" class="primary">登録して起動</button></div><div id="profile-error" class="auth-error"></div></div></div>
 <div id="main-app"><div id="header-bar"><div><div class="app-title">✨ ライト</div><div class="app-subtitle" id="identity-label">未ログイン</div></div><button id="open-settings-btn" class="icon-btn">⚙️ 設定</button></div><div id="avatar-mode-badge">● アバターモード / LIGHT</div><div id="avatar-container"></div><div id="avatar-error"></div><div id="chat-log"><div class="msg-sys"><strong>システム:</strong> クラウド連携待機中...</div></div><div id="attach-bar"><div id="attach-thumbs"></div><div id="attach-info">写真はチャットと一緒に送れます。ライトが文脈から説明・タグ・分類を自動整理して資料館に記録します。</div><div id="attach-actions"><span style="font-size:12px;color:#ccc">写真はライトが自動で整理・記録します。保存したくないときは「保存しないで」と一言つけてね。</span><button id="photo-clear-btn" class="mini-btn">写真を外す</button></div></div><div class="controls"><button id="talk-btn">🔴</button><button id="photo-btn" class="icon-btn" title="写真を添付">📷</button><input id="photo-input" type="file" accept="image/jpeg,image/png,image/webp" multiple style="display:none"><input type="text" id="chat-input" placeholder="ライトに話しかける..."><button id="send-btn">送信</button></div></div>
 <div id="settings-modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">⚙️ システム設定</div><button class="close-btn" id="close-settings-btn">✖</button></div><div class="setting-row"><span>ボイス再生（音声）</span><button id="mute-toggle-btn" class="icon-btn">🔇 音声 OFF</button></div><div class="setting-row"><span>チャット / 音声モード</span><button id="voice-mode-toggle-btn" class="icon-btn">💬 チャット</button></div><div class="section-title">👤 プロフィール</div><div class="sync-box"><div style="font-size:11px;color:#ccc;margin-bottom:8px">現在のプロフィール</div><div id="profile-summary" class="small" style="line-height:1.7;margin-bottom:8px">未読み込み</div><button id="profile-edit-btn" class="modal-btn" style="margin-top:0">プロフィールを編集</button></div><div class="section-title">☁️ クラウド同期</div><div class="sync-box"><div style="font-size:11px;color:#ccc;margin-bottom:8px">現在の合言葉</div><input id="sync-id-input" readonly><button id="logout-btn" class="sync-btn" style="margin-top:5px;background:#bf616a;color:#fff">別のユーザーでログインし直す</button></div><div class="section-title">【現在の学習ステータス】</div><div class="setting-row" style="flex-direction:column;align-items:flex-start;margin-bottom:5px"><span id="brain-status-text" style="font-size:13px">個人記憶: 0件 | 共有記憶: 0件 | 写真: 0件 | 長期記憶: なし</span></div><button id="view-brain-btn" class="modal-btn">🧠 記憶データの中身を確認 / 編集</button><div class="section-title">【拡張知識】</div><button id="pdf-btn" class="modal-btn">📄 説明書・資料(PDF)を一時記憶させる</button><button id="camera-btn" class="modal-btn">📷 カメラでライトに見せる</button><input type="file" id="pdf-upload" accept="application/pdf" style="display:none"></div></div>
@@ -65,12 +104,11 @@ const ARCHIVE_CATEGORIES={
 };
 const STAFF_ROLES={pa:'PA',roady:'ローディ',promoter:'プロモーター',lighting:'照明'};
 window.isMuted=true;window.selfReflections=[];window.userFacts=[];window.pdfKnowledge='';window.conversationHistory=[];window.memoryFiles=[];window.photoMemories=[];window.timelineEntries=[];window.lightBrain={summary:'',recentHistory:[]};window.apiConfig={modelMode:'server'};window.recentConversationImages=[];let apiConfigLoaded=false;let brainSaveQueue=Promise.resolve();
-let sessionUserKey='',sessionUserName='',sessionDisplayName='',sessionBirthday='',sessionBandId='',sessionBandName='';let attachedPhotos=[];let pendingProfile={};let authReady=false;let booting=false;let registrationInProgress=false;let voiceMode=localStorage.getItem('light_voice_mode')==='1';
+let sessionUserKey='',sessionUserName='',sessionDisplayName='',sessionBirthday='',sessionBandId='',sessionBandName='';let attachedPhotos=[];let pendingProfile={};let authReady=false;let booting=false;let voiceMode=localStorage.getItem('light_voice_mode')==='1';
 let avatarConfig={betaEnabled:false,liveDayEnabled:false,lightUrl:'',otoUrl:''};let avatarRuntime={vrm:null,lightObject:null,otoObject:null,mode:'light',loaded:false};
 const $=id=>document.getElementById(id),chatLog=$('chat-log'),chatInput=$('chat-input'),sendBtn=$('send-btn'),talkBtn=$('talk-btn'),settingsModal=$('settings-modal'),loginScreen=$('login-screen'),mainApp=$('main-app');
 const now=()=>Date.now(), esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s])); const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function canonical(v){return String(v||'').trim().toLowerCase();}
-function safeBandId(name){return canonical(name).replace(/[^a-z0-9\u3040-\u30ff\u4e00-\u9fff_-]/g,'_').slice(0,80)||'band';}
 function romanToKatakana(input){let s=String(input||'').toLowerCase().replace(/[^a-z]/g,'');if(!s)return '';const overrides={ryusei:'リュウセイ',ryuusei:'リュウセイ',souta:'ソウタ',shota:'ショウタ',shouta:'ショウタ',yuuki:'ユウキ',yuuta:'ユウタ',yuya:'ユウヤ',kouki:'コウキ',kouya:'コウヤ',kouta:'コウタ',yuto:'ユウト',yuto:'ユウト',haruto:'ハルト',kaito:'カイト',ren:'レン',rin:'リン',yuna:'ユナ',hina:'ヒナ'};if(overrides[s])return overrides[s];const map={rya:'リャ',ryu:'リュウ',ryo:'リョ',kya:'キャ',kyu:'キュ',kyo:'キョ',gya:'ギャ',gyu:'ギュ',gyo:'ギョ',sha:'シャ',shu:'シュ',she:'シェ',sho:'ショ',cha:'チャ',chu:'チュ',che:'チェ',cho:'チョ',nya:'ニャ',nyu:'ニュ',nyo:'ニョ',hya:'ヒャ',hyu:'ヒュ',hyo:'ヒョ',bya:'ビャ',byu:'ビュ',byo:'ビョ',pya:'ピャ',pyu:'ピュ',pyo:'ピョ',mya:'ミャ',myu:'ミュ',myo:'ミョ',fya:'フャ',fyu:'フュ',fyo:'フョ',fa:'ファ',fi:'フィ',fe:'フェ',fo:'フォ',va:'ヴァ',vi:'ヴィ',vu:'ヴ',ve:'ヴェ',vo:'ヴォ',shi:'シ',chi:'チ',tsu:'ツ',ji:'ジ',fu:'フ',kwa:'クァ',kwi:'クィ',kwe:'クェ',kwo:'クォ',gwa:'グァ',gwi:'グィ',gwe:'グェ',gwo:'グォ',we:'ウェ',wi:'ウィ',wo:'ウォ',ye:'イェ',aa:'アー',ii:'イー',uu:'ウー',ee:'エー',oo:'オー',ou:'オウ',ei:'エイ',ka:'カ',ki:'キ',ku:'ク',ke:'ケ',ko:'コ',ga:'ガ',gi:'ギ',gu:'グ',ge:'ゲ',go:'ゴ',sa:'サ',si:'シ',su:'ス',se:'セ',so:'ソ',za:'ザ',zi:'ジ',zu:'ズ',ze:'ゼ',zo:'ゾ',ta:'タ',ti:'チ',tu:'ツ',te:'テ',to:'ト',da:'ダ',di:'ヂ',du:'ヅ',de:'デ',do:'ド',na:'ナ',ni:'ニ',nu:'ヌ',ne:'ネ',no:'ノ',ha:'ハ',hi:'ヒ',he:'ヘ',ho:'ホ',ba:'バ',bi:'ビ',bu:'ブ',be:'ベ',bo:'ボ',pa:'パ',pi:'ピ',pu:'プ',pe:'ペ',po:'ポ',ma:'マ',mi:'ミ',mu:'ム',me:'メ',mo:'モ',ya:'ヤ',yu:'ユ',yo:'ヨ',ra:'ラ',ri:'リ',ru:'ル',re:'レ',ro:'ロ',wa:'ワ',n:'ン'};const keys=Object.keys(map).sort((a,b)=>b.length-a.length);let out='',i=0;while(i<s.length){if(i+1<s.length&&s[i]===s[i+1]&&/[bcdfghjklmpqrstvwxyz]/.test(s[i])&&s[i]!=='n'){out+='ッ';i++;continue}if(s[i]==='n'&&(i===s.length-1||!/[aiueoy]/.test(s[i+1]))){out+='ン';i++;continue}let found='';for(const k of keys){if(s.startsWith(k,i)){found=k;break}}if(found){out+=map[found];i+=found.length}else{i++;}}return out||String(input||'');}
 function validPassphrase(raw){const v=String(raw||'').trim();return v.length>=12&&v.length<=128&&!/[\0-\x1F\/\\]/.test(v);}
 function normalizeBirthday(v){const s=String(v||'').trim(),m=s.match(/^(\d{2})-(\d{2})$/);if(!m)return '';const mo=Number(m[1]),d=Number(m[2]);return mo>=1&&mo<=12&&d>=1&&d<=31?s:'';}
@@ -124,37 +162,30 @@ async function authRegister(passphrase){
   if(!name)return setProfileMessage('名前を入力してください。'),false;
   if(!birthday)return setProfileMessage('誕生日は MM-DD 形式で入力してください。'),false;
   if(!bandName)return setProfileMessage('現在のバンド名を入力してください。'),false;
-  setProfileMessage('登録コードを確認中...');
   const gate=await checkRegistrationCode(joinCode);
   const gateSnap=await getDoc(doc(db,'light_public_settings','registration'));
   if(gateSnap.exists()&&gateSnap.data()?.enabled===true&&!gate) return setProfileMessage('初回登録コードが違います。'),false;
-  setProfileMessage('認証アカウントを作成中...');
   const email=await authEmailForPassphrase(passphrase);
   const cred=await createUserWithEmailAndPassword(auth,email,passphrase);
-  setProfileMessage('プロフィールを保存中...');
   const bandId=safeBandId(bandName);
   const profile={
     userKey:passphrase,credentialKey:passphrase,authUid:cred.user.uid,
     username:canonical(name),name,displayName:name,birthday,bandId,bandName,
     createdAt:now(),lastLoginAt:now(),loginCount:1
   };
-  // まず本人プロフィールだけを確実に保存してログインを完了させる。
   await setDoc(doc(db,'light_users',passphrase),profile,{merge:true});
+  const bandRef=doc(db,'light_bands',bandId);
+  const bandSnap=await getDoc(bandRef);
+  if(!bandSnap.exists()) await setDoc(bandRef,{
+    bandId,name:bandName,normalizedName:canonical(bandName),createdAt:now(),updatedAt:now(),
+    createdByUid:cred.user.uid
+  });
+  await setDoc(doc(db,'light_band_members',`${bandId}_${cred.user.uid}`),{
+    uid:cred.user.uid,userKey:passphrase,bandId,bandName,updatedAt:now()
+  },{merge:true});
   localStorage.setItem('light_last_login',passphrase);
   applyProfile(profile);
   hideProfileModal();
-  // バンド/所属情報は後処理。ここで画面を待たせない。
-  void (async()=>{
-    try{
-      const bandRef=doc(db,'light_bands',bandId);
-      const bandSnap=await getDoc(bandRef);
-      if(!bandSnap.exists()) await setDoc(bandRef,{bandId,name:bandName,normalizedName:canonical(bandName),createdAt:now(),updatedAt:now(),createdByUid:cred.user.uid});
-      await setDoc(doc(db,'light_band_members',`${bandId}_${cred.user.uid}`),{uid:cred.user.uid,userKey:passphrase,bandId,bandName,updatedAt:now()},{merge:true});
-    }catch(e){
-      console.error('band association save failed',e);
-      addLog('システム','プロフィール登録は完了したけど、バンド所属情報の保存に失敗しました。後で再試行できます。','error');
-    }
-  })();
   return true;
 }
 async function completeProfile(){
@@ -169,30 +200,19 @@ async function completeProfile(){
   const oldBandId=String(current.bandId||'');
   const bandId=safeBandId(bandName);
   const profile={name,displayName:name,birthday,bandName,bandId,authUid:auth.currentUser?.uid||'',userKey:sessionUserKey,username:current.username||canonical(name),updatedAt:now()};
-  setProfileMessage('プロフィールを保存中...');
   await setDoc(doc(db,'light_users',sessionUserKey),profile,{merge:true});
+  if(auth.currentUser?.uid){
+    const bandRef=doc(db,'light_bands',bandId);
+    const bandSnap=await getDoc(bandRef);
+    if(!bandSnap.exists()) await setDoc(bandRef,{bandId,name:bandName,normalizedName:canonical(bandName),createdAt:now(),updatedAt:now(),createdByUid:auth.currentUser.uid},{merge:true});
+    await setDoc(doc(db,'light_band_members',`${bandId}_${auth.currentUser.uid}`),{uid:auth.currentUser.uid,userKey:sessionUserKey,bandId,bandName,updatedAt:now()},{merge:true});
+  }
+  if(oldBandId&&oldBandId!==bandId&&auth.currentUser?.uid) await deleteDoc(doc(db,'light_band_members',`${oldBandId}_${auth.currentUser.uid}`)).catch(()=>{});
   applyProfile({...current,...profile});
   hideProfileModal();
   localStorage.setItem('light_last_login',sessionUserKey);
-  if(auth.currentUser?.uid){
-    void (async()=>{
-      try{
-        const bandRef=doc(db,'light_bands',bandId);
-        const bandSnap=await getDoc(bandRef);
-        if(!bandSnap.exists()) await setDoc(bandRef,{bandId,name:bandName,normalizedName:canonical(bandName),createdAt:now(),updatedAt:now(),createdByUid:auth.currentUser.uid},{merge:true});
-        await setDoc(doc(db,'light_band_members',`${bandId}_${auth.currentUser.uid}`),{uid:auth.currentUser.uid,userKey:sessionUserKey,bandId,bandName,updatedAt:now()},{merge:true});
-        if(oldBandId&&oldBandId!==bandId) await deleteDoc(doc(db,'light_band_members',`${oldBandId}_${auth.currentUser.uid}`)).catch(()=>{});
-      }catch(e){
-        console.error('band association update failed',e);
-        addLog('システム','プロフィールは更新したけど、バンド所属情報の更新に失敗しました。','error');
-      }
-    })();
-  }
   return true;
 }
-function normalizeHistory(h){return(Array.isArray(h)?h:[]).filter(x=>x&&(x.role==='user'||x.role==='model')&&Array.isArray(x.parts));}
-function textFromParts(p){return(Array.isArray(p)?p:[]).map(x=>String(x?.text||'')).join('');}
-function queueBrainSave(){brainSaveQueue=brainSaveQueue.then(()=>saveBrain()).catch(e=>{console.debug('brain save skipped',e);});return brainSaveQueue;}
 function currentBandCreatedAt(){return now();}
 async function startWithPassphrase(){
   const passphrase=$('login-id-input').value.trim();
@@ -200,20 +220,11 @@ async function startWithPassphrase(){
   const b=$('execute-login-btn');b.disabled=true;
   try{
     const ok=await authLogin(passphrase);
-    if(ok){await resetAndBoot();return;}
-  }catch(e){
-    console.error(e);
-    setAuthMessage(friendlyAuthError(e));
-  }finally{b.disabled=false;}
+    if(ok){await resetAndBoot(passphrase);}
+  }catch(e){console.error(e);setAuthMessage(friendlyAuthError(e));}
+  finally{b.disabled=false;}
 }
 $('execute-login-btn').addEventListener('click',startWithPassphrase);
-$('new-registration-btn').addEventListener('click',()=>{
-  const passphrase=$('login-id-input').value.trim()||generatePassphrase();
-  $('login-id-input').value=passphrase;
-  pendingProfile={userKey:passphrase};
-  showProfileModal({},true);
-  setAuthMessage('新規登録です。プロフィールと初回登録コードを入力してください。');
-});
 $('login-id-input').addEventListener('keypress',e=>{if(e.key==='Enter')startWithPassphrase();});
 $('generate-passphrase-btn').addEventListener('click',()=>{
   const p=generatePassphrase();
@@ -223,55 +234,35 @@ $('generate-passphrase-btn').addEventListener('click',()=>{
 $('profile-cancel-btn').addEventListener('click',()=>{hideProfileModal();setAuthMessage('');});
 $('profile-edit-btn').addEventListener('click',()=>{showProfileModal({name:sessionDisplayName,birthday:sessionBirthday,bandName:sessionBandName},false);});
 $('profile-save-btn').addEventListener('click',async()=>{
-  const btn=$('profile-save-btn');btn.disabled=true;registrationInProgress=true;
+  const btn=$('profile-save-btn');btn.disabled=true;setProfileMessage('保存中...');
   try{
-    setProfileMessage('保存を開始します...');
-    let ok=false;
-    if($('join-code-field').style.display!=='none') ok=await authRegister(String($('login-id-input').value||pendingProfile.userKey||'').trim());
-    else ok=await completeProfile();
-    if(!ok){return;}
-    setProfileMessage('登録完了。ライトを起動中...');
-    // authRegister/completeProfile already updated the current session; avoid a second profile race.
-    loginScreen.style.display='none';mainApp.style.display='flex';resetState();await bootCloud();
-    setProfileMessage('');
+    if($('join-code-field').style.display!=='none') await authRegister(String($('login-id-input').value||pendingProfile.userKey||'').trim());
+    else await completeProfile();
+    await resetAndBoot(sessionUserKey || String($('login-id-input').value||pendingProfile.userKey||'').trim());
   }catch(e){console.error(e);setProfileMessage(friendlyAuthError(e));}
-  finally{registrationInProgress=false;btn.disabled=false;}
+  finally{btn.disabled=false;}
 });
-async function loadCurrentProfile(){
+async function loadCurrentProfile(explicitKey=''){
   const user=auth.currentUser;if(!user)return false;
-  const key=localStorage.getItem('light_last_login')||$('login-id-input').value.trim();
+  const key=String(explicitKey||localStorage.getItem('light_last_login')||'').trim();
   if(!key)return false;
   const snap=await getDoc(doc(db,'light_users',key));
-  if(!snap.exists()||snap.data()?.authUid!==user.uid)return false;
-  applyProfile({userKey:key,...(snap.data()||{})});
-  if(!snap.data()?.name||!snap.data()?.birthday||!snap.data()?.bandName){showProfileModal(snap.data()||{},false);return false;}
+  if(!snap.exists())return false;
+  const data=snap.data()||{};
+  if(data.authUid&&data.authUid!==user.uid)throw new Error('この合言葉のプロフィールと認証アカウントが一致しません。管理者確認が必要です。');
+  if(!data.authUid){await setDoc(doc(db,'light_users',key),{authUid:user.uid,lastLoginAt:now()},{merge:true});data.authUid=user.uid;}
+  applyProfile({userKey:key,...data});
+  localStorage.setItem('light_last_login',key);
+  if(!data.name||!data.birthday||!data.bandName){showProfileModal(data,false);return false;}
   return true;
 }
-let bootPromise=null;
-let bootedUid='';
-async function resetAndBoot(){
-  const user=auth.currentUser;
-  if(!user)return false;
-  if(bootedUid===user.uid)return true;
-  if(bootPromise)return await bootPromise;
-  bootPromise=(async()=>{
-    if(bootedUid===user.uid)return true;
-    booting=true;
-    try{
-      const ok=await loadCurrentProfile();
-      if(!ok)return false;
-      loginScreen.style.display='none';
-      mainApp.style.display='flex';
-      resetState();
-      await bootCloud();
-      bootedUid=user.uid;
-      return true;
-    }finally{
-      booting=false;
-      bootPromise=null;
-    }
-  })();
-  return await bootPromise;
+async function resetAndBoot(explicitKey=''){
+  if(!auth.currentUser||booting)return false;
+  booting=true;
+  try{
+    const ok=await loadCurrentProfile(explicitKey);if(!ok)return false;
+    loginScreen.style.display='none';mainApp.style.display='flex';resetState();await bootCloud();return true;
+  }finally{booting=false;}
 }
 function applyVoiceMode(){document.body.classList.toggle('voice-mode',voiceMode);const b=$('voice-mode-toggle-btn');if(b)b.textContent=voiceMode?'🎙️ 音声':'💬 チャット';}applyVoiceMode();function resetState(){window.selfReflections=[];window.userFacts=[];window.pdfKnowledge='';window.conversationHistory=[];window.memoryFiles=[];window.photoMemories=[];window.timelineEntries=[];window.lightBrain={summary:'',recentHistory:[]};window.recentConversationImages=[];attachedPhotos=[];renderAttachments();chatLog.innerHTML='<div class="msg-sys"><strong>システム:</strong> クラウド連携中...</div>';updateUI();}
 function addLog(name,text,type='user',images=[]){
@@ -282,22 +273,12 @@ function addLog(name,text,type='user',images=[]){
 }
 async function initAuth(){
   onAuthStateChanged(auth,async user=>{
-    if(registrationInProgress)return;
-    if(!user){
-      bootedUid='';
-      authReady=true;
-      loginScreen.style.display='flex';
-      mainApp.style.display='none';
-      return;
-    }
+    if(!user){authReady=true;loginScreen.style.display='flex';mainApp.style.display='none';return;}
     try{
-      const ok=await resetAndBoot();
-      if(!ok)throw new Error('プロフィールが見つかりません。');
-    }catch(e){
-      console.error(e);
-      await signOut(auth).catch(()=>{});
-      setAuthMessage('認証情報の読み込みに失敗しました。ログインし直してください。');
-    }finally{authReady=true;}
+      const result=await loadCurrentProfile(localStorage.getItem('light_last_login')||'');
+      if(result){loginScreen.style.display='none';mainApp.style.display='flex';resetState();await bootCloud();}
+    }catch(e){console.error(e);await signOut(auth).catch(()=>{});setAuthMessage('認証情報の読み込みに失敗しました。');}
+    finally{authReady=true;}
   });
 }
 function updateUI(){const personal=window.memoryFiles.filter(m=>m.enabled!==false&&m.scopeType==='personal'&&(m.scopeId===String(auth.currentUser?.uid||'')||m.scopeId===sessionUserKey)).length,shared=window.memoryFiles.filter(m=>m.enabled!==false&&m.scopeType!=='personal'&&applicableScope(m)).length;const brain=window.lightBrain.summary?'あり':'なし';$('brain-status-text').textContent=`個人記憶: ${personal}件 | 共有記憶: ${shared}件 | 写真: ${window.photoMemories.length}件 | 長期記憶: ${brain}`;}
@@ -322,7 +303,11 @@ function adaptivePlan(text,hasImage){return hasImage?['image']:['normal'];}
 function normalizeTags(a){return [...new Set((Array.isArray(a)?a:[]).map(x=>String(x||'').trim()).filter(Boolean))].slice(0,20);}
 function currentDate(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function detectSituation(text,hasImage=false){const t=String(text||'');const tags=[];if(/ライブ|本番|ステージ|対バン|出演|演奏|転換/.test(t))tags.push('ライブ・本番');if(/リハ|リハーサル|練習|スタジオ/.test(t))tags.push('リハーサル・練習');if(/PA|音響|マイク|ミキサー|モニター|FOH|返し/.test(t))tags.push('PA・音響');if(/ローディ|搬入|搬出|機材運搬|ケーブル/.test(t))tags.push('ローディ・機材');if(/照明|灯体|DMX|明かり/.test(t))tags.push('照明');if(/プロモーター|告知|宣伝|集客|チケット/.test(t))tags.push('プロモーション');if(/トラブル|故障|鳴らない|ハウリング|音が出ない|焦る|困った/.test(t))tags.push('トラブル対応');if(/顧問|幹部|部長|副部長|進行|運営/.test(t))tags.push('部活運営');if(hasImage)tags.push('画像あり');return tags.length?tags.join(' / '):'通常会話';}
-function extractUserConfirmedPersonLabels(text){const t=String(text||'');const labels=[];const patterns=[/この人(?:は|が)[：: ]?([^、。！？\n]{1,40})/g,/名前(?:は|が)[：: ]?([^、。！？\n]{1,40})/g,/この声(?:は|が)[：: ]?([^、。！？\n]{1,40})/g,/担当(?:は|が)[：: ]?([^、。！？\n]{1,40})/g];for(const re of patterns){for(const m of t.matchAll(re)){const v=String(m[1]||'').trim().replace(/(です|だよ|です。|だ。)$/,'').trim();if(v&&v.length<=40)labels.push(v);}}return [...new Set(labels)].slice(0,8);}
+function extractUserConfirmedPersonLabels(text){const t=String(text||'');const labels=[];const patterns=[/この人(?:は|が)[：: ]?([^、。！？
+]{1,40})/g,/名前(?:は|が)[：: ]?([^、。！？
+]{1,40})/g,/この声(?:は|が)[：: ]?([^、。！？
+]{1,40})/g,/担当(?:は|が)[：: ]?([^、。！？
+]{1,40})/g];for(const re of patterns){for(const m of t.matchAll(re)){const v=String(m[1]||'').trim().replace(/(です|だよ|です。|だ。)$/,'').trim();if(v&&v.length<=40)labels.push(v);}}return [...new Set(labels)].slice(0,8);}
 function candidateShouldSave(text){const t=String(text||'').trim();if(t.length<8||t.length>500)return false;if(/保存しない|記録しない|覚えさせない|忘れて|削除して/.test(t))return false;return /(僕は|私は|俺は|あたしは|誕生日|好きな|好きだ|苦手|得意|使ってる|使っている|自分の|担当は|役割は|覚えて|覚えておいて|大事|重要|今後は|いつも|最近)/.test(t);}
 async function saveMemoryCandidate(text){if(!candidateShouldSave(text)||!auth.currentUser?.uid)return;try{const ref=await addDoc(collection(db,'light_memory_candidates'),{candidateText:String(text).slice(0,500),kind:'conversation_fact',status:'pending',scopeType:'personal',scopeId:auth.currentUser.uid,authUid:auth.currentUser.uid,userKey:sessionUserKey,bandId:sessionBandId,bandName:sessionBandName,createdAt:now()});if(ref) addLog('システム','大事そうな情報を「記憶候補」として保留したぜ。管理者が確認してから正式記録にできる。','sys');}catch(e){console.debug('memory candidate skipped',e);}}
 function makeSystemInstruction(userText,hasImage){
@@ -401,161 +386,48 @@ async function callClientProvider(p,payload){
   const maxTokens=Math.max(100,Math.min(2200,Number(payload.maxOutputTokens||800)));
   const jsonMode=Boolean(payload.jsonMode);
   let url=providerUrl(p),headers={'Content-Type':'application/json'},body={};
-
   if(!url)throw new Error('AIプロバイダーの設定が不正です。');
-
   if(type==='gemini'){
     headers['x-goog-api-key']=p.apiKey;
     const contents=messages.map(m=>({
       role:m.role==='assistant'?'model':'user',
       parts:[
         {text:String(m.text||'').slice(0,14000)},
-        ...((m.images||[]).slice(0,2).map(img=>({
-          inline_data:{
-            mime_type:String(img.mimeType||'image/jpeg'),
-            data:String(img.base64||'')
-          }
-        })))
+        ...((m.images||[]).slice(0,2).map(img=>({inline_data:{mime_type:String(img.mimeType||'image/jpeg'),data:String(img.base64||'')}})))
       ]
     }));
-    body={
-      contents,
-      systemInstruction:{parts:[{text:system.slice(0,16000)}]},
-      generationConfig:{maxOutputTokens:maxTokens}
-    };
+    body={contents,systemInstruction:{parts:[{text:system.slice(0,16000)}]},generationConfig:{maxOutputTokens:maxTokens}};
     if(jsonMode)body.generationConfig.responseMimeType='application/json';
-
   }else if(type==='openai'||type==='openai_compatible'){
     headers.Authorization=`Bearer ${p.apiKey}`;
-    const out=[];
-    if(system)out.push({role:'system',content:system.slice(0,16000)});
+    const out=[];if(system)out.push({role:'system',content:system.slice(0,16000)});
     for(const m of messages){
       const role=m.role==='assistant'?'assistant':'user';
       if(m.images?.length){
         const content=[{type:'text',text:String(m.text||'').slice(0,14000)}];
-        for(const img of m.images.slice(0,2))content.push({
-          type:'image_url',
-          image_url:{
-            url:`data:${String(img.mimeType||'image/jpeg')};base64,${String(img.base64||'')}`
-          }
-        });
+        for(const img of m.images.slice(0,2))content.push({type:'image_url',image_url:{url:`data:${String(img.mimeType||'image/jpeg')};base64,${String(img.base64||'')}`}});
         out.push({role,content});
-      }else{
-        out.push({role,content:String(m.text||'').slice(0,14000)});
-      }
+      }else out.push({role,content:String(m.text||'').slice(0,14000)});
     }
     body={model:p.model,messages:out,max_tokens:maxTokens};
     if(jsonMode)body.response_format={type:'json_object'};
-
   }else if(type==='anthropic'){
     headers['x-api-key']=p.apiKey;
     headers['anthropic-version']='2023-06-01';
     headers['anthropic-dangerous-direct-browser-access']='true';
-    body={
-      model:p.model,
-      system:system.slice(0,16000),
-      max_tokens:maxTokens,
-      messages:messages.map(m=>{
-        const content=[{type:'text',text:String(m.text||'').slice(0,14000)}];
-        for(const img of (m.images||[]).slice(0,2))content.push({
-          type:'image',
-          source:{
-            type:'base64',
-            media_type:String(img.mimeType||'image/jpeg'),
-            data:String(img.base64||'')
-          }
-        });
-        return {role:m.role==='assistant'?'assistant':'user',content};
-      })
-    };
+    body={model:p.model,system:system.slice(0,16000),max_tokens:maxTokens,messages:messages.map(m=>{
+      const content=[{type:'text',text:String(m.text||'').slice(0,14000)}];
+      for(const img of (m.images||[]).slice(0,2))content.push({type:'image',source:{type:'base64',media_type:String(img.mimeType||'image/jpeg'),data:String(img.base64||'')}});
+      return {role:m.role==='assistant'?'assistant':'user',content};
+    })};
   }
-
-  // 一時的なAPI障害には最大3回まで再試行する。
-  const retryableStatuses=[429,500,502,503,504];
-  let res=null;
-  let data={};
-  let rawText='';
-
-  for(let attempt=0;attempt<3;attempt++){
-    try{
-      res=await fetchWithTimeout(
-        url,
-        {
-          method:'POST',
-          headers,
-          body:JSON.stringify(body)
-        }
-      );
-    }catch(e){
-      // ネットワークエラーやタイムアウトも残り回数があれば再試行。
-      if(attempt<2){
-        await sleep(1000*(attempt+1));
-        continue;
-      }
-      throw e;
-    }
-
-    rawText=await res.text();
-    try{
-      data=rawText?JSON.parse(rawText):{};
-    }catch(_){
-      data={};
-    }
-
-    if(res.ok)break;
-
-    const status=Number(res.status||0);
-
-    if(retryableStatuses.includes(status)&&attempt<2){
-      const retryAfterRaw=res.headers.get('Retry-After');
-      const retryAfterSeconds=Number(retryAfterRaw);
-      let waitMs=1000*(attempt+1);
-
-      if(Number.isFinite(retryAfterSeconds)&&retryAfterSeconds>0){
-        waitMs=Math.min(retryAfterSeconds*1000,8000);
-      }
-
-      console.warn(
-        '[AI retry]',
-        `provider=${p.label||p.id}`,
-        `model=${p.model}`,
-        `status=${status}`,
-        `attempt=${attempt+1}/3`,
-        `wait=${waitMs}ms`
-      );
-
-      await sleep(waitMs);
-      continue;
-    }
-
-    const detail=
-      data?.error?.message ||
-      data?.message ||
-      (rawText?String(rawText).slice(0,300):'');
-
-    const err=new Error(`HTTP ${status}${detail?`: ${detail}`:''}`);
-    err.status=status;
-    err.provider=p.label||p.id;
-    err.model=p.model;
-    throw err;
-  }
-
-  if(!res)throw new Error('AIへの通信に失敗しました。');
-
-  if(!res.ok){
-    const detail=data?.error?.message||data?.message||'';
-    const err=new Error(`HTTP ${res.status}${detail?`: ${detail}`:''}`);
-    err.status=res.status;
-    err.provider=p.label||p.id;
-    err.model=p.model;
-    throw err;
-  }
-
+  const res=await fetchWithTimeout(url,{method:'POST',headers,body:JSON.stringify(body)});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok){const err=new Error(`HTTP ${res.status}`);err.status=res.status;throw err;}
   let out='';
   if(type==='gemini')out=data?.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('')||'';
   else if(type==='anthropic')out=data?.content?.map(x=>x.text||'').join('')||'';
   else out=typeof data?.choices?.[0]?.message?.content==='string'?data.choices[0].message.content:'';
-
   if(!out)throw new Error('AIから回答が返ってきませんでした。');
   return {text:out,provider:p.label||p.id,model:p.model};
 }
