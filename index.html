@@ -33,16 +33,191 @@ body.avatar-mode #talk-btn{width:92px;height:92px;border-radius:50%;font-size:30
 body.voice-mode:not(.avatar-mode) #chat-log,body.voice-mode:not(.avatar-mode) #attach-bar,body.voice-mode:not(.avatar-mode) #photo-btn,body.voice-mode:not(.avatar-mode) #chat-input,body.voice-mode:not(.avatar-mode) #send-btn{display:none}body.voice-mode:not(.avatar-mode) .controls{justify-content:center}body.voice-mode:not(.avatar-mode) #talk-btn{width:92px;height:92px;border-radius:50%;font-size:30px}
 #avatar-error{display:none;color:#bf616a;font-size:12px;max-width:320px;text-align:center;margin:5px auto 10px}
 .login-secondary{background:rgba(255,255,255,.06);color:#ddd;border:1px solid rgba(255,255,255,.16);width:80%;max-width:330px;padding:11px;border-radius:30px;margin-top:4px}.login-help{color:#999;font-size:11px;max-width:330px;line-height:1.55;margin-top:7px}.profile-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);justify-content:center;align-items:center;z-index:2500}.profile-card{width:88%;max-width:420px;background:#161823;border:1px solid #ff7eb3;border-radius:16px;padding:20px;box-sizing:border-box}.profile-card h3{color:#ff7eb3;margin:0 0 14px}.profile-card input{width:100%;margin-top:7px;background:rgba(255,255,255,.08);border:1px solid rgba(255,126,179,.45);color:#fff;padding:12px;border-radius:10px}.profile-card .field{margin:12px 0}.profile-card .small{color:#aaa;font-size:11px;line-height:1.5}.profile-actions{display:flex;gap:8px;margin-top:15px}.profile-actions button{flex:1;border-radius:10px}.auth-error{color:#bf616a;font-size:12px;margin-top:8px;min-height:18px}
-</style></head><body>
-<div id="login-screen"><div class="login-title">✨ ライト OS</div><div class="login-desc">専用の合言葉でログインしてね！</div><input id="login-id-input" placeholder="例：lx-8fK3..." autocomplete="off" autocapitalize="none" spellcheck="false"><button id="execute-login-btn">起動する</button><button id="generate-passphrase-btn" class="login-secondary">自分専用の合言葉を作る</button><div class="status-note" style="max-width:330px">非課金版はFirebase Authenticationで本人確認します。<br>合言葉は端末間で共有するための秘密情報なので、他人に見せないでください。</div><div class="login-help">初回登録コードが設定されている場合は必要です。既存の合言葉の移行にも対応します。</div><div id="auth-error" class="auth-error"></div></div>
-<div id="profile-modal" class="profile-modal"><div class="profile-card"><h3>👤 プロフィール登録</h3><div class="small">名前と誕生日は合言葉とは別に保存します。バンドを変更しても個人記憶は残ります。</div><div class="field"><div class="small">名前</div><input id="profile-name" maxlength="60" placeholder="例：りゅうせい"></div><div class="field"><div class="small">誕生日</div><input id="profile-birthday" maxlength="5" placeholder="MM-DD" inputmode="numeric"></div><div class="field"><div class="small">現在のバンド名</div><input id="profile-band" maxlength="60" placeholder="例：Why's"></div><div class="field" id="join-code-field"><div class="small">初回登録コード</div><input id="profile-join-code" maxlength="120" placeholder="管理者から受け取ったコード" autocomplete="off"></div><div class="profile-actions"><button id="profile-cancel-btn">キャンセル</button><button id="profile-save-btn" class="primary">登録して起動</button></div><div id="profile-error" class="auth-error"></div></div></div>
-<div id="main-app"><div id="header-bar"><div><div class="app-title">✨ ライト</div><div class="app-subtitle" id="identity-label">未ログイン</div></div><button id="open-settings-btn" class="icon-btn">⚙️ 設定</button></div><div id="avatar-mode-badge">● アバターモード / LIGHT</div><div id="avatar-container"></div><div id="avatar-error"></div><div id="chat-log"><div class="msg-sys"><strong>システム:</strong> クラウド連携待機中...</div></div><div id="attach-bar"><div id="attach-thumbs"></div><div id="attach-info">写真はチャットと一緒に送れます。ライトが文脈から説明・タグ・分類を自動整理して資料館に記録します。</div><div id="attach-actions"><span style="font-size:12px;color:#ccc">写真はライトが自動で整理・記録します。保存したくないときは「保存しないで」と一言つけてね。</span><button id="photo-clear-btn" class="mini-btn">写真を外す</button></div></div><div class="controls"><button id="talk-btn">🔴</button><button id="photo-btn" class="icon-btn" title="写真を添付">📷</button><input id="photo-input" type="file" accept="image/jpeg,image/png,image/webp" multiple style="display:none"><input type="text" id="chat-input" placeholder="ライトに話しかける..."><button id="send-btn">送信</button></div></div>
-<div id="settings-modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">⚙️ システム設定</div><button class="close-btn" id="close-settings-btn">✖</button></div><div class="setting-row"><span>ボイス再生（音声）</span><button id="mute-toggle-btn" class="icon-btn">🔇 音声 OFF</button></div><div class="setting-row"><span>チャット / 音声モード</span><button id="voice-mode-toggle-btn" class="icon-btn">💬 チャット</button></div><div class="section-title">👤 プロフィール</div><div class="sync-box"><div style="font-size:11px;color:#ccc;margin-bottom:8px">現在のプロフィール</div><div id="profile-summary" class="small" style="line-height:1.7;margin-bottom:8px">未読み込み</div><button id="profile-edit-btn" class="modal-btn" style="margin-top:0">プロフィールを編集</button></div><div class="section-title">☁️ クラウド同期</div><div class="sync-box"><div style="font-size:11px;color:#ccc;margin-bottom:8px">現在の合言葉</div><input id="sync-id-input" readonly><button id="logout-btn" class="sync-btn" style="margin-top:5px;background:#bf616a;color:#fff">別のユーザーでログインし直す</button></div><div class="section-title">【現在の学習ステータス】</div><div class="setting-row" style="flex-direction:column;align-items:flex-start;margin-bottom:5px"><span id="brain-status-text" style="font-size:13px">個人記憶: 0件 | 共有記憶: 0件 | 写真: 0件 | 長期記憶: なし</span></div><button id="view-brain-btn" class="modal-btn">🧠 記憶データの中身を確認 / 編集</button><div class="section-title">【拡張知識】</div><button id="pdf-btn" class="modal-btn">📄 説明書・資料(PDF)を一時記憶させる</button><button id="camera-btn" class="modal-btn">📷 カメラでライトに見せる</button><input type="file" id="pdf-upload" accept="application/pdf" style="display:none"></div></div>
-<div id="camera-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:4000;align-items:center;justify-content:center;padding:18px"><div class="modal-content" style="width:min(520px,94%);max-width:520px"><div class="modal-header"><div class="modal-title">📷 カメラ</div><button class="close-btn" id="camera-close-btn">✖</button></div><video id="camera-video" autoplay playsinline muted style="width:100%;max-height:60vh;background:#05060a;border-radius:12px;object-fit:cover"></video><canvas id="camera-canvas" style="display:none"></canvas><div id="camera-message" class="small" style="margin-top:8px">カメラの許可が必要です。</div><div class="row" style="margin-top:10px"><button id="camera-capture-btn" class="primary">撮影して添付</button><button id="camera-cancel-btn">閉じる</button></div></div></div>
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-title">✨ ライト OS</div>
+  <div class="login-desc">専用の合言葉でログインしてね！</div>
+  <input id="login-id-input" placeholder="例：lx-8fK3..." autocomplete="off" autocapitalize="none" spellcheck="false">
+  <button id="execute-login-btn">起動する</button>
+  <button id="generate-passphrase-btn" class="login-secondary">自分専用の合言葉を作る</button>
+  <div class="status-note" style="max-width:330px">
+    非課金版はFirebase Authenticationで本人確認します。<br>
+    合言葉は端末間で共有するための秘密情報なので、他人に見せないでください。
+  </div>
+  <div class="login-help">
+    初回登録コードが設定されている場合は必要です。既存の合言葉の移行にも対応します。
+  </div>
+  <div id="auth-error" class="auth-error"></div>
+</div>
+
+<div id="profile-modal" class="profile-modal">
+  <div class="profile-card">
+    <h3>👤 プロフィール登録</h3>
+    <div class="small">名前と誕生日は合言葉とは別に保存します。バンドを変更しても個人記憶は残ります。</div>
+
+    <div class="field">
+      <div class="small">名前</div>
+      <input id="profile-name" maxlength="60" placeholder="例：りゅうせい">
+    </div>
+
+    <div class="field">
+      <div class="small">誕生日</div>
+      <input id="profile-birthday" maxlength="5" placeholder="MM-DD" inputmode="numeric">
+    </div>
+
+    <div class="field">
+      <div class="small">現在のバンド名</div>
+      <input id="profile-band" maxlength="60" placeholder="例：Why's">
+    </div>
+
+    <div class="field" id="join-code-field">
+      <div class="small">初回登録コード</div>
+      <input id="profile-join-code" maxlength="120" placeholder="管理者から受け取ったコード" autocomplete="off">
+    </div>
+
+    <div class="profile-actions">
+      <button id="profile-cancel-btn">キャンセル</button>
+      <button id="profile-save-btn" class="primary">登録して起動</button>
+    </div>
+
+    <div id="profile-error" class="auth-error"></div>
+  </div>
+</div>
+
+<div id="main-app">
+  <div id="header-bar">
+    <div>
+      <div class="app-title">✨ ライト</div>
+      <div class="app-subtitle" id="identity-label">未ログイン</div>
+    </div>
+    <button id="open-settings-btn" class="icon-btn">⚙️ 設定</button>
+  </div>
+
+  <div id="avatar-mode-badge">● アバターモード / LIGHT</div>
+  <div id="avatar-container"></div>
+  <div id="avatar-error"></div>
+
+  <div id="chat-log">
+    <div class="msg-sys"><strong>システム:</strong> クラウド連携待機中...</div>
+  </div>
+
+  <div id="attach-bar">
+    <div id="attach-thumbs"></div>
+    <div id="attach-info">
+      写真はチャットと一緒に送れます。ライトが文脈から説明・タグ・分類を自動整理して資料館に記録します。
+    </div>
+    <div id="attach-actions">
+      <span style="font-size:12px;color:#ccc">
+        写真はライトが自動で整理・記録します。保存したくないときは「保存しないで」と一言つけてね。
+      </span>
+      <button id="photo-clear-btn" class="mini-btn">写真を外す</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="talk-btn">🔴</button>
+    <button id="photo-btn" class="icon-btn" title="写真を添付">📷</button>
+    <input id="photo-input" type="file" accept="image/jpeg,image/png,image/webp" multiple style="display:none">
+    <input type="text" id="chat-input" placeholder="ライトに話しかける...">
+    <button id="send-btn">送信</button>
+  </div>
+</div>
+
+<div id="settings-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ システム設定</div>
+      <button class="close-btn" id="close-settings-btn">✖</button>
+    </div>
+
+    <div class="setting-row">
+      <span>ボイス再生（音声）</span>
+      <button id="mute-toggle-btn" class="icon-btn">🔇 音声 OFF</button>
+    </div>
+
+    <div class="setting-row">
+      <span>チャット / 音声モード</span>
+      <button id="voice-mode-toggle-btn" class="icon-btn">💬 チャット</button>
+    </div>
+
+    <div class="section-title">👤 プロフィール</div>
+    <div class="sync-box">
+      <div style="font-size:11px;color:#ccc;margin-bottom:8px">現在のプロフィール</div>
+      <div id="profile-summary" class="small" style="line-height:1.7;margin-bottom:8px">未読み込み</div>
+      <button id="profile-edit-btn" class="modal-btn" style="margin-top:0">プロフィールを編集</button>
+    </div>
+
+    <div class="section-title">☁️ クラウド同期</div>
+    <div class="sync-box">
+      <div style="font-size:11px;color:#ccc;margin-bottom:8px">現在の合言葉</div>
+      <input id="sync-id-input" readonly>
+      <button id="logout-btn" class="sync-btn" style="margin-top:5px;background:#bf616a;color:#fff">
+        別のユーザーでログインし直す
+      </button>
+    </div>
+
+    <div class="section-title">【現在の学習ステータス】</div>
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;margin-bottom:5px">
+      <span id="brain-status-text" style="font-size:13px">
+        個人記憶: 0件 | 共有記憶: 0件 | 写真: 0件 | 長期記憶: なし
+      </span>
+    </div>
+
+    <button id="view-brain-btn" class="modal-btn">🧠 記憶データの中身を確認 / 編集</button>
+
+    <div class="section-title">【拡張知識】</div>
+    <button id="pdf-btn" class="modal-btn">📄 説明書・資料(PDF)を一時記憶させる</button>
+    <button id="camera-btn" class="modal-btn">📷 カメラでライトに見せる</button>
+    <input type="file" id="pdf-upload" accept="application/pdf" style="display:none">
+  </div>
+</div>
+
+<div id="camera-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:4000;align-items:center;justify-content:center;padding:18px">
+  <div class="modal-content" style="width:min(520px,94%);max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title">📷 カメラ</div>
+      <button class="close-btn" id="camera-close-btn">✖</button>
+    </div>
+
+    <video id="camera-video" autoplay playsinline muted style="width:100%;max-height:60vh;background:#05060a;border-radius:12px;object-fit:cover"></video>
+    <canvas id="camera-canvas" style="display:none"></canvas>
+    <div id="camera-message" class="small" style="margin-top:8px">カメラの許可が必要です。</div>
+
+    <div class="row" style="margin-top:10px">
+      <button id="camera-capture-btn" class="primary">撮影して添付</button>
+      <button id="camera-cancel-btn">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore,doc,getDoc,setDoc,addDoc,collection,getDocs,updateDoc,deleteDoc,query,where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  addDoc,
+  collection,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  query,
+  where
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
 const firebaseConfig={
   apiKey:"AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
   authDomain:"light-65413.firebaseapp.com",
@@ -51,628 +226,1800 @@ const firebaseConfig={
   messagingSenderId:"116819261632",
   appId:"1:116819261632:web:9d9144aa125a55371d5525"
 };
-const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app);
-const TEXT_MODELS=['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'];
+
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+const auth=getAuth(app);
+
+const TEXT_MODELS=[
+  'gemini-3.8-flash',
+  'gemini-3.7-flash',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite'
+];
+
 const MODEL_PLANS={
-  lite:['gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-3.5-flash','gemini-3.6-flash'],
-  normal:['gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'],
-  hard:['gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'],
-  veryHard:['gemini-3.8-flash','gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'],
-  image:['gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.7-flash','gemini-3.8-flash','gemini-3.1-flash-lite']
+  lite:[
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite',
+    'gemini-3.5-flash',
+    'gemini-3.6-flash'
+  ],
+  normal:[
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite'
+  ],
+  hard:[
+    'gemini-3.7-flash',
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite'
+  ],
+  veryHard:[
+    'gemini-3.8-flash',
+    'gemini-3.7-flash',
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-3.5-flash-lite',
+    'gemini-3.1-flash-lite'
+  ],
+  image:[
+    'gemini-3.6-flash',
+    'gemini-3.5-flash',
+    'gemini-3.5-flash-lite',
+    'gemini-3.7-flash',
+    'gemini-3.8-flash',
+    'gemini-3.1-flash-lite'
+  ]
 };
+
 const ARCHIVE_CATEGORIES={
-  personal:'個人',band:'バンド',club:'軽音楽部',live_event:'ライブでの出来事',live_staff:'ライブスタッフ',staff_shared:'スタッフ共有事項',daily:'日常'
+  personal:'個人',
+  band:'バンド',
+  club:'軽音楽部',
+  live_event:'ライブでの出来事',
+  live_staff:'ライブスタッフ',
+  staff_shared:'スタッフ共有事項',
+  daily:'日常'
 };
-const STAFF_ROLES={pa:'PA',roady:'ローディ',promoter:'プロモーター',lighting:'照明'};
-window.isMuted=true;window.selfReflections=[];window.userFacts=[];window.pdfKnowledge='';window.conversationHistory=[];window.memoryFiles=[];window.photoMemories=[];window.timelineEntries=[];window.lightBrain={summary:'',recentHistory:[]};window.apiConfig={modelMode:'server'};window.recentConversationImages=[];let apiConfigLoaded=false;let brainSaveQueue=Promise.resolve();
-let sessionUserKey='',sessionUserName='',sessionDisplayName='',sessionBirthday='',sessionBandId='',sessionBandName='';let attachedPhotos=[];let pendingProfile={};let authReady=false;let booting=false;let registrationInProgress=false;let voiceMode=localStorage.getItem('light_voice_mode')==='1';
-let avatarConfig={betaEnabled:false,liveDayEnabled:false,lightUrl:'',otoUrl:''};let avatarRuntime={vrm:null,lightObject:null,otoObject:null,mode:'light',loaded:false};
-const $=id=>document.getElementById(id),chatLog=$('chat-log'),chatInput=$('chat-input'),sendBtn=$('send-btn'),talkBtn=$('talk-btn'),settingsModal=$('settings-modal'),loginScreen=$('login-screen'),mainApp=$('main-app');
-const now=()=>Date.now(), esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s])); const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-function canonical(v){return String(v||'').trim().toLowerCase();}
-function safeBandId(name){return canonical(name).replace(/[^a-z0-9\u3040-\u30ff\u4e00-\u9fff_-]/g,'_').slice(0,80)||'band';}
-function romanToKatakana(input){let s=String(input||'').toLowerCase().replace(/[^a-z]/g,'');if(!s)return '';const overrides={ryusei:'リュウセイ',ryuusei:'リュウセイ',souta:'ソウタ',shota:'ショウタ',shouta:'ショウタ',yuuki:'ユウキ',yuuta:'ユウタ',yuya:'ユウヤ',kouki:'コウキ',kouya:'コウヤ',kouta:'コウタ',yuto:'ユウト',yuto:'ユウト',haruto:'ハルト',kaito:'カイト',ren:'レン',rin:'リン',yuna:'ユナ',hina:'ヒナ'};if(overrides[s])return overrides[s];const map={rya:'リャ',ryu:'リュウ',ryo:'リョ',kya:'キャ',kyu:'キュ',kyo:'キョ',gya:'ギャ',gyu:'ギュ',gyo:'ギョ',sha:'シャ',shu:'シュ',she:'シェ',sho:'ショ',cha:'チャ',chu:'チュ',che:'チェ',cho:'チョ',nya:'ニャ',nyu:'ニュ',nyo:'ニョ',hya:'ヒャ',hyu:'ヒュ',hyo:'ヒョ',bya:'ビャ',byu:'ビュ',byo:'ビョ',pya:'ピャ',pyu:'ピュ',pyo:'ピョ',mya:'ミャ',myu:'ミュ',myo:'ミョ',fya:'フャ',fyu:'フュ',fyo:'フョ',fa:'ファ',fi:'フィ',fe:'フェ',fo:'フォ',va:'ヴァ',vi:'ヴィ',vu:'ヴ',ve:'ヴェ',vo:'ヴォ',shi:'シ',chi:'チ',tsu:'ツ',ji:'ジ',fu:'フ',kwa:'クァ',kwi:'クィ',kwe:'クェ',kwo:'クォ',gwa:'グァ',gwi:'グィ',gwe:'グェ',gwo:'グォ',we:'ウェ',wi:'ウィ',wo:'ウォ',ye:'イェ',aa:'アー',ii:'イー',uu:'ウー',ee:'エー',oo:'オー',ou:'オウ',ei:'エイ',ka:'カ',ki:'キ',ku:'ク',ke:'ケ',ko:'コ',ga:'ガ',gi:'ギ',gu:'グ',ge:'ゲ',go:'ゴ',sa:'サ',si:'シ',su:'ス',se:'セ',so:'ソ',za:'ザ',zi:'ジ',zu:'ズ',ze:'ゼ',zo:'ゾ',ta:'タ',ti:'チ',tu:'ツ',te:'テ',to:'ト',da:'ダ',di:'ヂ',du:'ヅ',de:'デ',do:'ド',na:'ナ',ni:'ニ',nu:'ヌ',ne:'ネ',no:'ノ',ha:'ハ',hi:'ヒ',he:'ヘ',ho:'ホ',ba:'バ',bi:'ビ',bu:'ブ',be:'ベ',bo:'ボ',pa:'パ',pi:'ピ',pu:'プ',pe:'ペ',po:'ポ',ma:'マ',mi:'ミ',mu:'ム',me:'メ',mo:'モ',ya:'ヤ',yu:'ユ',yo:'ヨ',ra:'ラ',ri:'リ',ru:'ル',re:'レ',ro:'ロ',wa:'ワ',n:'ン'};const keys=Object.keys(map).sort((a,b)=>b.length-a.length);let out='',i=0;while(i<s.length){if(i+1<s.length&&s[i]===s[i+1]&&/[bcdfghjklmpqrstvwxyz]/.test(s[i])&&s[i]!=='n'){out+='ッ';i++;continue}if(s[i]==='n'&&(i===s.length-1||!/[aiueoy]/.test(s[i+1]))){out+='ン';i++;continue}let found='';for(const k of keys){if(s.startsWith(k,i)){found=k;break}}if(found){out+=map[found];i+=found.length}else{i++;}}return out||String(input||'');}
-function validPassphrase(raw){const v=String(raw||'').trim();return v.length>=12&&v.length<=128&&!/[\0-\x1F\/\\]/.test(v);}
-function normalizeBirthday(v){const s=String(v||'').trim(),m=s.match(/^(\d{2})-(\d{2})$/);if(!m)return '';const mo=Number(m[1]),d=Number(m[2]);return mo>=1&&mo<=12&&d>=1&&d<=31?s:'';}
-function setAuthMessage(msg){$('auth-error').textContent=String(msg||'');}
-function setProfileMessage(msg){$('profile-error').textContent=String(msg||'');}
-function showProfileModal(profile={},needsJoin=true){pendingProfile=profile||{};$('profile-name').value=profile.name||profile.displayName||'';$('profile-birthday').value=profile.birthday||'';$('profile-band').value=profile.bandName||'';$('profile-join-code').value='';$('join-code-field').style.display=needsJoin?'block':'none';setProfileMessage('');$('profile-modal').style.display='flex';}
-function hideProfileModal(){$('profile-modal').style.display='none';}
-function generatePassphrase(){const bytes=new Uint8Array(18);crypto.getRandomValues(bytes);let s='';for(const b of bytes)s+=b.toString(36).padStart(2,'0');return `lx-${s.slice(0,22)}`;}
-function profileDisplayName(profile){return String(profile?.name||profile?.displayName||'ユーザー').trim()||'ユーザー';}
-function applyProfile(profile){sessionUserKey=String(profile.userKey||profile.credentialKey||'');sessionUserName=profile.username||profile.name||'';sessionDisplayName=profileDisplayName(profile);sessionBirthday=profile.birthday||'';sessionBandId=String(profile.bandId||'');sessionBandName=String(profile.bandName||'');$('sync-id-input').value=sessionUserKey;$('identity-label').textContent=`${sessionDisplayName} / ${sessionBandName||'未所属'}`;if($('profile-summary'))$('profile-summary').innerHTML=`名前：${esc(sessionDisplayName)}<br>誕生日：${esc(sessionBirthday||'未登録')}<br>現在のバンド：${esc(sessionBandName||'未所属')}`;}
 
-async function sha256Hex(value){
-  const data=new TextEncoder().encode(String(value||''));
-  const hash=await crypto.subtle.digest('SHA-256',data);
-  return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('');
+const STAFF_ROLES={
+  pa:'PA',
+  roady:'ローディ',
+  promoter:'プロモーター',
+  lighting:'照明'
+};
+
+window.isMuted=true;
+window.selfReflections=[];
+window.userFacts=[];
+window.pdfKnowledge='';
+window.conversationHistory=[];
+window.memoryFiles=[];
+window.photoMemories=[];
+window.timelineEntries=[];
+window.lightBrain={
+  summary:'',
+  recentHistory:[]
+};
+window.apiConfig={
+  modelMode:'server'
+};
+window.recentConversationImages=[];
+
+let apiConfigLoaded=false;
+let brainSaveQueue=Promise.resolve();
+
+let sessionUserKey='';
+let sessionUserName='';
+let sessionDisplayName='';
+let sessionBirthday='';
+let sessionBandId='';
+let sessionBandName='';
+
+let attachedPhotos=[];
+let pendingProfile={};
+let authReady=false;
+let booting=false;
+let registrationInProgress=false;
+let voiceMode=localStorage.getItem('light_voice_mode')==='1';
+
+let avatarConfig={
+  betaEnabled:false,
+  liveDayEnabled:false,
+  lightUrl:'',
+  otoUrl:''
+};
+
+let avatarRuntime={
+  vrm:null,
+  lightObject:null,
+  otoObject:null,
+  mode:'light',
+  loaded:false
+};
+
+const $=id=>document.getElementById(id);
+const chatLog=$('chat-log');
+const chatInput=$('chat-input');
+const sendBtn=$('send-btn');
+const talkBtn=$('talk-btn');
+const settingsModal=$('settings-modal');
+const loginScreen=$('login-screen');
+const mainApp=$('main-app');
+
+const now=()=>Date.now();
+
+const esc=v=>String(v??'').replace(
+  /[&<>"']/g,
+  s=>({
+    '&':'&amp;',
+    '<':'&lt;',
+    '>':'&gt;',
+    '"':'&quot;',
+    "'":'&#039;'
+  }[s])
+);
+
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function canonical(v){
+  return String(v||'').trim().toLowerCase();
 }
-async function authEmailForPassphrase(passphrase){
-  const h=await sha256Hex(passphrase);
-  return `student-${h}@light-65413.firebaseapp.com`;
+
+function safeBandId(name){
+  return canonical(name)
+    .replace(/[^a-z0-9\u3040-\u30ff\u4e00-\u9fff_-]/g,'_')
+    .slice(0,80)||'band';
 }
-async function checkRegistrationCode(input){
-  const snap=await getDoc(doc(db,'light_public_settings','registration'));
-  if(!snap.exists()||snap.data()?.enabled!==true||!snap.data()?.codeHash)return true;
-  const hash=await sha256Hex(String(input||'').trim());
-  return hash===String(snap.data().codeHash||'');
-}
-function friendlyAuthError(e){
-  const code=String(e?.code||'');
-  if(code.includes('auth/invalid-credential')||code.includes('auth/wrong-password')||code.includes('auth/user-not-found')) return '合言葉が違うか、まだ登録されていません。';
-  if(code.includes('auth/email-already-in-use')) return 'この合言葉はすでに登録されています。';
-  if(code.includes('auth/weak-password')) return '合言葉が弱すぎます。12文字以上で作ってください。';
-  if(code.includes('auth/operation-not-allowed')) return 'FirebaseのAuthenticationで「メール/パスワード」を有効にしてください。';
-  return e?.message||'認証に失敗しました。';
-}
-async function authLogin(passphrase){
-  setAuthMessage('認証中...');
-  const email=await authEmailForPassphrase(passphrase);
-  await signInWithEmailAndPassword(auth,email,passphrase);
-  localStorage.setItem('light_last_login',passphrase);
-  const snap=await getDoc(doc(db,'light_users',passphrase));
-  if(!snap.exists()) throw new Error('この合言葉のプロフィールが見つかりません。');
-  applyProfile({userKey:passphrase,...(snap.data()||{})});
-  if(!snap.data()?.name||!snap.data()?.birthday||!snap.data()?.bandName){showProfileModal(snap.data()||{},false);return false;}
-  return true;
-}
-async function authRegister(passphrase){
-  const name=$('profile-name').value.trim();
-  const birthday=normalizeBirthday($('profile-birthday').value);
-  const bandName=$('profile-band').value.trim();
-  const joinCode=$('profile-join-code').value.trim();
-  if(!name)return setProfileMessage('名前を入力してください。'),false;
-  if(!birthday)return setProfileMessage('誕生日は MM-DD 形式で入力してください。'),false;
-  if(!bandName)return setProfileMessage('現在のバンド名を入力してください。'),false;
-  setProfileMessage('登録コードを確認中...');
-  const gate=await checkRegistrationCode(joinCode);
-  const gateSnap=await getDoc(doc(db,'light_public_settings','registration'));
-  if(gateSnap.exists()&&gateSnap.data()?.enabled===true&&!gate) return setProfileMessage('初回登録コードが違います。'),false;
-  setProfileMessage('認証アカウントを作成中...');
-  const email=await authEmailForPassphrase(passphrase);
-  const cred=await createUserWithEmailAndPassword(auth,email,passphrase);
-  setProfileMessage('プロフィールを保存中...');
-  const bandId=safeBandId(bandName);
-  const profile={
-    userKey:passphrase,credentialKey:passphrase,authUid:cred.user.uid,
-    username:canonical(name),name,displayName:name,birthday,bandId,bandName,
-    createdAt:now(),lastLoginAt:now(),loginCount:1
+
+function romanToKatakana(input){
+  let s=String(input||'').toLowerCase().replace(/[^a-z]/g,'');
+  if(!s)return '';
+
+  const overrides={
+    ryusei:'リュウセイ',
+    ryuusei:'リュウセイ',
+    souta:'ソウタ',
+    shota:'ショウタ',
+    shouta:'ショウタ',
+    yuuki:'ユウキ',
+    yuuta:'ユウタ',
+    yuya:'ユウヤ',
+    kouki:'コウキ',
+    kouya:'コウヤ',
+    kouta:'コウタ',
+    yuto:'ユウト',
+    haruto:'ハルト',
+    kaito:'カイト',
+    ren:'レン',
+    rin:'リン',
+    yuna:'ユナ',
+    hina:'ヒナ'
   };
-  // まず本人プロフィールだけを確実に保存してログインを完了させる。
-  await setDoc(doc(db,'light_users',passphrase),profile,{merge:true});
-  localStorage.setItem('light_last_login',passphrase);
-  applyProfile(profile);
-  hideProfileModal();
-  // バンド/所属情報は後処理。ここで画面を待たせない。
-  void (async()=>{
-    try{
-      const bandRef=doc(db,'light_bands',bandId);
-      const bandSnap=await getDoc(bandRef);
-      if(!bandSnap.exists()) await setDoc(bandRef,{bandId,name:bandName,normalizedName:canonical(bandName),createdAt:now(),updatedAt:now(),createdByUid:cred.user.uid});
-      await setDoc(doc(db,'light_band_members',`${bandId}_${cred.user.uid}`),{uid:cred.user.uid,userKey:passphrase,bandId,bandName,updatedAt:now()},{merge:true});
-    }catch(e){
-      console.error('band association save failed',e);
-      addLog('システム','プロフィール登録は完了したけど、バンド所属情報の保存に失敗しました。後で再試行できます。','error');
-    }
-  })();
-  return true;
-}
-async function completeProfile(){
-  const name=$('profile-name').value.trim();
-  const birthday=normalizeBirthday($('profile-birthday').value);
-  const bandName=$('profile-band').value.trim();
-  if(!name)return setProfileMessage('名前を入力してください。'),false;
-  if(!birthday)return setProfileMessage('誕生日は MM-DD 形式で入力してください。'),false;
-  if(!bandName)return setProfileMessage('現在のバンド名を入力してください。'),false;
-  const old=await getDoc(doc(db,'light_users',sessionUserKey));
-  const current=old.exists()?old.data():{};
-  const oldBandId=String(current.bandId||'');
-  const bandId=safeBandId(bandName);
-  const profile={name,displayName:name,birthday,bandName,bandId,authUid:auth.currentUser?.uid||'',userKey:sessionUserKey,username:current.username||canonical(name),updatedAt:now()};
-  setProfileMessage('プロフィールを保存中...');
-  await setDoc(doc(db,'light_users',sessionUserKey),profile,{merge:true});
-  applyProfile({...current,...profile});
-  hideProfileModal();
-  localStorage.setItem('light_last_login',sessionUserKey);
-  if(auth.currentUser?.uid){
-    void (async()=>{
-      try{
-        const bandRef=doc(db,'light_bands',bandId);
-        const bandSnap=await getDoc(bandRef);
-        if(!bandSnap.exists()) await setDoc(bandRef,{bandId,name:bandName,normalizedName:canonical(bandName),createdAt:now(),updatedAt:now(),createdByUid:auth.currentUser.uid},{merge:true});
-        await setDoc(doc(db,'light_band_members',`${bandId}_${auth.currentUser.uid}`),{uid:auth.currentUser.uid,userKey:sessionUserKey,bandId,bandName,updatedAt:now()},{merge:true});
-        if(oldBandId&&oldBandId!==bandId) await deleteDoc(doc(db,'light_band_members',`${oldBandId}_${auth.currentUser.uid}`)).catch(()=>{});
-      }catch(e){
-        console.error('band association update failed',e);
-        addLog('システム','プロフィールは更新したけど、バンド所属情報の更新に失敗しました。','error');
+
+  if(overrides[s])return overrides[s];
+
+  const map={
+    rya:'リャ',
+    ryu:'リュウ',
+    ryo:'リョ',
+    kya:'キャ',
+    kyu:'キュ',
+    kyo:'キョ',
+    gya:'ギャ',
+    gyu:'ギュ',
+    gyo:'ギョ',
+    sha:'シャ',
+    shu:'シュ',
+    she:'シェ',
+    sho:'ショ',
+    cha:'チャ',
+    chu:'チュ',
+    che:'チェ',
+    cho:'チョ',
+    nya:'ニャ',
+    nyu:'ニュ',
+    nyo:'ニョ',
+    hya:'ヒャ',
+    hyu:'ヒュ',
+    hyo:'ヒョ',
+    bya:'ビャ',
+    byu:'ビュ',
+    byo:'ビョ',
+    pya:'ピャ',
+    pyu:'ピュ',
+    pyo:'ピョ',
+    ja:'ジャ',
+    ju:'ジュ',
+    jo:'ジョ',
+    fa:'ファ',
+    fi:'フィ',
+    fe:'フェ',
+    fo:'フォ',
+    va:'ヴァ',
+    vi:'ヴィ',
+    ve:'ヴェ',
+    vo:'ヴォ',
+    ti:'ティ',
+    di:'ディ',
+    tu:'トゥ',
+    du:'ドゥ',
+    wi:'ウィ',
+    we:'ウェ',
+    wo:'ウォ'
+  };
+
+  const basic={
+    a:'ア',i:'イ',u:'ウ',e:'エ',o:'オ',
+    ka:'カ',ki:'キ',ku:'ク',ke:'ケ',ko:'コ',
+    ga:'ガ',gi:'ギ',gu:'グ',ge:'ゲ',go:'ゴ',
+    sa:'サ',si:'シ',su:'ス',se:'セ',so:'ソ',
+    za:'ザ',zi:'ジ',zu:'ズ',ze:'ゼ',zo:'ゾ',
+    ta:'タ',te:'テ',to:'ト',
+    da:'ダ',de:'デ',do:'ド',
+    na:'ナ',ni:'ニ',nu:'ヌ',ne:'ネ',no:'ノ',
+    ha:'ハ',hi:'ヒ',fu:'フ',he:'ヘ',ho:'ホ',
+    ba:'バ',bi:'ビ',bu:'ブ',be:'ベ',bo:'ボ',
+    pa:'パ',pi:'ピ',pu:'プ',pe:'ペ',po:'ポ',
+    ma:'マ',mi:'ミ',mu:'ム',me:'メ',mo:'モ',
+    ya:'ヤ',yu:'ユ',yo:'ヨ',
+    ra:'ラ',ri:'リ',ru:'ル',re:'レ',ro:'ロ',
+    wa:'ワ',wi:'ウィ',we:'ウェ',wo:'ヲ',
+    n:'ン'
+  };
+
+  let out='';
+  let i=0;
+
+  while(i<s.length){
+    let matched=false;
+
+    if(i+3<=s.length){
+      const tri=s.slice(i,i+3);
+      if(map[tri]){
+        out+=map[tri];
+        i+=3;
+        matched=true;
       }
-    })();
+    }
+
+    if(matched)continue;
+
+    if(i+2<=s.length){
+      const bi=s.slice(i,i+2);
+      if(map[bi]){
+        out+=map[bi];
+        i+=2;
+        continue;
+      }
+      if(basic[bi]){
+        out+=basic[bi];
+        i+=2;
+        continue;
+      }
+    }
+
+    const one=s[i];
+    if(basic[one]){
+      out+=basic[one];
+      i++;
+      continue;
+    }
+
+    i++;
   }
-  return true;
+
+  return out;
 }
-function normalizeHistory(h){return(Array.isArray(h)?h:[]).filter(x=>x&&(x.role==='user'||x.role==='model')&&Array.isArray(x.parts));}
-function textFromParts(p){return(Array.isArray(p)?p:[]).map(x=>String(x?.text||'')).join('');}
-function queueBrainSave(){brainSaveQueue=brainSaveQueue.then(()=>saveBrain()).catch(e=>{console.debug('brain save skipped',e);});return brainSaveQueue;}
-function currentBandCreatedAt(){return now();}
-async function startWithPassphrase(){
-  const passphrase=$('login-id-input').value.trim();
-  if(!validPassphrase(passphrase)){setAuthMessage('合言葉は12〜128文字で入力してください。');return;}
-  const b=$('execute-login-btn');b.disabled=true;
-  try{
-    try{
-      const ok=await authLogin(passphrase);
-      if(ok){await resetAndBoot();return;}
-    }catch(e){
-      const code=String(e?.code||'');
-      if(code.includes('auth/user-not-found')||code.includes('auth/invalid-credential')){
-        pendingProfile={userKey:passphrase};
-        showProfileModal({},true);
-        setAuthMessage('初回登録です。プロフィールと初回登録コードを入力してください。');
-        return;
-      }
-      throw e;
-    }
-  }catch(e){console.error(e);setAuthMessage(friendlyAuthError(e));}
-  finally{b.disabled=false;}
-}
-$('execute-login-btn').addEventListener('click',startWithPassphrase);
-$('login-id-input').addEventListener('keypress',e=>{if(e.key==='Enter')startWithPassphrase();});
-$('generate-passphrase-btn').addEventListener('click',()=>{
-  const p=generatePassphrase();
-  $('login-id-input').value=p;
-  alert(`専用の合言葉を作りました。\n\n【 ${p} 】\n\n他の端末でも同じ合言葉を使えます。忘れない場所に保管してください。\n\n初回登録コードが設定されている場合は、それも必要です。`);
-});
-$('profile-cancel-btn').addEventListener('click',()=>{hideProfileModal();setAuthMessage('');});
-$('profile-edit-btn').addEventListener('click',()=>{showProfileModal({name:sessionDisplayName,birthday:sessionBirthday,bandName:sessionBandName},false);});
-$('profile-save-btn').addEventListener('click',async()=>{
-  const btn=$('profile-save-btn');btn.disabled=true;registrationInProgress=true;
-  try{
-    setProfileMessage('保存を開始します...');
-    let ok=false;
-    if($('join-code-field').style.display!=='none') ok=await authRegister(String($('login-id-input').value||pendingProfile.userKey||'').trim());
-    else ok=await completeProfile();
-    if(!ok){return;}
-    setProfileMessage('登録完了。ライトを起動中...');
-    // authRegister/completeProfile already updated the current session; avoid a second profile race.
-    loginScreen.style.display='none';mainApp.style.display='flex';resetState();await bootCloud();
-    setProfileMessage('');
-  }catch(e){console.error(e);setProfileMessage(friendlyAuthError(e));}
-  finally{registrationInProgress=false;btn.disabled=false;}
-});
-async function loadCurrentProfile(){
-  const user=auth.currentUser;if(!user)return false;
-  const key=localStorage.getItem('light_last_login')||$('login-id-input').value.trim();
-  if(!key)return false;
-  const snap=await getDoc(doc(db,'light_users',key));
-  if(!snap.exists()||snap.data()?.authUid!==user.uid)return false;
-  applyProfile({userKey:key,...(snap.data()||{})});
-  if(!snap.data()?.name||!snap.data()?.birthday||!snap.data()?.bandName){showProfileModal(snap.data()||{},false);return false;}
-  return true;
-}
-async function resetAndBoot(){
-  if(!auth.currentUser||booting)return;
-  booting=true;
-  try{
-    const ok=await loadCurrentProfile();if(!ok)return;
-    loginScreen.style.display='none';mainApp.style.display='flex';resetState();await bootCloud();
-  }finally{booting=false;}
-}
-function applyVoiceMode(){document.body.classList.toggle('voice-mode',voiceMode);const b=$('voice-mode-toggle-btn');if(b)b.textContent=voiceMode?'🎙️ 音声':'💬 チャット';}applyVoiceMode();function resetState(){window.selfReflections=[];window.userFacts=[];window.pdfKnowledge='';window.conversationHistory=[];window.memoryFiles=[];window.photoMemories=[];window.timelineEntries=[];window.lightBrain={summary:'',recentHistory:[]};window.recentConversationImages=[];attachedPhotos=[];renderAttachments();chatLog.innerHTML='<div class="msg-sys"><strong>システム:</strong> クラウド連携中...</div>';updateUI();}
-function addLog(name,text,type='user',images=[]){
-  const div=document.createElement('div');div.className=type==='sys'?'msg-sys':type==='ai'?'msg-ai':type==='error'?'msg-error':'msg-user';
+
+function addLog(name,text,type='ai',photos=[]){
+  const div=document.createElement('div');
+  div.className=
+    type==='user'
+      ? 'msg-user'
+      : type==='error'
+        ? 'msg-error'
+        : type==='sys'
+          ? 'msg-sys'
+          : 'msg-ai';
+
   div.innerHTML=`<strong>${esc(name)}:</strong> ${esc(text).replace(/\n/g,'<br>')}`;
-  if(images?.length){const wrap=document.createElement('div');wrap.className='image-chat-card';images.forEach(x=>{const im=document.createElement('img');im.src=x.dataUrl||x;im.alt='添付画像';wrap.appendChild(im);});div.appendChild(wrap);}
-  chatLog.appendChild(div);chatLog.scrollTop=chatLog.scrollHeight;
+
+  if(photos?.length){
+    const card=document.createElement('div');
+    card.className='image-chat-card';
+
+    photos.forEach(p=>{
+      const img=document.createElement('img');
+      img.src=p.dataUrl;
+      img.alt='添付画像';
+      card.appendChild(img);
+    });
+
+    div.appendChild(card);
+  }
+
+  chatLog.appendChild(div);
+  chatLog.scrollTop=chatLog.scrollHeight;
 }
-async function initAuth(){
-  onAuthStateChanged(auth,async user=>{
-    if(registrationInProgress)return;
-    if(!user){authReady=true;loginScreen.style.display='flex';mainApp.style.display='none';return;}
-    try{
-      const result=await loadCurrentProfile();
-      if(result){loginScreen.style.display='none';mainApp.style.display='flex';resetState();await bootCloud();}
-    }catch(e){console.error(e);await signOut(auth).catch(()=>{});setAuthMessage('認証情報の読み込みに失敗しました。');}
-    finally{authReady=true;}
-  });
+
+function applyVoiceMode(){
+  document.body.classList.toggle('voice-mode',voiceMode);
+  const btn=$('voice-mode-toggle-btn');
+  if(btn)btn.textContent=voiceMode?'🎙️ 音声':'💬 チャット';
 }
-function updateUI(){const personal=window.memoryFiles.filter(m=>m.enabled!==false&&m.scopeType==='personal'&&(m.scopeId===String(auth.currentUser?.uid||'')||m.scopeId===sessionUserKey)).length,shared=window.memoryFiles.filter(m=>m.enabled!==false&&m.scopeType!=='personal'&&applicableScope(m)).length;const brain=window.lightBrain.summary?'あり':'なし';$('brain-status-text').textContent=`個人記憶: ${personal}件 | 共有記憶: ${shared}件 | 写真: ${window.photoMemories.length}件 | 長期記憶: ${brain}`;}
-function applicableScope(m){const st=String(m.scopeType||''),sid=String(m.scopeId||'');if(st==='club')return true;if(st==='band')return sid===sessionBandId;if(st==='personal')return sid===String(auth.currentUser?.uid||'')||sid===sessionUserKey;return false;}
-async function loadBrain(){const s=await getDoc(doc(db,'light_brains',sessionUserKey));if(!s.exists()){window.lightBrain={summary:'',recentHistory:[]};return;}const d=s.data()||{};window.lightBrain={summary:String(d.summary||'').slice(0,3500),recentHistory:normalizeHistory(d.recentHistory).slice(-20)};window.conversationHistory=window.lightBrain.recentHistory.slice();}
-async function saveBrain(){await setDoc(doc(db,'light_brains',sessionUserKey),{authUid:auth.currentUser?.uid||'',userKey:sessionUserKey,username:sessionUserName,bandId:sessionBandId,bandName:sessionBandName,summary:String(window.lightBrain.summary||'').slice(0,3500),recentHistory:normalizeHistory(window.conversationHistory).slice(-20),updatedAt:now()});}
-function buildBrainContext(){return window.lightBrain.summary?`\n\n【ライトの長期記憶】\n${window.lightBrain.summary}`:'';}
-async function loadLegacy(){const s=await getDoc(doc(db,'light_memories',sessionUserKey));if(s.exists()){const d=s.data()||{};window.selfReflections=Array.isArray(d.reflections)?d.reflections:[];window.userFacts=Array.isArray(d.facts)?d.facts:[];}}
-async function loadMemoryFiles(){const qs=[];if(sessionUserKey)qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','personal'),where('scopeId','==',auth.currentUser?.uid||''))));if(sessionBandId)qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','band'),where('scopeId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','club'))));const snaps=await Promise.all(qs);window.memoryFiles=[];for(const s of snaps)s.forEach(d=>window.memoryFiles.push({id:d.id,...(d.data()||{})}));window.memoryFiles=[...new Map(window.memoryFiles.map(x=>[x.id,x])).values()];window.memoryFiles.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));}
-async function loadPhotoMemories(){const qs=[];if(sessionUserKey)qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','personal'),where('scopeId','==',auth.currentUser?.uid||''))));if(sessionBandId)qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','band'),where('scopeId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','club'))));const snaps=await Promise.all(qs);window.photoMemories=[];for(const s of snaps)s.forEach(d=>{const x={id:d.id,...(d.data()||{})};if(x.enabled!==false)window.photoMemories.push(x);});window.photoMemories=[...new Map(window.photoMemories.map(x=>[x.id,x])).values()];window.photoMemories.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));}
-async function loadTimeline(){const qs=[];if(sessionBandId)qs.push(getDocs(query(collection(db,'light_history'),where('bandId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_history'),where('scopeType','==','club'))));const snaps=await Promise.all(qs);window.timelineEntries=[];for(const s of snaps)s.forEach(d=>window.timelineEntries.push({id:d.id,...(d.data()||{})}));window.timelineEntries=[...new Map(window.timelineEntries.map(x=>[x.id,x])).values()];window.timelineEntries.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.createdAt||0)-Number(a.createdAt||0));}
-function contextCategoryText(m){let s=`[${ARCHIVE_CATEGORIES[m.category]||m.category||'資料'}]`;if(m.staffRole&&m.staffRole!=='none')s+=` / ${STAFF_ROLES[m.staffRole]||m.staffRole}`;if(m.certainty)s+=` / 確度:${m.certainty}`;if(m.validity)s+=` / 有効:${m.validity}`;if(m.trouble)s+=` / トラブル:${m.trouble}`;if(m.countermeasure)s+=` / 対処:${m.countermeasure}`;return s;}
-function scoreFile(m,q){const qq=canonical(q),hay=canonical([m.title,m.details,m.keywords?.join(' '),m.category,m.subcategory,m.staffRole,m.bandName,m.sourceName].join(' '));let score=0;for(const w of qq.split(/\s+/).filter(x=>x.length>1)){if(hay.includes(w))score+=2;}if(m.eventId&&canonical(q).includes('ライブ'))score+=1;return score;}
-function getApplicableFiles(){return window.memoryFiles.filter(applicableScope);}
-function rankedMemoryFiles(q){return getApplicableFiles().map(m=>({m,score:scoreFile(m,q)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score||Number(b.m.updatedAt||0)-Number(a.m.updatedAt||0)).slice(0,6).map(x=>x.m);}
-function findDirectAnswer(q){const hits=rankedMemoryFiles(q).filter(m=>m.directAnswer===true);if(!hits.length)return null;return hits[0].details;}
-function buildMemoryContext(q){const hits=rankedMemoryFiles(q);if(!hits.length)return '';let out='\n\n【関連する記憶ファイル】\n';for(const m of hits){const line=`${contextCategoryText(m)} | ${m.title||''} | tags:${(m.tags||m.keywords||[]).join(', ')} | event:${m.eventId||''}\n${m.details||''}\n`;if((out+line).length>5200)break;out+=line+'\n';}return out;}
-function buildPhotoContext(q){const qq=String(q||'').trim().toLowerCase();if(!qq)return '';const words=qq.split(/[\s、。,.！？!?・#]+/).map(x=>x.trim()).filter(x=>x.length>1);const scored=window.photoMemories.map(p=>{const hay=String([p.title,p.tags?.join(' '),p.category,p.staffRole,p.aiSummary,p.humanNote,p.eventTitle,p.bandName,p.date].join(' ')).toLowerCase();let score=0;if(qq&&hay.includes(qq))score+=8;for(const w of words){if(hay.includes(w))score+=2;}if(p.bandId===sessionBandId)score+=1;return{p,score};}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,4).map(x=>x.p);if(!scored.length)return '';let out='\n\n【関連する写真記録】\n';for(const p of scored){out+=`id=${p.id} | ${p.title||'写真'} | ${p.date||''} | ${ARCHIVE_CATEGORIES[p.category]||p.category||''} | ${(p.tags||[]).join(', ')} | event=${p.eventId||''} | staff=${STAFF_ROLES[p.staffRole]||p.staffRole||'none'}\n${p.aiSummary||''}\n${p.additionalNotes?.length?`追加記録:${p.additionalNotes.map(x=>x.text).join(' / ')}`:''}\n`;if(out.length>3600)break;}return out;}
-function buildTimelineContext(q=''){const qq=canonical(q);const words=qq.split(/\s+/).filter(x=>x.length>1);const ranked=window.timelineEntries.map(t=>{let score=t.bandId===sessionBandId?1:0;const hay=canonical([t.title,t.details,(t.tags||[]).join(' '),t.date,t.bandName].join(' '));for(const w of words){if(hay.includes(w))score+=2;}return{t,score};}).sort((a,b)=>b.score-a.score||String(b.t.date||'').localeCompare(String(a.t.date||''))).slice(0,8).map(x=>x.t);if(!ranked.length)return '';let out='\n\n【軽音楽部タイムライン】\n';for(const t of ranked){out+=`id=${t.id} | ${t.date||''} | ${t.title||''} | band=${t.bandName||''} | tags=${(t.tags||[]).join(', ')}\n${t.details||''}\nlinkedPhotos=${(t.photoIds||[]).length}\n\n`;if(out.length>3800)break;}return out;}
-function wantsRecentImages(q){return /(さっき|さきほど|この写真|その写真|前の写真|さっきの写真|直前の写真|上の写真|この画像|その画像)/.test(String(q||''));}
-function adaptivePlan(text,hasImage){return hasImage?['image']:['normal'];}
-function normalizeTags(a){return [...new Set((Array.isArray(a)?a:[]).map(x=>String(x||'').trim()).filter(Boolean))].slice(0,20);}
-function currentDate(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-function detectSituation(text,hasImage=false){const t=String(text||'');const tags=[];if(/ライブ|本番|ステージ|対バン|出演|演奏|転換/.test(t))tags.push('ライブ・本番');if(/リハ|リハーサル|練習|スタジオ/.test(t))tags.push('リハーサル・練習');if(/PA|音響|マイク|ミキサー|モニター|FOH|返し/.test(t))tags.push('PA・音響');if(/ローディ|搬入|搬出|機材運搬|ケーブル/.test(t))tags.push('ローディ・機材');if(/照明|灯体|DMX|明かり/.test(t))tags.push('照明');if(/プロモーター|告知|宣伝|集客|チケット/.test(t))tags.push('プロモーション');if(/トラブル|故障|鳴らない|ハウリング|音が出ない|焦る|困った/.test(t))tags.push('トラブル対応');if(/顧問|幹部|部長|副部長|進行|運営/.test(t))tags.push('部活運営');if(hasImage)tags.push('画像あり');return tags.length?tags.join(' / '):'通常会話';}
-function extractUserConfirmedPersonLabels(text){const t=String(text||'');const labels=[];const patterns=[/この人(?:は|が)[：: ]?([^、。！？\n]{1,40})/g,/名前(?:は|が)[：: ]?([^、。！？\n]{1,40})/g,/この声(?:は|が)[：: ]?([^、。！？\n]{1,40})/g,/担当(?:は|が)[：: ]?([^、。！？\n]{1,40})/g];for(const re of patterns){for(const m of t.matchAll(re)){const v=String(m[1]||'').trim().replace(/(です|だよ|です。|だ。)$/,'').trim();if(v&&v.length<=40)labels.push(v);}}return [...new Set(labels)].slice(0,8);}
-function candidateShouldSave(text){const t=String(text||'').trim();if(t.length<8||t.length>500)return false;if(/保存しない|記録しない|覚えさせない|忘れて|削除して/.test(t))return false;return /(僕は|私は|俺は|あたしは|誕生日|好きな|好きだ|苦手|得意|使ってる|使っている|自分の|担当は|役割は|覚えて|覚えておいて|大事|重要|今後は|いつも|最近)/.test(t);}
-async function saveMemoryCandidate(text){if(!candidateShouldSave(text)||!auth.currentUser?.uid)return;try{const ref=await addDoc(collection(db,'light_memory_candidates'),{candidateText:String(text).slice(0,500),kind:'conversation_fact',status:'pending',scopeType:'personal',scopeId:auth.currentUser.uid,authUid:auth.currentUser.uid,userKey:sessionUserKey,bandId:sessionBandId,bandName:sessionBandName,createdAt:now()});if(ref) addLog('システム','大事そうな情報を「記憶候補」として保留したぜ。管理者が確認してから正式記録にできる。','sys');}catch(e){console.debug('memory candidate skipped',e);}}
-function makeSystemInstruction(userText,hasImage){
-  const isOto=avatarRuntime.mode==='oto' && avatarConfig.betaEnabled && avatarConfig.liveDayEnabled;
-  const persona=isOto
-    ? `あなたは軽音楽部の専門サポートAI「オト」です。一人称は「私」。必要最小限の短い発言で、落ち着いて正確に答えてください。普段は手をポケットに入れ、動きは小さく、専門家として振る舞います。担当領域はPA・ローディ・プロモーター・照明・顧問/幹部・全体進行です。ユーザーが困っているときは、優先順位・安全確認・次の一手を簡潔に示してください。`
-    : `あなたは軽音楽部の相棒「電キャ」の「ライト」です。一人称は「あたし」。ボーイッシュで明るく元気。自然で親しみやすく、「〜だぜ！」「任せとけ！」などの口調。`;
-  return `${persona}
-ユーザー名：${sessionDisplayName}
-誕生日：${sessionBirthday||'未登録'}
-現在のバンド：${sessionBandName||'未所属'}
-現在日付：${currentDate()}
-状況認識：${detectSituation(userText,hasImage)}
 
-【記憶の読み分け】
-個人記憶はこのユーザーだけ、バンド記憶は現在のバンド共有、部活記憶は全員共有。
-ライブスタッフはPA・ローディ・プロモーター・照明の4担当。スタッフ共有事項も同じ4担当。
-分類は「個人」「バンド」「軽音楽部」「ライブでの出来事」「ライブスタッフ」「スタッフ共有事項」「日常」を基本とする。
+applyVoiceMode();
 
-【現在モード】
-${isOto?'ライブデーモード中。専門対応を優先する。通常時はライトに戻す。':'通常のライトモード。'}
+function updateIdentityUI(){
+  $('identity-label').textContent=
+    sessionDisplayName
+      ? `${sessionDisplayName}${sessionBandName?` / ${sessionBandName}`:''}`
+      : '未ログイン';
 
-【重要】
-AIの視覚的な推測は「〜に見える」「〜のようだ」と表現し、確認済みの事実と混同しない。人の顔や声から実在人物の名前を推測・断定しない。ユーザーが明示した人物名・担当名だけを確認済み情報として扱い、写真に人物がいても自動で名前を付けない。
-ユーザーが明示的に記録・保存を頼んだ場合だけ資料を作成・更新する。
-部史の削除はしない。
+  $('sync-id-input').value=sessionUserKey||'';
 
-【関連記憶】
-${buildMemoryContext(userText)}
-${buildPhotoContext(userText)}
-${buildTimelineContext(userText)}
-${buildBrainContext()}
-${window.pdfKnowledge}
-${window.selfReflections.length?`\n【旧学習ルール】\n${window.selfReflections.join('\n')}`:''}
-${window.userFacts.length?`\n【旧事実記憶】\n${window.userFacts.join('\n')}`:''}
-
-【会話ルール】
-1. 会話文だけを自然に返す。絵文字・Markdownの#や*は使わない。
-2. 記憶にない事実は作らない。
-3. 写真が添付されている場合は写真とユーザーの文章を一緒に解釈する。
-4. 「覚えて」「記録して」「資料にして」など明示依頼がある場合、別の保存処理が後で走るので、会話では通常の返答だけする。
-5. 最後の行に長期記憶へ残す価値が高い情報が明確にある場合だけ、最後の行に [BRAIN: 要約] を追加する。それ以外は追加しない。
-6. [BRAIN:] は最後の行以外には絶対に出さない。
-${isOto?'7. 専門対応では、分からないことを分からないと明示し、機材仕様や現場状態を捏造しない。':''}
-`;}
-function stripBrain(reply){const ms=[...String(reply||'').matchAll(/\[BRAIN:\s*([\s\S]*?)\]/g)];let summary='';if(ms.length)summary=ms[ms.length-1][1].trim().slice(0,3500);const cleaned=String(reply||'').replace(/\[BRAIN:\s*[\s\S]*?\]/g,'').trim();return{cleaned,summary};}
-function historyForAI(history){return normalizeHistory(history).slice(-12).map(x=>({role:x.role==='model'?'assistant':'user',text:textFromParts(x.parts)}));}
-function parseJsonLoose(text){const raw=String(text||'').trim();try{return JSON.parse(raw);}catch(_){const m=raw.match(/```(?:json)?\s*([\s\S]*?)```/i);if(m)try{return JSON.parse(m[1]);}catch(__){}const a=raw.indexOf('{'),b=raw.lastIndexOf('}');if(a>=0&&b>a)try{return JSON.parse(raw.slice(a,b+1));}catch(__){}throw new Error('AIのJSON応答を解釈できませんでした。');}}
-
-async function loadAIProviders(){
-  try{
-    const s=await getDocs(collection(db,'light_ai_providers'));
-    window.aiProviders=s.docs.map(d=>({id:d.id,...(d.data()||{})}))
-      .filter(p=>p.enabled!==false&&p.apiKey&&p.model)
-      .sort((a,b)=>Number(a.priority||100)-Number(b.priority||100));
-    apiConfigLoaded=true;
-    return window.aiProviders;
-  }catch(e){console.error(e);window.aiProviders=[];throw e;}
+  $('profile-summary').textContent=
+    sessionDisplayName
+      ? `名前：${sessionDisplayName}\n誕生日：${sessionBirthday||'未登録'}\nバンド：${sessionBandName||'未所属'}`
+      : '未読み込み';
 }
-function providerUrl(p){
-  if(p.type==='gemini') return `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(p.model)}:generateContent`;
-  const base=(p.baseUrl||'').replace(/\/+$/,'');
-  if(p.type==='openai') return `https://api.openai.com/v1/chat/completions`;
-  if(p.type==='openai_compatible') return /\/chat\/completions$/i.test(base)?base:`${base}/chat/completions`;
-  if(p.type==='anthropic') return 'https://api.anthropic.com/v1/messages';
+
+function updateUI(){
+  updateIdentityUI();
+
+  $('brain-status-text').textContent=
+    `個人記憶: ${window.userFacts.length}件 | `+
+    `共有記憶: ${window.memoryFiles.length}件 | `+
+    `写真: ${window.photoMemories.length}件 | `+
+    `長期記憶: ${window.lightBrain.summary?'あり':'なし'}`;
+}
+
+function normalizeTags(tags){
+  if(Array.isArray(tags))return tags.map(x=>String(x||'').trim()).filter(Boolean).slice(0,30);
+
+  return String(tags||'')
+    .split(/[,\s、]+/)
+    .map(x=>x.trim())
+    .filter(Boolean)
+    .slice(0,30);
+}
+
+function normalizeHistory(history){
+  return (Array.isArray(history)?history:[])
+    .filter(x=>x&&typeof x==='object')
+    .map(x=>({
+      role:x.role==='assistant'?'model':x.role,
+      parts:Array.isArray(x.parts)
+        ? x.parts.map(p=>({text:String(p?.text||'')}))
+        : [{text:String(x.text||'')}]
+    }))
+    .filter(x=>x.parts.some(p=>p.text))
+    .slice(-40);
+}
+
+function buildHistoryForAI(){
+  return normalizeHistory(window.conversationHistory).slice(-20);
+}
+
+function isExplicitNoSave(text){
+  return /(保存しない|記録しない|覚えさせない|忘れて|削除して|消して)/.test(String(text||''));
+}
+
+function normalizeStaffRole(v){
+  const s=String(v||'').trim().toLowerCase();
+
+  if(['pa','ＰＡ'].includes(s))return 'pa';
+  if(['roady','ローディ','roadie'].includes(s))return 'roady';
+  if(['promoter','プロモーター'].includes(s))return 'promoter';
+  if(['lighting','照明'].includes(s))return 'lighting';
+
   return '';
 }
-async function fetchWithTimeout(url,options,ms=45000){
-  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ms);
-  try{return await fetch(url,{...options,signal:controller.signal});}finally{clearTimeout(timer);}
+
+function archiveCategoryLabel(v){
+  return ARCHIVE_CATEGORIES[v]||v||'未分類';
 }
-async function callClientProvider(p,payload){
-  const type=String(p.type||'').toLowerCase();
-  const system=String(payload.system||'');
-  const messages=Array.isArray(payload.messages)?payload.messages.slice(-20):[];
-  const maxTokens=Math.max(100,Math.min(2200,Number(payload.maxOutputTokens||800)));
-  const jsonMode=Boolean(payload.jsonMode);
-  let url=providerUrl(p),headers={'Content-Type':'application/json'},body={};
 
-  if(!url)throw new Error('AIプロバイダーの設定が不正です。');
+function staffRoleLabel(v){
+  return STAFF_ROLES[v]||v||'';
+}function providerUrl(p){
+  if(p.type==='gemini'){
+    return `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(p.model)}:generateContent`;
+  }
 
-  if(type==='gemini'){
-    headers['x-goog-api-key']=p.apiKey;
-    const contents=messages.map(m=>({
-      role:m.role==='assistant'?'model':'user',
-      parts:[
-        {text:String(m.text||'').slice(0,14000)},
-        ...((m.images||[]).slice(0,2).map(img=>({
-          inline_data:{
-            mime_type:String(img.mimeType||'image/jpeg'),
-            data:String(img.base64||'')
-          }
-        })))
-      ]
-    }));
-    body={
-      contents,
-      systemInstruction:{parts:[{text:system.slice(0,16000)}]},
-      generationConfig:{maxOutputTokens:maxTokens}
-    };
-    if(jsonMode)body.generationConfig.responseMimeType='application/json';
+  const base=(p.baseUrl||'').replace(/\/+$/,'');
 
-  }else if(type==='openai'||type==='openai_compatible'){
-    headers.Authorization=`Bearer ${p.apiKey}`;
-    const out=[];
-    if(system)out.push({role:'system',content:system.slice(0,16000)});
-    for(const m of messages){
-      const role=m.role==='assistant'?'assistant':'user';
-      if(m.images?.length){
-        const content=[{type:'text',text:String(m.text||'').slice(0,14000)}];
-        for(const img of m.images.slice(0,2))content.push({
-          type:'image_url',
-          image_url:{
-            url:`data:${String(img.mimeType||'image/jpeg')};base64,${String(img.base64||'')}`
-          }
-        });
-        out.push({role,content});
-      }else{
-        out.push({role,content:String(m.text||'').slice(0,14000)});
-      }
-    }
-    body={model:p.model,messages:out,max_tokens:maxTokens};
-    if(jsonMode)body.response_format={type:'json_object'};
+  if(p.type==='openai'){
+    return 'https://api.openai.com/v1/chat/completions';
+  }
 
-  }else if(type==='anthropic'){
-    headers['x-api-key']=p.apiKey;
-    headers['anthropic-version']='2023-06-01';
-    headers['anthropic-dangerous-direct-browser-access']='true';
-    body={
-      model:p.model,
-      system:system.slice(0,16000),
-      max_tokens:maxTokens,
-      messages:messages.map(m=>{
-        const content=[{type:'text',text:String(m.text||'').slice(0,14000)}];
-        for(const img of (m.images||[]).slice(0,2))content.push({
-          type:'image',
-          source:{
-            type:'base64',
-            media_type:String(img.mimeType||'image/jpeg'),
-            data:String(img.base64||'')
-          }
-        });
-        return {role:m.role==='assistant'?'assistant':'user',content};
-      })
+  if(p.type==='openai_compatible'){
+    return /\/chat\/completions$/i.test(base)
+      ? base
+      : `${base}/chat/completions`;
+  }
+
+  if(p.type==='anthropic'){
+    return 'https://api.anthropic.com/v1/messages';
+  }
+
+  return '';
+}
+
+async function fetchWithTimeout(url,options,ms=45000){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),ms);
+
+  try{
+    return await fetch(url,{
+      ...options,
+      signal:controller.signal
+    });
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+function getProviderHeaders(p){
+  if(p.type==='gemini'){
+    return {
+      'Content-Type':'application/json',
+      'x-goog-api-key':p.apiKey
     };
   }
 
-  // 一時的なAPI障害には最大3回まで再試行する。
-  const retryableStatuses=[429,500,502,503,504];
-  let res=null;
-  let data={};
-  let rawText='';
+  if(p.type==='anthropic'){
+    return {
+      'Content-Type':'application/json',
+      'x-api-key':p.apiKey,
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    };
+  }
 
-  for(let attempt=0;attempt<3;attempt++){
+  return {
+    'Content-Type':'application/json',
+    'Authorization':`Bearer ${p.apiKey}`
+  };
+}
+
+function buildProviderPayload(p,payload){
+  const history=buildHistoryForAI();
+
+  if(p.type==='gemini'){
+    const contents=[];
+
+    for(const h of history){
+      contents.push({
+        role:h.role==='model'?'model':'user',
+        parts:h.parts.map(x=>({text:String(x.text||'')}))
+      });
+    }
+
+    const userParts=[];
+
+    if(payload.text){
+      userParts.push({
+        text:String(payload.text)
+      });
+    }
+
+    if(Array.isArray(payload.photos)){
+      for(const photo of payload.photos){
+        if(photo?.base64){
+          userParts.push({
+            inlineData:{
+              mimeType:photo.mimeType||'image/jpeg',
+              data:photo.base64
+            }
+          });
+        }
+      }
+    }
+
+    contents.push({
+      role:'user',
+      parts:userParts.length
+        ? userParts
+        : [{text:String(payload.text||'')}]
+    });
+
+    const body={
+      contents,
+      generationConfig:{
+        maxOutputTokens:Number(payload.maxOutputTokens||1200)
+      }
+    };
+
+    if(payload.system){
+      body.systemInstruction={
+        parts:[
+          {
+            text:String(payload.system)
+          }
+        ]
+      };
+    }
+
+    if(payload.responseMimeType){
+      body.generationConfig.responseMimeType=payload.responseMimeType;
+    }
+
+    return body;
+  }
+
+  if(p.type==='anthropic'){
+    const messages=[];
+
+    for(const h of history){
+      messages.push({
+        role:h.role==='model'?'assistant':'user',
+        content:h.parts.map(x=>({
+          type:'text',
+          text:String(x.text||'')
+        }))
+      });
+    }
+
+    const content=[];
+
+    if(payload.text){
+      content.push({
+        type:'text',
+        text:String(payload.text)
+      });
+    }
+
+    if(Array.isArray(payload.photos)){
+      for(const photo of payload.photos){
+        if(photo?.base64){
+          content.push({
+            type:'image',
+            source:{
+              type:'base64',
+              media_type:photo.mimeType||'image/jpeg',
+              data:photo.base64
+            }
+          });
+        }
+      }
+    }
+
+    messages.push({
+      role:'user',
+      content:content.length
+        ? content
+        : [{type:'text',text:String(payload.text||'')}]
+    });
+
+    const body={
+      model:p.model,
+      max_tokens:Number(payload.maxOutputTokens||1200),
+      messages
+    };
+
+    if(payload.system){
+      body.system=String(payload.system);
+    }
+
+    return body;
+  }
+
+  const messages=[];
+
+  if(payload.system){
+    messages.push({
+      role:'system',
+      content:String(payload.system)
+    });
+  }
+
+  for(const h of history){
+    messages.push({
+      role:h.role==='model'?'assistant':'user',
+      content:h.parts.map(x=>x.text).join('\n')
+    });
+  }
+
+  const userContent=[];
+
+  if(payload.text){
+    userContent.push({
+      type:'text',
+      text:String(payload.text)
+    });
+  }
+
+  if(Array.isArray(payload.photos)){
+    for(const photo of payload.photos){
+      if(photo?.base64){
+        userContent.push({
+          type:'image_url',
+          image_url:{
+            url:`data:${photo.mimeType||'image/jpeg'};base64,${photo.base64}`
+          }
+        });
+      }
+    }
+  }
+
+  messages.push({
+    role:'user',
+    content:userContent.length
+      ? userContent
+      : String(payload.text||'')
+  });
+
+  const body={
+    model:p.model,
+    messages,
+    max_tokens:Number(payload.maxOutputTokens||1200)
+  };
+
+  if(payload.responseMimeType==='application/json'){
+    body.response_format={
+      type:'json_object'
+    };
+  }
+
+  return body;
+}
+
+async function readProviderError(res){
+  let raw='';
+
+  try{
+    raw=await res.text();
+  }catch(_){
+    raw='';
+  }
+
+  let message=raw;
+
+  try{
+    const data=JSON.parse(raw);
+
+    message=
+      data?.error?.message ||
+      data?.message ||
+      data?.error ||
+      raw;
+  }catch(_){}
+
+  message=String(message||'').slice(0,1200);
+
+  return `HTTP ${res.status}${message?`：${message}`:''}`;
+}
+
+async function callClientProvider(p,payload){
+  const url=providerUrl(p);
+
+  if(!url){
+    throw new Error(`プロバイダー「${p?.type||'unknown'}」のURLを作れません。`);
+  }
+
+  const body=buildProviderPayload(p,payload);
+  const headers=getProviderHeaders(p);
+
+  const retryableStatuses=new Set([
+    429,
+    500,
+    502,
+    503,
+    504
+  ]);
+
+  let lastError=null;
+
+  for(let attempt=1;attempt<=3;attempt++){
     try{
-      res=await fetchWithTimeout(
+      const res=await fetchWithTimeout(
         url,
         {
           method:'POST',
           headers,
           body:JSON.stringify(body)
-        }
+        },
+        45000
       );
-    }catch(e){
-      // ネットワークエラーやタイムアウトも残り回数があれば再試行。
-      if(attempt<2){
-        await sleep(1000*(attempt+1));
+
+      if(res.ok){
+        const data=await res.json();
+
+        let text='';
+
+        if(p.type==='gemini'){
+          text=
+            data?.candidates?.[0]?.content?.parts
+              ?.map(x=>x?.text||'')
+              .join('') ||
+            '';
+        }else if(p.type==='anthropic'){
+          text=
+            data?.content
+              ?.filter(x=>x?.type==='text')
+              ?.map(x=>x?.text||'')
+              ?.join('') ||
+            '';
+        }else{
+          const content=data?.choices?.[0]?.message?.content;
+
+          if(typeof content==='string'){
+            text=content;
+          }else if(Array.isArray(content)){
+            text=content
+              .map(x=>typeof x==='string'?x:(x?.text||''))
+              .join('');
+          }
+        }
+
+        if(!text){
+          throw new Error(
+            `${p.type||'AI'}から本文が返ってきませんでした。`
+          );
+        }
+
+        return{
+          text,
+          provider:p.type,
+          model:p.model
+        };
+      }
+
+      const detail=await readProviderError(res);
+      lastError=new Error(
+        `${p.type||'AI'} / ${p.model||'unknown'}: ${detail}`
+      );
+
+      if(!retryableStatuses.has(res.status)){
+        throw lastError;
+      }
+
+      if(attempt<3){
+        let waitMs=attempt===1?1000:2000;
+
+        const retryAfter=res.headers.get('Retry-After');
+
+        if(retryAfter){
+          const seconds=Number(retryAfter);
+
+          if(Number.isFinite(seconds)){
+            waitMs=Math.min(8000,Math.max(500,seconds*1000));
+          }
+        }
+
+        await sleep(waitMs);
         continue;
       }
-      throw e;
-    }
 
-    rawText=await res.text();
-    try{
-      data=rawText?JSON.parse(rawText):{};
-    }catch(_){
-      data={};
-    }
+      throw lastError;
 
-    if(res.ok)break;
+    }catch(e){
+      lastError=e instanceof Error
+        ? e
+        : new Error(String(e));
 
-    const status=Number(res.status||0);
+      const message=String(lastError.message||'');
 
-    if(retryableStatuses.includes(status)&&attempt<2){
-      const retryAfterRaw=res.headers.get('Retry-After');
-      const retryAfterSeconds=Number(retryAfterRaw);
-      let waitMs=1000*(attempt+1);
+      const networkLike=
+        /Failed to fetch|NetworkError|Load failed|fetch|aborted|AbortError/i
+          .test(message);
 
-      if(Number.isFinite(retryAfterSeconds)&&retryAfterSeconds>0){
-        waitMs=Math.min(retryAfterSeconds*1000,8000);
+      if(attempt<3 && networkLike){
+        await sleep(attempt===1?1000:2000);
+        continue;
       }
 
-      console.warn(
-        '[AI retry]',
-        `provider=${p.label||p.id}`,
-        `model=${p.model}`,
-        `status=${status}`,
-        `attempt=${attempt+1}/3`,
-        `wait=${waitMs}ms`
+      throw lastError;
+    }
+  }
+
+  throw lastError||new Error('AI通信に失敗しました。');
+}
+
+async function loadAIProviders(){
+  try{
+    const s=await getDocs(collection(db,'light_ai_providers'));
+
+    window.aiProviders=s.docs
+      .map(d=>({
+        id:d.id,
+        ...(d.data()||{})
+      }))
+      .filter(
+        p=>
+          p.enabled!==false &&
+          p.apiKey &&
+          p.model
+      )
+      .sort(
+        (a,b)=>
+          Number(a.priority||100)-
+          Number(b.priority||100)
       );
 
-      await sleep(waitMs);
-      continue;
+    apiConfigLoaded=true;
+
+    return window.aiProviders;
+
+  }catch(e){
+    console.error(e);
+    window.aiProviders=[];
+    throw e;
+  }
+}
+
+function makeSystemPrompt(){
+  return `
+あなたは軽音楽部向けAIアシスタント「ライト」です。
+
+一人称は「あたし」。
+明るく親しみやすく、必要なときは「〜だぜ！」「任せとけ！」などの自然な口調を使います。
+
+ただし、重要な情報・技術的な説明・スタッフ業務では、分かりやすさを優先してください。
+
+あなたには保存済みの記憶・資料・会話履歴が与えられることがあります。
+保存済み情報を事実として扱う場合は、記録内容を優先してください。
+
+記録にない人物名・出来事・日時などを勝手に確定しないでください。
+推測の場合は推測だと分かるようにしてください。
+
+ライブスタッフに関する情報では、
+PA・ローディ・プロモーター・照明
+の区別を維持してください。
+
+「ライブでの出来事」「ライブスタッフ」「スタッフ共有事項」は別カテゴリとして扱ってください。
+
+ユーザーが「保存しないで」「記録しないで」「覚えさせない」などと明示した場合、その内容を新しい長期記憶として保存する提案をしないでください。
+
+回答は、ユーザーがそのまま読める自然な日本語にしてください。
+`.trim();
+}
+
+function selectModelPlan(text,photos=[]){
+  const s=String(text||'');
+
+  if(photos.length){
+    return MODEL_PLANS.image;
+  }
+
+  if(
+    /詳しく|深く|分析|比較|理由|考察|設計|コード|バグ|原因|どうして|なぜ/.test(s)
+  ){
+    return MODEL_PLANS.hard;
+  }
+
+  if(
+    /難しい|複雑|長文|徹底|詳しく教えて/.test(s)
+  ){
+    return MODEL_PLANS.veryHard;
+  }
+
+  if(
+    s.length<40
+  ){
+    return MODEL_PLANS.lite;
+  }
+
+  return MODEL_PLANS.normal;
+}
+
+function chooseProviderForRequest(text,photos=[]){
+  const providers=Array.isArray(window.aiProviders)
+    ? window.aiProviders
+    : [];
+
+  if(!providers.length){
+    throw new Error(
+      '利用可能なAIプロバイダーがありません。管理者設定を確認してください。'
+    );
+  }
+
+  const preferredModels=selectModelPlan(text,photos);
+
+  const sorted=[...providers].sort((a,b)=>{
+    const pa=preferredModels.indexOf(a.model);
+    const pb=preferredModels.indexOf(b.model);
+
+    const va=pa<0?999:pa;
+    const vb=pb<0?999:pb;
+
+    if(va!==vb)return va-vb;
+
+    return Number(a.priority||100)-Number(b.priority||100);
+  });
+
+  return sorted;
+}
+
+function buildAIContext(text){
+  const memories=rankedMemoryFiles(text)
+    .slice(0,8)
+    .map((m,i)=>{
+      return `[資料${i+1}]
+タイトル: ${m.title||''}
+カテゴリ: ${archiveCategoryLabel(m.category)}
+スタッフ役割: ${staffRoleLabel(m.staffRole)}
+内容:
+${m.details||''}`;
+    })
+    .join('\n\n');
+
+  const brain=
+    window.lightBrain?.summary
+      ? `【長期記憶】
+${window.lightBrain.summary}`
+      : '';
+
+  const pdf=
+    window.pdfKnowledge
+      ? window.pdfKnowledge
+      : '';
+
+  return `
+${brain}
+
+【関連資料】
+${memories||'(関連資料なし)'}
+
+${pdf}
+`.trim();
+}
+
+async function requestAI(payload){
+  const providers=chooseProviderForRequest(
+    payload.text,
+    payload.photos||[]
+  );
+
+  let lastError=null;
+
+  for(const p of providers){
+    try{
+      const result=await callClientProvider(
+        p,
+        payload
+      );
+
+      return result;
+
+    }catch(e){
+      console.error(
+        `AI provider failed: ${p.type}/${p.model}`,
+        e
+      );
+
+      lastError=e;
+
+      addLog(
+        'システム',
+        `${p.type||'AI'} / ${p.model||'unknown'} が利用できないため、次のAIへ切り替えます。`,
+        'sys'
+      );
+    }
+  }
+
+  throw lastError||new Error('利用可能なAIがありません。');
+}
+
+async function generateChat(text,photos=[]){
+  const context=buildAIContext(text);
+
+  const prompt=`
+${context}
+
+【今回のユーザー発言】
+${text}
+
+上記を踏まえて回答してください。
+`.trim();
+
+  const result=await requestAI({
+    text:prompt,
+    photos,
+    system:makeSystemPrompt(),
+    maxOutputTokens:1400
+  });
+
+  const reply=String(result.text||'').trim();
+
+  window.conversationHistory.push(
+    {
+      role:'user',
+      parts:[{text:String(text||'')}]
+    },
+    {
+      role:'model',
+      parts:[{text:reply}]
+    }
+  );
+
+  window.conversationHistory=
+    normalizeHistory(window.conversationHistory).slice(-20);
+
+  queueBrainSave();
+
+  return{
+    reply,
+    provider:result.provider,
+    model:result.model
+  };
+}
+
+function rankedMemoryFiles(text){
+  const q=String(text||'').toLowerCase();
+
+  if(!q)return[];
+
+  return [...(window.memoryFiles||[])]
+    .map(m=>{
+      const target=[
+        m.title,
+        m.details,
+        ...(m.tags||[]),
+        ...(m.keywords||[]),
+        m.category,
+        m.staffRole,
+        m.bandName
+      ]
+      .join(' ')
+      .toLowerCase();
+
+      let score=0;
+
+      for(const word of q.split(/[\s、。！？!?]+/)){
+        if(word&&target.includes(word)){
+          score+=1;
+        }
+      }
+
+      if(
+        m.category &&
+        q.includes(String(m.category).toLowerCase())
+      ){
+        score+=3;
+      }
+
+      if(
+        m.staffRole &&
+        (
+          q.includes(String(m.staffRole).toLowerCase()) ||
+          q.includes(staffRoleLabel(m.staffRole).toLowerCase())
+        )
+      ){
+        score+=4;
+      }
+
+      return{
+        ...m,
+        _score:score
+      };
+    })
+    .filter(m=>m._score>0)
+    .sort((a,b)=>b._score-a._score);
+}
+
+function findDirectAnswer(text){
+  const q=String(text||'').toLowerCase();
+
+  const candidates=[
+    ...(window.memoryFiles||[]),
+    ...(window.photoMemories||[])
+  ];
+
+  for(const m of candidates){
+    const title=String(m.title||'').toLowerCase();
+
+    if(
+      title &&
+      (
+        q.includes(title) ||
+        title.includes(q)
+      )
+    ){
+      return m.details||m.description||'';
+    }
+  }
+
+  return '';
+}
+
+async function fallbackFromMemory(text){
+  const direct=findDirectAnswer(text);
+
+  if(direct){
+    const reply=String(direct);
+
+    window.conversationHistory.push(
+      {
+        role:'user',
+        parts:[{text}]
+      },
+      {
+        role:'model',
+        parts:[{text:reply}]
+      }
+    );
+
+    window.conversationHistory=
+      normalizeHistory(window.conversationHistory).slice(-20);
+
+    queueBrainSave();
+
+    return{
+      reply,
+      fromMemory:true
+    };
+  }
+
+  const hits=rankedMemoryFiles(text);
+
+  if(hits.length){
+    const reply=
+      `保存してある資料を見ると、${hits[0].title||'この件'}についてこう記録されてるぜ。\n\n`+
+      `${hits[0].details||''}`;
+
+    return{
+      reply,
+      fromMemory:true
+    };
+  }
+
+  return null;
+}async function callLight(text,photos){
+  try{
+    return await generateChat(text,photos);
+  }catch(e){
+    const fb=await fallbackFromMemory(text);
+    if(fb){
+      addLog('システム','AIに接続できなかったため、保存済み記憶を使って回答します。','sys');
+      return{reply:fb.reply,fromMemory:true};
+    }
+    throw e;
+  }
+}
+
+function shouldAutoArchivePhotos(text){
+  return !/(保存しない|記録しない|覚えさせない|資料館に入れない|ライブラリに入れない)/.test(String(text||''));
+}
+
+async function autoArchivePhotos(photos,display,reply){
+  if(!photos.length||!shouldAutoArchivePhotos(display))return;
+  let ok=0;
+  for(const photo of photos){
+    try{
+      const c=await catalogPhotoWithAI(photo,display,reply);
+      await archivePhoto(photo,c,display);
+      ok++;
+    }catch(err){
+      console.error('写真自動記録エラー',err);
+    }
+  }
+  try{
+    await Promise.all([loadMemoryFiles(),loadPhotoMemories(),loadTimeline()]);
+    updateUI();
+    if(ok)addLog('システム',`${ok}枚の写真を自動で資料館に記録したぜ。`,'sys');
+  }catch(e){console.error(e);}
+}
+
+async function processUserInput(text){
+  if(/^\s*(デイブレイク|daybreak)\s*$/i.test(String(text||''))){
+    if(!avatarConfig.betaEnabled){
+      addLog('システム','アバターモードがOFFです。管理者サイトでONにしてください。','sys');
+      return;
+    }
+    if(!avatarConfig.liveDayEnabled){
+      addLog('システム','ライブデーモードがOFFです。管理者サイトで有効にしてください。','sys');
+      return;
+    }
+    const next=avatarRuntime.mode==='oto'?'light':'oto';
+    if(next==='oto'&&!avatarConfig.otoUrl){
+      addLog('システム','Otoアバターがまだ登録されていません。管理者サイトで後から追加できます。','sys');
+      return;
+    }
+    showAvatarMode(next);
+    const mode=avatarRuntime.mode==='oto'?'オト':'ライト';
+    addLog(mode,mode==='オト'?'切り替わった。':'戻ったぜ。','ai');
+    if(!window.isMuted)window.speak(mode==='オト'?'オトに切り替えます。':'ライトに戻るぜ。');
+    return;
+  }
+
+  const t=String(text||'').trim();
+  if(!t&&!attachedPhotos.length)return;
+
+  const photos=attachedPhotos.slice();
+  const display=t||'この写真を見て！';
+
+  addLog('あなた',display,'user',photos);
+
+  sendBtn.disabled=true;
+  chatInput.disabled=true;
+  talkBtn.disabled=true;
+  $('photo-btn').disabled=true;
+  sendBtn.textContent='🧠';
+
+  try{
+    const result=await callLight(display,photos);
+
+    addLog('ライト',result.reply,'ai');
+    if(!window.isMuted)window.speak(result.reply);
+
+    void saveMemoryCandidate(t);
+
+    if(photos.length){
+      void autoArchivePhotos(photos,display,result.reply);
     }
 
-    const detail=
-      data?.error?.message ||
-      data?.message ||
-      (rawText?String(rawText).slice(0,300):'');
-
-    const err=new Error(`HTTP ${status}${detail?`: ${detail}`:''}`);
-    err.status=status;
-    err.provider=p.label||p.id;
-    err.model=p.model;
-    throw err;
+    if(
+      explicitCommand(t)&&
+      (!photos.length||/(部史|タイムライン|写真.*追記|写真.*更新|写真.*修正|付け足して)/.test(t))&&
+      !/写真.*見て/.test(t)
+    ){
+      void(async()=>{
+        try{
+          const plan=await planExplicitAction(t);
+          await applyExplicitAction(plan,t);
+        }catch(e){
+          console.error('資料館操作エラー',e);
+        }
+      })();
+    }
+  }catch(e){
+    console.error(e);
+    addLog('システムエラー',e.message||'AI通信に失敗しました。','error');
+  }finally{
+    sendBtn.disabled=false;
+    chatInput.disabled=false;
+    talkBtn.disabled=false;
+    $('photo-btn').disabled=false;
+    sendBtn.textContent='送信';
+    clearAttachments();
+    chatInput.focus();
   }
-
-  if(!res)throw new Error('AIへの通信に失敗しました。');
-
-  if(!res.ok){
-    const detail=data?.error?.message||data?.message||'';
-    const err=new Error(`HTTP ${res.status}${detail?`: ${detail}`:''}`);
-    err.status=res.status;
-    err.provider=p.label||p.id;
-    err.model=p.model;
-    throw err;
-  }
-
-  let out='';
-  if(type==='gemini')out=data?.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('')||'';
-  else if(type==='anthropic')out=data?.content?.map(x=>x.text||'').join('')||'';
-  else out=typeof data?.choices?.[0]?.message?.content==='string'?data.choices[0].message.content:'';
-
-  if(!out)throw new Error('AIから回答が返ってきませんでした。');
-  return {text:out,provider:p.label||p.id,model:p.model};
-}
-async function requestAI(payload){
-  if(!apiConfigLoaded)await loadAIProviders();
-  if(!window.aiProviders?.length)throw new Error('AIがまだ設定されていません。管理者サイトでAIプロバイダーを登録してください。');
-  let lastErr=null;
-  for(const p of window.aiProviders){
-    try{return await callClientProvider(p,payload);}
-    catch(e){console.warn('AI provider failed',p.label||p.id,e);lastErr=e;}
-  }
-  throw lastErr||new Error('登録済みAIを利用できませんでした。');
 }
 
-async function generateChat(text,photos){const imageNow=photos.length>0;if(imageNow)window.recentConversationImages=photos.slice(-2);const history=historyForAI(window.conversationHistory);const label=text||'この写真を見て';const current={role:'user',text:label,images:(photos||[]).slice(0,2).map(im=>({mimeType:im.mimeType,base64:im.base64}))};if(!imageNow&&wantsRecentImages(text))current.images=window.recentConversationImages.slice(-2).map(im=>({mimeType:im.mimeType,base64:im.base64}));const messages=[...history,current];const si=makeSystemInstruction(text,imageNow);const complex=/(コード|設計|分析|比較|原因|計画|複雑|調べて|デバッグ|詳しく)/.test(text||'');const result=await requestAI({messages,system:si,maxOutputTokens:complex?1400:700,jsonMode:false});const parsed=stripBrain(result.text);if(parsed.summary)window.lightBrain.summary=parsed.summary;window.conversationHistory.push({role:'user',parts:[{text:label}]},{role:'model',parts:[{text:parsed.cleaned}]});window.conversationHistory=normalizeHistory(window.conversationHistory).slice(-12);queueBrainSave();return{reply:parsed.cleaned,provider:result.provider};}
-const CATALOG_SCHEMA={type:'object',properties:{title:{type:'string'},category:{type:'string',enum:['personal','band','club','live_event','live_staff','staff_shared','daily']},subcategory:{type:'string'},staffRole:{type:'string',enum:['pa','roady','promoter','lighting','none']},scopeType:{type:'string',enum:['personal','band','club']},tags:{type:'array',items:{type:'string'}},summary:{type:'string'},aiObservation:{type:'string'},humanNoteSuggested:{type:'string'},date:{type:'string'},dateSource:{type:'string',enum:['message','current','unknown']},shouldCreateTimeline:{type:'boolean'},timelineTitle:{type:'string'},timelineDetails:{type:'string'},timelineTags:{type:'array',items:{type:'string'}},trouble:{type:'string'},response:{type:'string'}},required:['title','category','subcategory','staffRole','scopeType','tags','summary','aiObservation','humanNoteSuggested','date','dateSource','shouldCreateTimeline','timelineTitle','timelineDetails','timelineTags','trouble','response']};
-async function catalogPhotoWithAI(photo,text,chatReply){const prompt=`この写真を「軽音楽部の資料館」に登録するためのメタデータをJSONで作ってください。会話文も必ず材料にしてください。
-現在日付:${currentDate()}
-ユーザー:${sessionDisplayName}
-バンド:${sessionBandName}
-ユーザーの発言:${text||'(写真だけ)'}
-ライトの返答:${chatReply||''}
+$('send-btn').addEventListener('click',()=>{
+  const t=chatInput.value;
+  chatInput.value='';
+  processUserInput(t);
+});
 
-ルール:
-- titleは短く検索しやすく。
-- categoryは personal / band / club / live_event / live_staff / staff_shared / daily。
-- live_staffならstaffRoleは pa / roady / promoter / lighting のどれか。違うなら none。
-- scopeTypeは personal / band / club。文脈がなければ band。
-- tagsは日本語の検索語を5〜12個。
-- aiObservationは写真から見えることだけ。断定しない。
-- dateは会話から分かる日付。分からなければ空文字。
-- shouldCreateTimelineはライブ・イベント・重要な部活出来事ならtrue。
-- troubleはトラブルが明確なときだけ。`;const result=await requestAI({messages:[{role:'user',text:prompt,images:[{mimeType:photo.mimeType,base64:photo.base64}]}],system:'写真記録の司書としてJSONだけを返してください。説明文やMarkdownは不要です。',maxOutputTokens:900,jsonMode:true});return parseJsonLoose(result.text);}
-function findTimelineMatch(catalog){const date=String(catalog.date||'');const title=canonical(catalog.timelineTitle||catalog.title||'');let best=null,score=0;for(const t of window.timelineEntries){let s=0;if(date&&t.date===date)s+=5;if(title&&canonical(`${t.title||''} ${t.tags?.join(' ')||''}`).includes(title))s+=4;const tt=canonical((t.tags||[]).join(' '));for(const tag of catalog.timelineTags||[]){if(tag&&tt.includes(canonical(tag)))s+=1;}if(t.bandId===sessionBandId)s+=2;if(s>score){score=s;best=t;}}return score>=7?best:null;}
-async function upsertTimelineFromCatalog(catalog,imageId,memoryId){if(!catalog.shouldCreateTimeline)return '';const match=findTimelineMatch(catalog);const date=String(catalog.date||currentDate()).slice(0,10);const title=String(catalog.timelineTitle||catalog.title||'出来事').trim();const details=String(catalog.timelineDetails||catalog.summary||'').trim();const tags=normalizeTags([...(catalog.timelineTags||[]),...(catalog.tags||[])].slice(0,16));if(match){const photoIds=[...new Set([...(match.photoIds||[]),imageId].filter(Boolean))],memoryIds=[...new Set([...(match.memoryIds||[]),memoryId].filter(Boolean))];const after={...match,date:match.date||date,title:match.title||title,details:match.details?`${match.details}\n\n追加記録：${details}`:details,tags:[...new Set([...(match.tags||[]),...tags])],photoIds,memoryIds,updatedAt:now(),lastLinkedAt:now()};await updateDoc(doc(db,'light_history',match.id),after);await addDoc(collection(db,'light_history_edits'),{historyId:match.id,action:'link',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,authUid:auth.currentUser?.uid||'',timestamp:now(),before:match,after});return match.id;}const ref=await addDoc(collection(db,'light_history'),{date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName,scopeType:'band',createdAt:now(),createdBy:sessionUserKey,createdByName:sessionDisplayName,authUid:auth.currentUser?.uid||'',photoIds:imageId?[imageId]:[],memoryIds:memoryId?[memoryId]:[]});await addDoc(collection(db,'light_history_edits'),{historyId:ref.id,action:'add',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,authUid:auth.currentUser?.uid||'',timestamp:now(),before:null,after:{id:ref.id,date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName,photoIds:imageId?[imageId]:[],memoryIds:memoryId?[memoryId]:[]}});window.timelineEntries.unshift({id:ref.id,date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName,createdAt:now(),photoIds:imageId?[imageId]:[],memoryIds:memoryId?[memoryId]:[]});return ref.id;}
-async function storeImageChunks(imageId,dataUrl){const chunks=[];for(let i=0;i<dataUrl.length;i+=450000)chunks.push(dataUrl.slice(i,i+450000));await Promise.all(chunks.map((data,i)=>setDoc(doc(db,'light_images',imageId,'chunks',String(i)),{index:i,data,createdAt:now()})));return chunks.length;}
-async function archivePhoto(photo,catalog,originalText){const scopeType=catalog.scopeType||'band',scopeId=scopeType==='personal'?(auth.currentUser?.uid||''):scopeType==='club'?'club':sessionBandId;const userConfirmedPersonLabels=extractUserConfirmedPersonLabels(originalText);const imageId='img-'+now().toString(36)+'-'+Math.random().toString(36).slice(2,7);const tags=normalizeTags([...(catalog.tags||[]),'写真']);const data=photo.dataUrl;const idata={imageId,authUid:auth.currentUser?.uid||'',userKey:sessionUserKey,username:sessionUserName,displayName:sessionDisplayName,bandId:sessionBandId,bandName:sessionBandName,scopeType,scopeId,title:catalog.title||`写真 ${new Date().toLocaleString('ja-JP')}`,category:catalog.category||'band',subcategory:catalog.subcategory||'',staffRole:catalog.staffRole||'none',tags,aiSummary:String(catalog.summary||'').slice(0,4500),aiObservation:String(catalog.aiObservation||'').slice(0,3500),humanNote:String(catalog.humanNoteSuggested||'').slice(0,1500),sourceText:String(originalText||'').slice(0,2000),date:String(catalog.date||'').slice(0,10),dateSource:catalog.dateSource||'unknown',mimeType:'image/jpeg',width:photo.width,height:photo.height,originalName:photo.originalName||'',createdAt:now(),enabled:true,userConfirmedPersonLabels};await setDoc(doc(db,'light_images',imageId),idata);idata.chunkCount=await storeImageChunks(imageId,data);const mf=await addDoc(collection(db,'light_memory_files'),{title:idata.title,details:`${idata.aiSummary}\n\nAI観察：${idata.aiObservation}\n\nトラブル：${catalog.trouble||'(なし)'}\n\n人間メモ：${idata.humanNote||'(なし)'}`,keywords:tags,tags,category:idata.category,subcategory:idata.subcategory,staffRole:idata.staffRole,scopeType,scopeId,bandId:sessionBandId,bandName:sessionBandName,kind:'photo',imageId,sourceName:idata.originalName||'会話中の写真',directAnswer:false,enabled:true,eventId:'',authUid:auth.currentUser?.uid||'',createdBy:sessionUserKey,createdAt:now(),updatedAt:now(),userConfirmedPersonLabels});const eventId=await upsertTimelineFromCatalog(catalog,imageId,mf.id);if(eventId){await updateDoc(doc(db,'light_images',imageId),{eventId,eventTitle:catalog.timelineTitle||catalog.title||''});await updateDoc(doc(db,'light_memory_files',mf.id),{eventId,updatedAt:now()});}await loadMemoryFiles();await loadPhotoMemories();await loadTimeline();updateUI();addLog('システム',`写真「${idata.title}」を資料館に記録したぜ。`,'sys');}
-function explicitCommand(text){return /(覚えて|記録して|資料にして|資料館|部史に|タイムラインに|追加して|更新して|修正して|追記して|付け足して|追加|更新|修正|追記)/.test(String(text||''));}
-const ACTION_SCHEMA={type:'object',properties:{action:{type:'string',enum:['none','add_timeline','update_timeline','update_photo','add_memory']},targetQuery:{type:'string'},title:{type:'string'},details:{type:'string'},date:{type:'string'},tags:{type:'array',items:{type:'string'}},category:{type:'string',enum:['personal','band','club','live_event','live_staff','staff_shared','daily','none']},staffRole:{type:'string',enum:['pa','roady','promoter','lighting','none']},scopeType:{type:'string',enum:['personal','band','club','none']},note:{type:'string'}},required:['action','targetQuery','title','details','date','tags','category','staffRole','scopeType','note']};
-async function planExplicitAction(text){const prompt=`ユーザーの依頼を資料館/部史への操作に変換してください。明示依頼がないものはaction=none。削除依頼もnone。
-ユーザー:${sessionDisplayName}
-バンド:${sessionBandName}
-現在日付:${currentDate()}
-依頼:${text}
-利用可能な操作:add_timeline=部史追加, update_timeline=既存部史更新, update_photo=写真記録への追記, add_memory=記憶ファイル追加。
-返すJSONのactionは none / add_timeline / update_timeline / update_photo / add_memory のいずれか。categoryは personal / band / club / live_event / live_staff / staff_shared / daily / none、staffRoleは pa / roady / promoter / lighting / none、scopeTypeは personal / band / club / none。`;const result=await requestAI({messages:[{role:'user',text:prompt}],system:'資料館の操作プランナーとしてJSONだけを返してください。',maxOutputTokens:600,jsonMode:true});return parseJsonLoose(result.text);}
-function bestPhoto(q){const qq=canonical(q);let best=null,score=0;for(const p of window.photoMemories){let s=0;const hay=canonical([p.title,p.tags?.join(' '),p.aiSummary,p.category,p.staffRole,p.eventTitle,p.date].join(' '));for(const w of qq.split(/\s+/).filter(x=>x.length>1))if(hay.includes(w))s+=2;if(p.bandId===sessionBandId)s+=1;if(s>score){score=s;best=p;}}return score>=3?best:null;}
-function bestTimeline(q){const qq=canonical(q);let best=null,score=0;for(const t of window.timelineEntries){let s=0;const hay=canonical([t.title,t.details,t.tags?.join(' '),t.date].join(' '));for(const w of qq.split(/\s+/).filter(x=>x.length>1))if(hay.includes(w))s+=2;if(t.bandId===sessionBandId)s+=1;if(s>score){score=s;best=t;}}return score>=3?best:null;}
-async function applyExplicitAction(plan,originalText){if(!plan||plan.action==='none')return false;if(plan.action==='add_timeline'){const date=(plan.date||currentDate()).slice(0,10),title=plan.title||'出来事',details=plan.details||originalText,tags=normalizeTags(plan.tags);const ref=await addDoc(collection(db,'light_history'),{date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName,scopeType:'band',createdAt:now(),createdBy:sessionUserKey,createdByName:sessionDisplayName,authUid:auth.currentUser?.uid||'',photoIds:[],memoryIds:[]});await addDoc(collection(db,'light_history_edits'),{historyId:ref.id,action:'add',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,authUid:auth.currentUser?.uid||'',timestamp:now(),before:null,after:{id:ref.id,date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName}});await loadTimeline();addLog('システム',`「${title}」を部史に追加したぜ。`,'sys');return true;}
-if(plan.action==='update_timeline'){const t=bestTimeline(plan.targetQuery||plan.title);if(!t)return false;const before={...t},after={...t};if(plan.title)after.title=plan.title;if(plan.details)after.details=plan.details;if(plan.date)after.date=plan.date.slice(0,10);if(plan.tags?.length)after.tags=normalizeTags(plan.tags);after.updatedAt=now();after.updatedBy=sessionUserKey;after.updatedByName=sessionDisplayName;await updateDoc(doc(db,'light_history',t.id),after);await addDoc(collection(db,'light_history_edits'),{historyId:t.id,action:'update',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,authUid:auth.currentUser?.uid||'',timestamp:now(),before,after});await loadTimeline();addLog('システム',`「${after.title||t.title}」を部史で更新したぜ。`,'sys');return true;}
-if(plan.action==='update_photo'){const p=bestPhoto(plan.targetQuery||plan.title);if(!p)return false;const note=String(plan.note||plan.details||'').trim();if(!note)return false;const before={...p},added=[...(p.additionalNotes||[]),{text:note,by:sessionUserKey,byName:sessionDisplayName,at:now()}];const after={...p,additionalNotes:added,updatedAt:now()};await updateDoc(doc(db,'light_images',p.id),{additionalNotes:added,updatedAt:now()});if(p.id){const fs=await getDocs(collection(db,'light_memory_files'));for(const d of fs.docs){if((d.data()||{}).imageId===p.id)await updateDoc(d.ref,{details:`${d.data()?.details||''}\n\n追記（${sessionDisplayName}）：${note}`,updatedAt:now()});}}await addDoc(collection(db,'light_photo_edits'),{imageId:p.id,action:'append_note',editor:sessionUserKey,editorName:sessionDisplayName,authUid:auth.currentUser?.uid||'',timestamp:now(),before,after});await loadPhotoMemories();addLog('システム',`写真「${p.title||'写真'}」に追記したぜ。`,'sys');return true;}
-if(plan.action==='add_memory'){const scopeType=plan.scopeType==='personal'?'personal':plan.scopeType==='club'?'club':'band',scopeId=scopeType==='personal'?(auth.currentUser?.uid||''):scopeType==='club'?'club':sessionBandId;const ref=await addDoc(collection(db,'light_memory_files'),{title:plan.title||'会話からの記憶',details:plan.details||originalText,tags:normalizeTags(plan.tags),keywords:normalizeTags(plan.tags),category:plan.category&&plan.category!=='none'?plan.category:scopeType,subcategory:'',staffRole:plan.staffRole||'none',scopeType,scopeId,bandId:sessionBandId,bandName:sessionBandName,kind:'text',directAnswer:false,enabled:true,authUid:auth.currentUser?.uid||'',createdBy:sessionUserKey,createdAt:now(),updatedAt:now()});await loadMemoryFiles();updateUI();addLog('システム',`「${plan.title||'会話からの記憶'}」を記憶ファイルに保存したぜ。`,'sys');return true;}return false;}
-async function fallbackFromMemory(text){const direct=findDirectAnswer(text);if(direct){const reply=String(direct);window.conversationHistory.push({role:'user',parts:[{text}]},{role:'model',parts:[{text:reply}]});window.conversationHistory=normalizeHistory(window.conversationHistory).slice(-20);queueBrainSave();return{reply,fromMemory:true};}const hits=rankedMemoryFiles(text);if(hits.length){const reply=`保存してある資料を見ると、${hits[0].title||'この件'}についてこう記録されてるぜ。\n\n${hits[0].details||''}`;return{reply,fromMemory:true};}return null;}
-async function callLight(text,photos){try{return await generateChat(text,photos);}catch(e){const fb=await fallbackFromMemory(text);if(fb){addLog('システム','AIに接続できなかったため、保存済み記憶を使って回答します。','sys');return{reply:fb.reply,fromMemory:true};}throw e;}}
-function shouldAutoArchivePhotos(text){return !/(保存しない|記録しない|覚えさせない|資料館に入れない|ライブラリに入れない)/.test(String(text||''));}
-async function autoArchivePhotos(photos,display,reply){if(!photos.length||!shouldAutoArchivePhotos(display))return;let ok=0;for(const photo of photos){try{const c=await catalogPhotoWithAI(photo,display,reply);await archivePhoto(photo,c,display);ok++;}catch(err){console.error('写真自動記録エラー',err);}}try{await Promise.all([loadMemoryFiles(),loadPhotoMemories(),loadTimeline()]);updateUI();if(ok)addLog('システム',`${ok}枚の写真を自動で資料館に記録したぜ。`,'sys');}catch(e){console.error(e);}}
-async function processUserInput(text){
-  if(/^\s*(デイブレイク|daybreak)\s*$/i.test(String(text||''))){if(!avatarConfig.betaEnabled){addLog('システム','アバターモードがOFFです。管理者サイトでONにしてください。','sys');return;}if(!avatarConfig.liveDayEnabled){addLog('システム','ライブデーモードがOFFです。管理者サイトで有効にしてください。','sys');return;}const next=avatarRuntime.mode==='oto'?'light':'oto';if(next==='oto'&&!avatarConfig.otoUrl){addLog('システム','Otoアバターがまだ登録されていません。管理者サイトで後から追加できます。','sys');return;}showAvatarMode(next);const mode=avatarRuntime.mode==='oto'?'オト':'ライト';addLog(mode,mode==='オト'?'切り替わった。':'戻ったぜ。','ai');if(!window.isMuted)window.speak(mode==='オト'?'オトに切り替えます。':'ライトに戻るぜ。');return;}const t=String(text||'').trim();if(!t&&!attachedPhotos.length)return;const photos=attachedPhotos.slice();const display=t||'この写真を見て！';addLog('あなた',display,'user',photos);sendBtn.disabled=true;chatInput.disabled=true;talkBtn.disabled=true;$('photo-btn').disabled=true;sendBtn.textContent='🧠';try{const result=await callLight(display,photos);addLog('ライト',result.reply,'ai');if(!window.isMuted)window.speak(result.reply);void saveMemoryCandidate(t);if(photos.length)void autoArchivePhotos(photos,display,result.reply);if(explicitCommand(t)&&(!photos.length||/(部史|タイムライン|写真.*追記|写真.*更新|写真.*修正|付け足して)/.test(t))&&!/写真.*見て/.test(t)){void (async()=>{try{const plan=await planExplicitAction(t);await applyExplicitAction(plan,t);}catch(e){console.error('資料館操作エラー',e);}})();}}catch(e){console.error(e);addLog('システムエラー',e.message||'AI通信に失敗しました。','error');}finally{sendBtn.disabled=false;chatInput.disabled=false;talkBtn.disabled=false;$('photo-btn').disabled=false;sendBtn.textContent='送信';clearAttachments();chatInput.focus();}}
-$('send-btn').addEventListener('click',()=>{const t=chatInput.value;chatInput.value='';processUserInput(t);});chatInput.addEventListener('keypress',e=>{if(e.key==='Enter')$('send-btn').click();});
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(SR){const r=new SR();r.lang='ja-JP';r.continuous=false;r.interimResults=false;talkBtn.addEventListener('click',()=>{try{r.start();talkBtn.textContent='👂';talkBtn.style.background='#f1c40f';}catch(e){}});r.onresult=e=>{talkBtn.textContent='🔴';talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';chatInput.value=e.results[0][0].transcript;$('send-btn').click();};r.onerror=()=>{talkBtn.textContent='🔴';talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';};r.onend=()=>{talkBtn.textContent='🔴';talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';};}else talkBtn.style.display='none';
-$('photo-btn').addEventListener('click',()=>$('photo-input').click());$('photo-input').addEventListener('change',async e=>{const files=[...(e.target.files||[])].slice(0,4);if(!files.length)return;try{attachedPhotos=[];for(const f of files)attachedPhotos.push(await preparePhoto(f));renderAttachments();}catch(err){console.error(err);alert(err.message||'写真を読み込めませんでした。');}e.target.value='';});$('photo-clear-btn').addEventListener('click',clearAttachments);function clearAttachments(){attachedPhotos=[];renderAttachments();}function renderAttachments(){$('attach-thumbs').innerHTML='';if(!attachedPhotos.length){$('attach-bar').classList.remove('visible');return}attachedPhotos.forEach(p=>{const im=document.createElement('img');im.src=p.dataUrl;im.alt='写真';$('attach-thumbs').appendChild(im);});$('attach-info').textContent=`${attachedPhotos.length}枚の写真を添付中。ライトが文脈から説明・タグ・分類を自動整理して資料館に記録します。保存したくない場合はメッセージに「保存しないで」と書いてね。`;$('attach-bar').classList.add('visible');}
-async function preparePhoto(file){if(!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error('JPEG / PNG / WebPの写真を選んでください。');const url=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('写真の読み込みに失敗しました。'));r.readAsDataURL(file)});const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('画像として読み込めませんでした。'));i.src=url});const canvas=document.createElement('canvas');let w=img.naturalWidth,h=img.naturalHeight,max=960,scale=Math.min(1,max/Math.max(w,h));w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,w,h);let q=.72,out=canvas.toDataURL('image/jpeg',q);for(let i=0;i<4&&out.length>450000;i++){q=Math.max(.42,q-.08);out=canvas.toDataURL('image/jpeg',q);}const base64=out.split(',')[1]||'';return{dataUrl:out,base64,mimeType:'image/jpeg',originalName:file.name,width:w,height:h};}
-window.isMuted=true;const muteBtn=$('mute-toggle-btn');muteBtn.textContent='🔇 音声 OFF';$('open-settings-btn').addEventListener('click',()=>$('settings-modal').style.display='flex');$('close-settings-btn').addEventListener('click',()=>$('settings-modal').style.display='none');muteBtn.addEventListener('click',()=>{window.isMuted=!window.isMuted;muteBtn.textContent=window.isMuted?'🔇 音声 OFF':'🔊 音声 ON';muteBtn.style.borderColor=window.isMuted?'#bf616a':'#ff7eb3';if(window.isMuted){speechSynthesis.cancel();if(window.currentAudio)window.currentAudio.pause();}});window.currentAudio=null;window.speak=t=>{if(window.isMuted)return;speechSynthesis.cancel();const clean=String(t||'').replace(/[「」『』（）()【】_~〜]/g,'').trim();if(!clean)return;const audio=new Audio(`https://api.tts.quest/v3/voicevox/synthesis?text=${encodeURIComponent(clean)}&speaker=8`);window.currentAudio=audio;audio.play().catch(()=>{const u=new SpeechSynthesisUtterance(clean);u.lang='ja-JP';u.rate=1.1;u.pitch=1.2;speechSynthesis.speak(u)});};
-$('voice-mode-toggle-btn').addEventListener('click',()=>{voiceMode=!voiceMode;localStorage.setItem('light_voice_mode',voiceMode?'1':'0');applyVoiceMode();if(voiceMode)addLog('システム','音声モード：マイクボタンで話して、ライトの返答を音声でも受け取れるぜ。','sys');});
-$('logout-btn').addEventListener('click',async()=>{settingsModal.style.display='none';await signOut(auth);location.reload();});$('sync-id-input').addEventListener('click',()=>navigator.clipboard?.writeText($('sync-id-input').value).catch(()=>{}));$('view-brain-btn').addEventListener('click',()=>{const s=`【長期記憶】\n${window.lightBrain.summary||'(なし)'}\n\n【自己改善ルール】\n${window.selfReflections.join('\n')||'(なし)'}\n\n【事実記憶】\n${window.userFacts.join('\n')||'(なし)'}`;alert(s);});
-let cameraStream=null;function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;}$('camera-video').srcObject=null;}$('camera-btn').addEventListener('click',async()=>{const modal=$('camera-modal'),video=$('camera-video'),msgEl=$('camera-message');modal.style.display='flex';msgEl.textContent='カメラを起動中...';try{if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia)throw new Error('HTTPSで開いているページでのみカメラを使えます。');cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});video.srcObject=cameraStream;msgEl.textContent='撮影ボタンで1枚を添付できます。';}catch(e){console.error(e);msgEl.textContent=e.message||'カメラを起動できませんでした。';stopCamera();}});function closeCamera(){stopCamera();$('camera-modal').style.display='none';}$('camera-close-btn').addEventListener('click',closeCamera);$('camera-cancel-btn').addEventListener('click',closeCamera);$('camera-capture-btn').addEventListener('click',async()=>{const video=$('camera-video'),canvas=$('camera-canvas');if(!cameraStream||!video.videoWidth){$('camera-message').textContent='カメラ映像がまだ準備できていません。';return;}let w=video.videoWidth,h=video.videoHeight,max=960,scale=Math.min(1,max/Math.max(w,h));w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(video,0,0,w,h);const dataUrl=canvas.toDataURL('image/jpeg',.72);attachedPhotos=[{dataUrl,base64:dataUrl.split(',')[1]||'',mimeType:'image/jpeg',originalName:`camera-${Date.now()}.jpg`,width:w,height:h}];renderAttachments();closeCamera();addLog('システム','カメラ画像を添付したぜ。文章と一緒に送ってくれれば、その画像も見られる。','sys');});
-$('pdf-btn').addEventListener('click',()=>$('pdf-upload').click());$('pdf-upload').addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;addLog('システム',`PDF「${f.name}」を読み込み中...`,'sys');try{const pdf=await pdfjsLib.getDocument({data:await f.arrayBuffer()}).promise;let txt='';for(let i=1;i<=pdf.numPages;i++){const page=await pdf.getPage(i);txt+=(await page.getTextContent()).items.map(x=>x.str).join(' ')+'\n';}window.pdfKnowledge=`\n\n【追加知識：${f.name}】\n${txt.slice(0,14000)}`;addLog('ライト','その資料、頭に入れたぜ！','ai');if(!window.isMuted)window.speak('その資料、頭に入れたぜ！');}catch(err){console.error(err);addLog('システム','PDF読み込み失敗','error');}e.target.value='';});
-async function bootCloud(){try{await Promise.all([loadBrain(),loadLegacy(),loadMemoryFiles(),loadPhotoMemories(),loadTimeline(),loadAvatarConfig(),loadAIProviders()]);updateUI();addLog('システム',`「${sessionDisplayName}」の記憶と「${sessionBandName||'未所属'}」の共有資料を読み込んだぜ。`,'sys');const msg=`おかえり、${sessionDisplayName}。今日もよろしくな！`;addLog('ライト',msg,'ai');if(!window.isMuted)window.speak(msg);}catch(e){console.error(e);addLog('システムエラー','クラウドとの通信に失敗しました。Firebaseの設定を確認してください。','error');}}
+chatInput.addEventListener('keypress',e=>{
+  if(e.key==='Enter')$('send-btn').click();
+});
+
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+
+if(SR){
+  const r=new SR();
+  r.lang='ja-JP';
+  r.continuous=false;
+  r.interimResults=false;
+
+  talkBtn.addEventListener('click',()=>{
+    try{
+      r.start();
+      talkBtn.textContent='👂';
+      talkBtn.style.background='#f1c40f';
+    }catch(e){}
+  });
+
+  r.onresult=e=>{
+    talkBtn.textContent='🔴';
+    talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';
+    chatInput.value=e.results[0][0].transcript;
+    $('send-btn').click();
+  };
+
+  r.onerror=()=>{
+    talkBtn.textContent='🔴';
+    talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';
+  };
+
+  r.onend=()=>{
+    talkBtn.textContent='🔴';
+    talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';
+  };
+}else{
+  talkBtn.style.display='none';
+}
+
+$('photo-btn').addEventListener('click',()=>$('photo-input').click());
+
+$('photo-input').addEventListener('change',async e=>{
+  const files=[...(e.target.files||[])].slice(0,4);
+  if(!files.length)return;
+
+  try{
+    attachedPhotos=[];
+    for(const f of files){
+      attachedPhotos.push(await preparePhoto(f));
+    }
+    renderAttachments();
+  }catch(err){
+    console.error(err);
+    alert(err.message||'写真を読み込めませんでした。');
+  }
+
+  e.target.value='';
+});
+
+$('photo-clear-btn').addEventListener('click',clearAttachments);
+
+function clearAttachments(){
+  attachedPhotos=[];
+  renderAttachments();
+}
+
+async function preparePhoto(file){
+  if(!file||!file.type.startsWith('image/')){
+    throw new Error('画像ファイルを選択してください。');
+  }
+
+  const max=1600;
+
+  return await new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+
+    reader.onload=()=>{
+      const img=new Image();
+
+      img.onload=()=>{
+        let w=img.width;
+        let h=img.height;
+
+        if(Math.max(w,h)>max){
+          const scale=max/Math.max(w,h);
+          w=Math.round(w*scale);
+          h=Math.round(h*scale);
+        }
+
+        const canvas=document.createElement('canvas');
+        canvas.width=w;
+        canvas.height=h;
+
+        const ctx=canvas.getContext('2d');
+        ctx.drawImage(img,0,0,w,h);
+
+        resolve({
+          name:file.name,
+          type:'image/jpeg',
+          dataUrl:canvas.toDataURL('image/jpeg',.82),
+          width:w,
+          height:h
+        });
+      };
+
+      img.onerror=()=>reject(new Error('画像を読み込めませんでした。'));
+      img.src=reader.result;
+    };
+
+    reader.onerror=()=>reject(new Error('画像の読み込みに失敗しました。'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderAttachments(){
+  const box=$('photo-preview');
+  if(!box)return;
+
+  box.innerHTML='';
+
+  if(!attachedPhotos.length){
+    box.style.display='none';
+    return;
+  }
+
+  box.style.display='flex';
+
+  attachedPhotos.forEach((p,i)=>{
+    const wrap=document.createElement('div');
+    wrap.style.position='relative';
+
+    const img=document.createElement('img');
+    img.src=p.dataUrl;
+    img.alt=p.name||`写真${i+1}`;
+    img.style.width='72px';
+    img.style.height='72px';
+    img.style.objectFit='cover';
+    img.style.borderRadius='10px';
+
+    wrap.appendChild(img);
+    box.appendChild(wrap);
+  });
+}
+
+window.isMuted=true;
+
+if($('mute-btn')){
+  $('mute-btn').addEventListener('click',()=>{
+    window.isMuted=!window.isMuted;
+    $('mute-btn').textContent=window.isMuted?'🔇':'🔊';
+  });
+}
+
+window.speechSynthesis?.cancel();
+
+window.speak=function(text){
+  if(window.isMuted||!('speechSynthesis' in window))return;
+
+  try{
+    window.speechSynthesis.cancel();
+
+    const u=new SpeechSynthesisUtterance(String(text||''));
+    u.lang='ja-JP';
+    u.rate=.98;
+    u.pitch=1.05;
+
+    window.speechSynthesis.speak(u);
+  }catch(e){
+    console.debug('speech skipped',e);
+  }
+};
+
+async function bootCloud(){
+  const loaders=[
+    ['長期記憶',loadBrain],
+    ['旧記憶',loadLegacy],
+    ['共有資料',loadMemoryFiles],
+    ['写真資料館',loadPhotoMemories],
+    ['タイムライン',loadTimeline],
+    ['アバター設定',loadAvatarConfig],
+    ['AI設定',loadAIProviders]
+  ];
+
+  let success=0;
+
+  for(const [label,loader] of loaders){
+    try{
+      await loader();
+      success++;
+      console.log(`✓ ${label} loaded`);
+    }catch(e){
+      console.error(`✗ ${label} failed`,e);
+
+      /*
+       * ここが今回の修正版。
+       * 1個の読み込み失敗だけで「Firebase全部死亡」
+       * にしない。
+       */
+      addLog(
+        'システム',
+        `${label}の読み込みに失敗しました：${e?.message||e}`,
+        'error'
+      );
+    }
+  }
+
+  updateUI();
+
+  if(success===0){
+    addLog(
+      'システムエラー',
+      'クラウドデータを読み込めませんでした。Firebaseの設定・通信状態を確認してください。',
+      'error'
+    );
+    return;
+  }
+
+  addLog(
+    'システム',
+    `「${sessionDisplayName}」の記憶と「${sessionBandName||'未所属'}」の共有資料を読み込んだぜ。`,
+    'sys'
+  );
+
+  const msg=`おかえり、${sessionDisplayName}。今日もよろしくな！`;
+  addLog('ライト',msg,'ai');
+
+  if(!window.isMuted)window.speak(msg);
+}
+
+/* =========================
+   カメラ
+========================= */
+
+if($('camera-btn')&&$('camera-input')){
+  $('camera-btn').addEventListener('click',()=>{
+    $('camera-input').click();
+  });
+
+  $('camera-input').addEventListener('change',async e=>{
+    const file=e.target.files?.[0];
+    if(!file)return;
+
+    try{
+      const p=await preparePhoto(file);
+      attachedPhotos=[p];
+      renderAttachments();
+    }catch(err){
+      console.error(err);
+      alert(err.message||'写真を読み込めませんでした。');
+    }
+
+    e.target.value='';
+  });
+}
+
+/* =========================
+   PDF
+========================= */
+
+if($('pdf-input')){
+  $('pdf-input').addEventListener('change',async e=>{
+    const file=e.target.files?.[0];
+    if(!file)return;
+
+    try{
+      if(typeof pdfjsLib==='undefined'){
+        throw new Error('PDF.jsを読み込めませんでした。');
+      }
+
+      const buf=await file.arrayBuffer();
+      const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+
+      let text='';
+
+      for(let i=1;i<=Math.min(pdf.numPages,30);i++){
+        const page=await pdf.getPage(i);
+        const content=await page.getTextContent();
+
+        text+=content.items
+          .map(x=>x.str)
+          .join(' ')+'\n';
+      }
+
+      text=text.trim();
+
+      if(!text){
+        throw new Error('PDFから文字を取得できませんでした。');
+      }
+
+      window.tempPdfMemory={
+        name:file.name,
+        text:text.slice(0,30000),
+        createdAt:now()
+      };
+
+      addLog(
+        'システム',
+        `PDF「${file.name}」を一時記憶として読み込んだぜ。`,
+        'sys'
+      );
+
+      updateUI();
+
+      if(!window.isMuted){
+        speak('その資料、頭に入れたぜ！');
+      }
+
+    }catch(err){
+      console.error(err);
+      addLog('システム','PDF読み込み失敗','error');
+    }
+
+    e.target.value='';
+  });
+}
+
+/* =========================
+   アバター
+========================= */
+
 initAuth();
+
 const container=$('avatar-container');
-const avatarScene=new THREE.Scene();const avatarCamera=new THREE.PerspectiveCamera(32,1,.1,100);avatarCamera.position.set(0,1.35,5.2);
-const avatarRenderer=new THREE.WebGLRenderer({alpha:true,antialias:true});avatarRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));avatarRenderer.setSize(320,360,false);container.appendChild(avatarRenderer.domElement);
-const avatarLight=new THREE.HemisphereLight(0xffffff,0x222222,1.6);avatarScene.add(avatarLight);const avatarKey=new THREE.DirectionalLight(0xff7eb3,1.5);avatarKey.position.set(2,3,4);avatarScene.add(avatarKey);
-const avatarFallback=new THREE.Group();const fm=new THREE.MeshBasicMaterial({color:0xff7eb3,wireframe:true});const fh=new THREE.Mesh(new THREE.IcosahedronGeometry(.75,1),fm);fh.position.y=1.1;avatarFallback.add(fh);const fb=new THREE.Mesh(new THREE.CylinderGeometry(.42,.72,1.5,7,1,true),fm);fb.position.y=-.35;avatarFallback.add(fb);avatarScene.add(avatarFallback);
+
+const avatarScene=new THREE.Scene();
+
+const avatarCamera=
+  new THREE.PerspectiveCamera(32,1,.1,100);
+
+avatarCamera.position.set(0,1.35,5.2);
+
+const avatarRenderer=
+  new THREE.WebGLRenderer({
+    alpha:true,
+    antialias:true
+  });
+
+avatarRenderer.setPixelRatio(
+  Math.min(window.devicePixelRatio||1,2)
+);
+
+avatarRenderer.setSize(320,360,false);
+
+container.appendChild(avatarRenderer.domElement);
+
+const avatarLight=
+  new THREE.HemisphereLight(
+    0xffffff,
+    0x222222,
+    1.6
+  );
+
+avatarScene.add(avatarLight);
+
+const avatarKey=
+  new THREE.DirectionalLight(
+    0xff7eb3,
+    1.5
+  );
+
+avatarKey.position.set(2,3,4);
+avatarScene.add(avatarKey);
+
+const avatarFallback=new THREE.Group();
+
+const fm=
+  new THREE.MeshBasicMaterial({
+    color:0xff7eb3,
+    wireframe:true
+  });
+
+const fh=
+  new THREE.Mesh(
+    new THREE.IcosahedronGeometry(.75,1),
+    fm
+  );
+
+fh.position.y=1.1;
+avatarFallback.add(fh);
+
+const fb=
+  new THREE.Mesh(
+    new THREE.CylinderGeometry(.42,.72,1.5,7,1,true),
+    fm
+  );
+
+fb.position.y=-.35;
+avatarFallback.add(fb);
+
+avatarScene.add(avatarFallback);
 
 async function loadAvatarAsset(url,label){
   if(!url)return null;
+
   try{
-    const {GLTFLoader}=await import('https://esm.sh/three@0.128.0/examples/jsm/loaders/GLTFLoader.js');
+    const {GLTFLoader}=
+      await import(
+        'https://esm.sh/three@0.128.0/examples/jsm/loaders/GLTFLoader.js'
+      );
+
     const loader=new GLTFLoader();
     let loaded=null;
+
     try{
-      const {VRMLoaderPlugin,VRMUtils}=await import('https://esm.sh/@pixiv/three-vrm@1.0.9');
-      loader.register(parser=>new VRMLoaderPlugin(parser));
-      const gltf=await new Promise((res,rej)=>loader.load(url,res,undefined,rej));
+      const {
+        VRMLoaderPlugin,
+        VRMUtils
+      }=
+        await import(
+          'https://esm.sh/@pixiv/three-vrm@1.0.9'
+        );
+
+      loader.register(
+        parser=>new VRMLoaderPlugin(parser)
+      );
+
+      const gltf=
+        await new Promise((res,rej)=>{
+          loader.load(url,res,undefined,rej);
+        });
+
       loaded=gltf.userData?.vrm||gltf;
-      try{if(gltf.scene)VRMUtils.removeUnnecessaryJoints(gltf.scene);}catch(_){}
+
+      try{
+        if(gltf.scene){
+          VRMUtils.removeUnnecessaryJoints(gltf.scene);
+        }
+      }catch(_){}
+
     }catch(_){
-      loaded=await new Promise((res,rej)=>loader.load(url,res,undefined,rej));
+      loaded=
+        await new Promise((res,rej)=>{
+          loader.load(url,res,undefined,rej);
+        });
     }
-    const obj=loaded.scene||loaded.humanoid?.scene||loaded;
-    obj.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
-    obj.rotation.y=Math.PI;obj.visible=false;avatarScene.add(obj);
-    return {raw:loaded,obj};
-  }catch(e){console.error('avatar load failed',label,e);return null;}
-}
-function base64ToBlobUrl(base64,mime){
-  const bin=atob(String(base64||''));const bytes=new Uint8Array(bin.length);
-  for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
-  return URL.createObjectURL(new Blob([bytes],{type:mime||'model/gltf-binary'}));
-}
-async function loadAvatarFile(role){
-  const meta=await getDoc(doc(db,'light_avatar_files',role));
-  if(!meta.exists()||meta.data()?.enabled===false)return '';
-  const s=await getDocs(collection(db,'light_avatar_files',role,'chunks'));
-  const chunks=[];s.forEach(d=>chunks.push({index:Number(d.data()?.index??d.id),data:String(d.data()?.data||'')}));
-  chunks.sort((a,b)=>a.index-b.index);
-  if(!chunks.length)return '';
-  return base64ToBlobUrl(chunks.map(x=>x.data).join(''),meta.data()?.mimeType||'model/gltf-binary');
-}
-async function loadAvatarConfig(){
-  try{
-    const snap=await getDoc(doc(db,'light_avatar_config','main'));
-    if(snap.exists())avatarConfig={...avatarConfig,...(snap.data()||{})};
-    avatarRuntime.mode='light';avatarRuntime.loaded=false;avatarRuntime.lightObject=null;avatarRuntime.otoObject=null;
-    document.body.classList.remove('oto-mode');$('avatar-error').style.display='none';
-    if(!avatarConfig.betaEnabled){document.body.classList.remove('avatar-mode');$('avatar-mode-badge').style.display='none';avatarFallback.visible=true;return;}
-    document.body.classList.add('avatar-mode');$('avatar-mode-badge').textContent='● アバターモード / LIGHT';
-    const lightUrl=await loadAvatarFile('light');
-    if(!lightUrl){$('avatar-error').style.display='block';$('avatar-error').textContent='Lightアバターが未登録です。管理者サイトで後から追加できます。';avatarFallback.visible=true;return;}
-    const light=await loadAvatarAsset(lightUrl,'Light');
-    if(light){avatarRuntime.lightObject=light;light.obj.visible=true;avatarRuntime.loaded=true;avatarFallback.visible=false;}
-    else{avatarFallback.visible=true;$('avatar-error').style.display='block';$('avatar-error').textContent='Lightアバターを読み込めませんでした。';}
-    setTimeout(()=>{try{URL.revokeObjectURL(lightUrl);}catch(_){}},60000);
-    resizeAvatar();
-  }catch(e){console.error(e);$('avatar-error').style.display='block';$('avatar-error').textContent='アバター設定を読み込めませんでした。';}
-}
-function resizeAvatar(){const w=container.clientWidth||320,h=container.clientHeight||360;avatarCamera.aspect=w/h;avatarCamera.updateProjectionMatrix();avatarRenderer.setSize(w,h,false);}
-window.addEventListener('resize',resizeAvatar);
-function showAvatarMode(mode){
-  avatarRuntime.mode=mode;
-  document.body.classList.toggle('oto-mode',mode==='oto');
-  $('avatar-mode-badge').textContent=mode==='oto'?'● アバターモード / OTO':'● アバターモード / LIGHT';
-  if(avatarRuntime.lightObject?.obj)avatarRuntime.lightObject.obj.visible=mode==='light';
-  if(avatarRuntime.otoObject?.obj)avatarRuntime.otoObject.obj.visible=mode==='oto';
-  if(mode==='oto'&&!avatarRuntime.otoObject){
-    loadAvatarFile('oto').then(url=>url?loadAvatarAsset(url,'Oto').then(x=>({x,url})):({x:null,url:''})).then(({x,url})=>{
-      if(x){avatarRuntime.otoObject=x;x.obj.visible=true;if(avatarRuntime.lightObject?.obj)avatarRuntime.lightObject.obj.visible=false;avatarRuntime.loaded=true;}
-      else{addLog('システム','Otoアバターがまだ登録されていません。管理者サイトで後から追加できます。','sys');}
-      if(url)setTimeout(()=>{try{URL.revokeObjectURL(url);}catch(_){}},60000);
-    });
+
+    const obj=loaded.scene||loaded;
+
+    if(!obj){
+      throw new Error(`${label||'アバター'}を読み込めませんでした`);
+    }
+
+    obj.rotation.y=Math.PI;
+
+    return {
+      object:obj,
+      vrm:loaded?.humanoid?loaded:null
+    };
+
+  }catch(e){
+    console.error(`${label||'avatar'} load failed`,e);
+    return null;
   }
 }
-function avatarAnimate(){requestAnimationFrame(avatarAnimate);const t=Date.now()*.001;if(avatarRuntime.loaded){const active=avatarRuntime.mode==='oto'?avatarRuntime.otoObject?.obj:avatarRuntime.lightObject?.obj;if(active){active.position.y=Math.sin(t*1.1)*.015;}}avatarRenderer.render(avatarScene,avatarCamera);}avatarAnimate();resizeAvatar();
-</script></body></html>
+
+let currentAvatarObject=null;
+let currentVRM=null;
+
+async function showAvatarMode(mode){
+  avatarRuntime.mode=mode;
+
+  const url=
+    mode==='oto'
+      ? avatarConfig.otoUrl
+      : avatarConfig.lightUrl;
+
+  if(currentAvatarObject){
+    avatarScene.remove(currentAvatarObject);
+    currentAvatarObject=null;
+    currentVRM=null;
+  }
+
+  const loaded=await loadAvatarAsset(
+    url,
+    mode==='oto'?'Oto':'ライト'
+  );
+
+  if(loaded){
+    currentAvatarObject=loaded.object;
+    currentVRM=loaded.vrm;
+    avatarScene.add(currentAvatarObject);
+    avatarFallback.visible=false;
+  }else{
+    avatarFallback.visible=true;
+  }
+}
+
+function avatarAnimate(){
+  requestAnimationFrame(avatarAnimate);
+
+  const t=performance.now()/1000;
+
+  if(currentAvatarObject){
+    currentAvatarObject.position.y=
+      Math.sin(t*1.5)*.035;
+  }
+
+  if(avatarFallback.visible){
+    avatarFallback.position.y=
+      Math.sin(t*1.5)*.035;
+    avatarFallback.rotation.y=
+      Math.sin(t*.35)*.08;
+  }
+
+  if(currentVRM){
+    try{
+      currentVRM.update(1/60);
+    }catch(_){}
+  }
+
+  avatarRenderer.render(
+    avatarScene,
+    avatarCamera
+  );
+}
+
+avatarAnimate();
+
+window.addEventListener('resize',()=>{
+  const w=container.clientWidth||320;
+  const h=container.clientHeight||360;
+
+  avatarCamera.aspect=w/h;
+  avatarCamera.updateProjectionMatrix();
+
+  avatarRenderer.setSize(w,h,false);
+});
+
+</script>
+</body>
+</html>
