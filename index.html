@@ -249,11 +249,7 @@ function adaptivePlan(text,hasImage){return hasImage?['image']:['normal'];}
 function normalizeTags(a){return [...new Set((Array.isArray(a)?a:[]).map(x=>String(x||'').trim()).filter(Boolean))].slice(0,20);}
 function currentDate(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function detectSituation(text,hasImage=false){const t=String(text||'');const tags=[];if(/ライブ|本番|ステージ|対バン|出演|演奏|転換/.test(t))tags.push('ライブ・本番');if(/リハ|リハーサル|練習|スタジオ/.test(t))tags.push('リハーサル・練習');if(/PA|音響|マイク|ミキサー|モニター|FOH|返し/.test(t))tags.push('PA・音響');if(/ローディ|搬入|搬出|機材運搬|ケーブル/.test(t))tags.push('ローディ・機材');if(/照明|灯体|DMX|明かり/.test(t))tags.push('照明');if(/プロモーター|告知|宣伝|集客|チケット/.test(t))tags.push('プロモーション');if(/トラブル|故障|鳴らない|ハウリング|音が出ない|焦る|困った/.test(t))tags.push('トラブル対応');if(/顧問|幹部|部長|副部長|進行|運営/.test(t))tags.push('部活運営');if(hasImage)tags.push('画像あり');return tags.length?tags.join(' / '):'通常会話';}
-function extractUserConfirmedPersonLabels(text){const t=String(text||'');const labels=[];const patterns=[/この人(?:は|が)[：: ]?([^、。！？
-]{1,40})/g,/名前(?:は|が)[：: ]?([^、。！？
-]{1,40})/g,/この声(?:は|が)[：: ]?([^、。！？
-]{1,40})/g,/担当(?:は|が)[：: ]?([^、。！？
-]{1,40})/g];for(const re of patterns){for(const m of t.matchAll(re)){const v=String(m[1]||'').trim().replace(/(です|だよ|です。|だ。)$/,'').trim();if(v&&v.length<=40)labels.push(v);}}return [...new Set(labels)].slice(0,8);}
+function extractUserConfirmedPersonLabels(text){const t=String(text||'');const labels=[];const patterns=[/この人(?:は|が)[：: ]?([^、。！？]{1,40})/g,/名前(?:は|が)[：: ]?([^、。！？]{1,40})/g,/この声(?:は|が)[：: ]?([^、。！？]{1,40})/g,/担当(?:は|が)[：: ]?([^、。！？]{1,40})/g];for(const re of patterns){for(const m of t.matchAll(re)){const v=String(m[1]||'').trim().replace(/(です|だよ|です。|だ。)$/,'').trim();if(v&&v.length<=40)labels.push(v);}}return [...new Set(labels)].slice(0,8);}
 function explicitMemoryCommand(text){return /覚えて(?:おいて)?|記憶して|記録して|覚えといて/.test(String(text||''));}
 function explicitNoSaveCommand(text){return /覚えないで|保存しないで|記録しないで|覚えさせない/.test(String(text||''));}
 function explicitForgetCommand(text){return /忘れて|忘れろ|記憶から消して|記憶しないで/.test(String(text||''));}
