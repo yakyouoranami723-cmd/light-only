@@ -1,1 +1,1318 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ライト OS ver.mightyX</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+<style>
+body{background:#0b0c10;color:#fff;font-family:'Helvetica Neue',Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;overflow:hidden}
+#main-app{display:none;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;overflow-y:auto;box-sizing:border-box}
+#avatar-container{width:200px;height:200px;margin-bottom:10px}#header-bar{width:90%;max-width:650px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.app-title{font-weight:bold;font-size:16px;color:#ff7eb3;letter-spacing:1px}.app-subtitle{font-size:10px;color:#88c0d0;margin-top:3px;max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon-btn{background:rgba(255,255,255,.1);border:1px solid #ff7eb3;color:#fff;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:13px;transition:all .2s}.icon-btn:hover{background:rgba(255,126,179,.3)}
+#chat-log{width:90%;max-width:650px;height:240px;background:rgba(20,20,30,.85);padding:15px;border-radius:16px;overflow-y:auto;margin-bottom:15px;border:1px solid rgba(255,126,179,.4);box-shadow:0 0 25px rgba(255,126,179,.15);font-size:15px;line-height:1.6;box-sizing:border-box}
+.msg-sys{color:#88c0d0;font-size:13px}.msg-user{color:#a3be8c;margin-top:6px}.msg-ai{color:#b48ead;margin-top:6px}.msg-error{color:#bf616a;font-weight:bold;background:rgba(191,97,106,.1);padding:5px;border-radius:5px;margin-top:6px}
+.controls{display:flex;gap:10px;align-items:center;width:90%;max-width:650px}button,input[type=text],select,textarea{padding:12px 18px;font-size:14px;border-radius:30px;border:none;outline:none;transition:all .2s ease;box-sizing:border-box}button{cursor:pointer;font-weight:bold}button:hover{transform:translateY(-2px)}button:active{transform:translateY(1px)}button:disabled{opacity:.5;cursor:not-allowed;transform:none}
+#talk-btn{background:linear-gradient(135deg,#ff758c,#ff7eb3);color:white;box-shadow:0 4px 15px rgba(255,117,140,.4);flex-shrink:0}#chat-input{flex-grow:1;border:1px solid #ff7eb3;background:rgba(0,0,0,.6);color:#fff}#send-btn{background:linear-gradient(135deg,#4facfe,#00f2fe);color:white;box-shadow:0 4px 15px rgba(79,172,254,.4);flex-shrink:0}
+#photo-btn{background:rgba(255,255,255,.07);border-color:#88c0d0;color:#fff;flex-shrink:0;padding:12px 14px}#attach-bar{width:90%;max-width:650px;margin-top:0;margin-bottom:10px;padding:10px;background:rgba(20,20,30,.92);border:1px solid rgba(79,172,254,.45);border-radius:12px;display:none;box-sizing:border-box}#attach-bar.visible{display:block}
+#attach-thumbs{display:flex;gap:8px;flex-wrap:wrap;align-items:center}#attach-thumbs img{width:58px;height:58px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,126,179,.45)}#attach-info{font-size:11px;color:#ccc;margin-top:7px;line-height:1.5}
+#attach-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px}.mini-btn{padding:8px 10px;border-radius:8px;font-size:12px;background:rgba(255,255,255,.05);color:#fff;border:1px solid rgba(255,255,255,.18)}
+.image-chat-card{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}.image-chat-card img{max-width:180px;max-height:140px;border-radius:8px;display:block}
+#settings-modal{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,.75);backdrop-filter:blur(5px);justify-content:center;align-items:center;z-index:1000}.modal-content{background:#161823;border:1px solid #ff7eb3;border-radius:16px;width:85%;max-width:420px;padding:20px;box-shadow:0 0 30px rgba(255,126,179,.3);max-height:90vh;overflow-y:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:10px;margin-bottom:15px}.modal-title{font-size:16px;font-weight:bold;color:#ff7eb3}.close-btn{background:none;border:none;color:#aaa;font-size:20px;cursor:pointer;padding:0}.setting-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;font-size:14px}.modal-btn{width:100%;background:rgba(255,255,255,.05);border:1px solid #4facfe;color:#4facfe;padding:10px;border-radius:8px;margin-top:8px;font-size:13px}.section-title{font-size:12px;color:#88c0d0;margin-top:20px;margin-bottom:5px;border-bottom:1px dashed #88c0d0;padding-bottom:3px}
+.sync-box{background:rgba(241,196,15,.1);border:1px solid #f1c40f;padding:10px;border-radius:8px;margin-bottom:10px}#sync-id-input{width:100%;box-sizing:border-box;background:rgba(0,0,0,.5);color:#f1c40f;border:1px solid #f1c40f;text-align:center;font-weight:bold;letter-spacing:1px;border-radius:5px;padding:8px;margin-bottom:8px}.sync-btn{background:#f1c40f;color:#000;width:100%;border-radius:5px;padding:8px;border:none;font-weight:bold;cursor:pointer}
+#login-screen{position:absolute;top:0;left:0;width:100vw;height:100vh;background:#0b0c10;z-index:2000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}.login-title{color:#ff7eb3;font-size:24px;font-weight:bold;margin-bottom:10px;letter-spacing:2px}.login-desc{color:#ccc;font-size:14px;margin-bottom:30px}#login-id-input{width:80%;max-width:330px;background:rgba(255,255,255,.1);color:#fff;border:2px solid #ff7eb3;text-align:center;font-weight:bold;letter-spacing:1px;padding:15px;border-radius:30px;margin-bottom:20px;font-size:16px}#execute-login-btn{background:linear-gradient(135deg,#ff758c,#ff7eb3);color:white;width:80%;max-width:330px;padding:15px;border-radius:30px;font-size:16px;margin-bottom:10px;box-shadow:0 4px 15px rgba(255,117,140,.4)}.login-warning{width:80%;max-width:330px;box-sizing:border-box;margin-top:8px;padding:10px 12px;border:1px solid rgba(241,196,15,.65);background:rgba(241,196,15,.08);color:#f1c40f;border-radius:10px;font-size:11px;line-height:1.6;text-align:left}.status-note{color:#aaa;font-size:11px;margin-top:8px;line-height:1.5}
+@media(max-width:560px){.controls{gap:7px}#talk-btn{padding:12px 13px}.app-subtitle{max-width:190px}}
+#avatar-container.avatar-beta{width:320px;height:360px;margin-bottom:8px;position:relative;border-radius:20px;background:radial-gradient(circle at 50% 35%,rgba(255,126,179,.10),rgba(0,0,0,0) 62%);}
+#avatar-mode-badge{display:none;color:#ff7eb3;font-size:12px;margin:0 0 8px;letter-spacing:.5px}
+body.avatar-mode #avatar-mode-badge{display:block}
+body.avatar-mode #chat-log,body.avatar-mode #attach-bar,body.avatar-mode #photo-btn,body.avatar-mode #chat-input,body.avatar-mode #send-btn{display:none}
+body.avatar-mode .controls{justify-content:center}
+body.avatar-mode #talk-btn{width:92px;height:92px;border-radius:50%;font-size:30px}
+body.voice-mode:not(.avatar-mode) #chat-log,body.voice-mode:not(.avatar-mode) #attach-bar,body.voice-mode:not(.avatar-mode) #photo-btn,body.voice-mode:not(.avatar-mode) #chat-input,body.voice-mode:not(.avatar-mode) #send-btn{display:none}body.voice-mode:not(.avatar-mode) .controls{justify-content:center}body.voice-mode:not(.avatar-mode) #talk-btn{width:92px;height:92px;border-radius:50%;font-size:30px}
+#avatar-error{display:none;color:#bf616a;font-size:12px;max-width:320px;text-align:center;margin:5px auto 10px}
+.login-secondary{background:rgba(255,255,255,.06);color:#ddd;border:1px solid rgba(255,255,255,.16);width:80%;max-width:330px;padding:11px;border-radius:30px;margin-top:4px}.login-help{color:#999;font-size:11px;max-width:330px;line-height:1.55;margin-top:7px}.profile-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(6px);justify-content:center;align-items:center;z-index:2500}.profile-card{width:88%;max-width:420px;background:#161823;border:1px solid #ff7eb3;border-radius:16px;padding:20px;box-sizing:border-box}.profile-card h3{color:#ff7eb3;margin:0 0 14px}.profile-card input{width:100%;margin-top:7px;background:rgba(255,255,255,.08);border:1px solid rgba(255,126,179,.45);color:#fff;padding:12px;border-radius:10px}.profile-card .field{margin:12px 0}.profile-card .small{color:#aaa;font-size:11px;line-height:1.5}.profile-actions{display:flex;gap:8px;margin-top:15px}.profile-actions button{flex:1;border-radius:10px}.auth-error{color:#bf616a;font-size:12px;margin-top:8px;min-height:18px}
 
+/* ===== Mobile / touch optimization ===== */
+html,body{width:100%;max-width:100%;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+button,input,textarea,select{touch-action:manipulation}
+@media (max-width:700px){
+  body{min-height:100dvh;height:100dvh;overflow:hidden}
+  #main-app{height:100dvh;min-height:0;justify-content:flex-start;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+  #login-screen{height:100dvh;padding:max(18px,env(safe-area-inset-top)) 14px max(18px,env(safe-area-inset-bottom));box-sizing:border-box;overflow:auto}
+  .login-title{font-size:22px}.login-desc{font-size:13px;margin-bottom:22px}
+  #login-id-input,#execute-login-btn,.login-secondary,.login-warning,.login-help{width:min(100%,360px)}
+  #header-bar{width:calc(100% - 24px);margin:8px 0 6px;gap:8px}
+  .app-title{font-size:15px}.app-subtitle{max-width:52vw}
+  #avatar-container{width:min(46vw,200px);height:min(46vw,200px);margin-bottom:4px}
+  #avatar-container.avatar-beta{width:min(72vw,320px);height:min(78vw,360px);max-height:43vh;margin-bottom:4px}
+  #avatar-mode-badge{font-size:11px;margin-bottom:5px}
+  #chat-log{width:calc(100% - 20px);height:min(34dvh,270px);min-height:120px;padding:11px;margin-bottom:8px;font-size:14px}
+  #attach-bar{width:calc(100% - 20px);margin-bottom:7px;padding:8px}
+  .controls{width:calc(100% - 20px);max-width:none;gap:6px;align-items:stretch;flex-wrap:nowrap}
+  .controls button{padding:11px 10px;min-height:44px}
+  #talk-btn{min-width:48px}.controls #chat-input{min-width:0;width:auto;flex:1;padding:11px 13px;font-size:16px}
+  #send-btn{min-width:58px}
+  #photo-btn{min-width:46px}
+  .image-chat-card img{max-width:min(45vw,180px);max-height:130px}
+  .modal-content{width:calc(100% - 24px);max-width:430px;max-height:calc(100dvh - 24px);padding:14px}
+  .setting-row{gap:10px;align-items:flex-start}.setting-row>span{min-width:0}
+  .profile-card{width:calc(100% - 24px);max-width:430px;max-height:calc(100dvh - 24px);overflow:auto;padding:16px}
+  .profile-actions{position:sticky;bottom:0;background:#161823;padding-top:8px}
+  #camera-modal{padding:10px!important}.camera-modal .modal-content{width:100%}
+  #camera-video{max-height:55dvh!important}
+}
+@media (max-width:430px){
+  #header-bar{width:calc(100% - 16px)}
+  #chat-log,#attach-bar,.controls{width:calc(100% - 16px)}
+  .app-subtitle{display:none}
+  #avatar-container.avatar-beta{width:70vw;height:38vh}
+  body.avatar-mode #talk-btn,body.voice-mode:not(.avatar-mode) #talk-btn{width:78px;height:78px}
+  .controls button{padding-left:8px;padding-right:8px}
+  #photo-btn{display:none}
+}
+</style></head><body>
+<div id="login-screen"><div class="login-title">✨ ライト OS</div><div class="login-desc">専用の合言葉でログインしてね！</div><input id="login-id-input" placeholder="例：lx-8fK3..." autocomplete="off" autocapitalize="none" spellcheck="false"><button id="execute-login-btn">起動する</button><button id="generate-passphrase-btn" class="login-secondary">自分専用の合言葉を作る</button><div class="status-note" style="max-width:330px">非課金版はFirebase Authenticationで本人確認します。<br>合言葉は端末間で共有するための秘密情報なので、他人に見せないでください。</div><div class="login-help">初回登録コードが設定されている場合は必要です。既存の合言葉の移行にも対応します。</div><div id="auth-error" class="auth-error"></div></div>
+<div id="profile-modal" class="profile-modal"><div class="profile-card"><h3>👤 プロフィール登録</h3><div class="small">名前と誕生日は合言葉とは別に保存します。バンドを変更しても個人記憶は残ります。</div><div class="field"><div class="small">名前</div><input id="profile-name" maxlength="60" placeholder="例：りゅうせい"></div><div class="field"><div class="small">誕生日</div><input id="profile-birthday" maxlength="5" placeholder="MM-DD" inputmode="numeric"></div><div class="field"><div class="small">現在のバンド名</div><input id="profile-band" maxlength="60" placeholder="例：Why's"></div><div class="field" id="join-code-field"><div class="small">初回登録コード</div><input id="profile-join-code" maxlength="120" placeholder="管理者から受け取ったコード" autocomplete="off"></div><div class="profile-actions"><button id="profile-cancel-btn">キャンセル</button><button id="profile-save-btn" class="primary">登録して起動</button></div><div id="profile-error" class="auth-error"></div></div></div>
+<div id="main-app"><div id="header-bar"><div><div class="app-title">✨ ライト</div><div class="app-subtitle" id="identity-label">未ログイン</div></div><button id="open-settings-btn" class="icon-btn">⚙️ 設定</button></div><div id="avatar-mode-badge">● アバターモード / LIGHT</div><div id="avatar-container"></div><div id="avatar-error"></div><div id="chat-log"><div class="msg-sys"><strong>システム:</strong> クラウド連携待機中...</div></div><div id="attach-bar"><div id="attach-thumbs"></div><div id="attach-info">写真はチャットと一緒に送れます。ライトが文脈から説明・タグ・分類を自動整理して資料館に記録します。</div><div id="attach-actions"><span style="font-size:12px;color:#ccc">写真はライトが自動で整理・記録します。保存したくないときは「保存しないで」と一言つけてね。</span><button id="photo-clear-btn" class="mini-btn">写真を外す</button></div></div><div class="controls"><button id="talk-btn">🔴</button><button id="photo-btn" class="icon-btn" title="写真を添付">📷</button><input id="photo-input" type="file" accept="image/jpeg,image/png,image/webp" multiple style="display:none"><input type="text" id="chat-input" placeholder="ライトに話しかける..."><button id="send-btn">送信</button></div></div>
+<div id="settings-modal"><div class="modal-content"><div class="modal-header"><div class="modal-title">⚙️ システム設定</div><button class="close-btn" id="close-settings-btn">✖</button></div><div class="setting-row"><span>ボイス再生（音声）</span><button id="mute-toggle-btn" class="icon-btn">🔇 音声 OFF</button></div><div class="setting-row"><span>チャット / 音声モード</span><button id="voice-mode-toggle-btn" class="icon-btn">💬 チャット</button></div><div class="section-title">👤 プロフィール</div><div class="sync-box"><div style="font-size:11px;color:#ccc;margin-bottom:8px">現在のプロフィール</div><div id="profile-summary" class="small" style="line-height:1.7;margin-bottom:8px">未読み込み</div><button id="profile-edit-btn" class="modal-btn" style="margin-top:0">プロフィールを編集</button></div><div class="section-title">☁️ クラウド同期</div><div class="sync-box"><div style="font-size:11px;color:#ccc;margin-bottom:8px">現在の合言葉</div><input id="sync-id-input" readonly><button id="logout-btn" class="sync-btn" style="margin-top:5px;background:#bf616a;color:#fff">別のユーザーでログインし直す</button></div><div class="section-title">【現在の学習ステータス】</div><div class="setting-row" style="flex-direction:column;align-items:flex-start;margin-bottom:5px"><span id="brain-status-text" style="font-size:13px">個人記憶: 0件 | 共有記憶: 0件 | 写真: 0件 | 長期記憶: なし</span></div><button id="view-brain-btn" class="modal-btn">🧠 記憶データの中身を確認 / 編集</button><div class="section-title">【拡張知識】</div><button id="pdf-btn" class="modal-btn">📄 説明書・資料(PDF)を一時記憶させる</button><button id="camera-btn" class="modal-btn">📷 カメラでライトに見せる</button><input type="file" id="pdf-upload" accept="application/pdf" style="display:none"></div></div>
+<div id="camera-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:4000;align-items:center;justify-content:center;padding:18px"><div class="modal-content" style="width:min(520px,94%);max-width:520px"><div class="modal-header"><div class="modal-title">📷 カメラ</div><button class="close-btn" id="camera-close-btn">✖</button></div><video id="camera-video" autoplay playsinline muted style="width:100%;max-height:60vh;background:#05060a;border-radius:12px;object-fit:cover"></video><canvas id="camera-canvas" style="display:none"></canvas><div id="camera-message" class="small" style="margin-top:8px">カメラの許可が必要です。</div><div class="row" style="margin-top:10px"><button id="camera-capture-btn" class="primary">撮影して添付</button><button id="camera-cancel-btn">閉じる</button></div></div></div>
+<script type="module">
+
+
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore,doc,getDoc,setDoc,addDoc,collection,getDocs,updateDoc,deleteDoc,query,where,writeBatch,limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getStorage,ref as storageRef,uploadBytes,deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+import { getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+const firebaseConfig={
+  apiKey:"AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
+  authDomain:"light-65413.firebaseapp.com",
+  projectId:"light-65413",
+  storageBucket:"light-65413.firebasestorage.app",
+  messagingSenderId:"116819261632",
+  appId:"1:116819261632:web:9d9144aa125a55371d5525"
+};
+const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app),storage=getStorage(app);
+const ARCHIVE_CATEGORIES={
+  personal:'個人',band:'バンド',club:'軽音楽部',live_event:'ライブでの出来事',live_staff:'ライブスタッフ',staff_shared:'スタッフ共有事項',daily:'日常'
+};
+const STAFF_ROLES={pa:'PA',roady:'ローディ',promoter:'プロモーター',lighting:'照明'};
+window.isMuted=true;window.authFlowBusy=false;window.selfReflections=[];window.userFacts=[];window.pdfKnowledge='';window.pdfKnowledgeAt=0;window.pdfKnowledgeName='';window.conversationHistory=[];window.memoryFiles=[];window.photoMemories=[];window.timelineEntries=[];window.lightBrain={summary:'',recentHistory:[]};window.apiConfig={modelMode:'server'};window.pendingChangeRequests=[];window.memorySuppressions=[];window.pendingChangeAwaitingAnswer=null;window.pendingChangePromptedAt=0;window.pendingChangePromptRequestId='';window.operationMode='automatic';window.forcedModeOverride=null;window.autoMode='light';window.recentConversationImages=[];window.lastSuppressedMemory=null;window.lastSavedMemory=null;window.lastSuppressionId='';window.lastMemorySourceText='';window.lastMeaningfulUserText='';window.lastSavedMemoryAt=0;let apiConfigLoaded=false;let brainSaveQueue=Promise.resolve();
+let sessionUserKey='',sessionUserName='',sessionDisplayName='',sessionBirthday='',sessionBandId='',sessionBandName='';let attachedPhotos=[];let pendingProfile={};let authReady=false;let booting=false;let voiceMode=localStorage.getItem('light_voice_mode')==='1';
+let avatarConfig={betaEnabled:false,liveDayEnabled:false,lightUrl:'',otoUrl:''};let avatarRuntime={vrm:null,lightObject:null,otoObject:null,mode:'light',loaded:false};
+const $=id=>document.getElementById(id),chatLog=$('chat-log'),chatInput=$('chat-input'),sendBtn=$('send-btn'),talkBtn=$('talk-btn'),settingsModal=$('settings-modal'),loginScreen=$('login-screen'),mainApp=$('main-app');
+const now=()=>Date.now(), esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s])); const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function canonical(v){return String(v||'').trim().toLowerCase();}
+function romanToKatakana(input){let s=String(input||'').toLowerCase().replace(/[^a-z]/g,'');if(!s)return '';const overrides={ryusei:'リュウセイ',ryuusei:'リュウセイ',souta:'ソウタ',shota:'ショウタ',shouta:'ショウタ',yuuki:'ユウキ',yuuta:'ユウタ',yuya:'ユウヤ',kouki:'コウキ',kouya:'コウヤ',kouta:'コウタ',yuto:'ユウト',yuto:'ユウト',haruto:'ハルト',kaito:'カイト',ren:'レン',rin:'リン',yuna:'ユナ',hina:'ヒナ'};if(overrides[s])return overrides[s];const map={rya:'リャ',ryu:'リュウ',ryo:'リョ',kya:'キャ',kyu:'キュ',kyo:'キョ',gya:'ギャ',gyu:'ギュ',gyo:'ギョ',sha:'シャ',shu:'シュ',she:'シェ',sho:'ショ',cha:'チャ',chu:'チュ',che:'チェ',cho:'チョ',nya:'ニャ',nyu:'ニュ',nyo:'ニョ',hya:'ヒャ',hyu:'ヒュ',hyo:'ヒョ',bya:'ビャ',byu:'ビュ',byo:'ビョ',pya:'ピャ',pyu:'ピュ',pyo:'ピョ',mya:'ミャ',myu:'ミュ',myo:'ミョ',fya:'フャ',fyu:'フュ',fyo:'フョ',fa:'ファ',fi:'フィ',fe:'フェ',fo:'フォ',va:'ヴァ',vi:'ヴィ',vu:'ヴ',ve:'ヴェ',vo:'ヴォ',shi:'シ',chi:'チ',tsu:'ツ',ji:'ジ',fu:'フ',kwa:'クァ',kwi:'クィ',kwe:'クェ',kwo:'クォ',gwa:'グァ',gwi:'グィ',gwe:'グェ',gwo:'グォ',we:'ウェ',wi:'ウィ',wo:'ウォ',ye:'イェ',aa:'アー',ii:'イー',uu:'ウー',ee:'エー',oo:'オー',ou:'オウ',ei:'エイ',ka:'カ',ki:'キ',ku:'ク',ke:'ケ',ko:'コ',ga:'ガ',gi:'ギ',gu:'グ',ge:'ゲ',go:'ゴ',sa:'サ',si:'シ',su:'ス',se:'セ',so:'ソ',za:'ザ',zi:'ジ',zu:'ズ',ze:'ゼ',zo:'ゾ',ta:'タ',ti:'チ',tu:'ツ',te:'テ',to:'ト',da:'ダ',di:'ヂ',du:'ヅ',de:'デ',do:'ド',na:'ナ',ni:'ニ',nu:'ヌ',ne:'ネ',no:'ノ',ha:'ハ',hi:'ヒ',he:'ヘ',ho:'ホ',ba:'バ',bi:'ビ',bu:'ブ',be:'ベ',bo:'ボ',pa:'パ',pi:'ピ',pu:'プ',pe:'ペ',po:'ポ',ma:'マ',mi:'ミ',mu:'ム',me:'メ',mo:'モ',ya:'ヤ',yu:'ユ',yo:'ヨ',ra:'ラ',ri:'リ',ru:'ル',re:'レ',ro:'ロ',wa:'ワ',n:'ン'};const keys=Object.keys(map).sort((a,b)=>b.length-a.length);let out='',i=0;while(i<s.length){if(i+1<s.length&&s[i]===s[i+1]&&/[bcdfghjklmpqrstvwxyz]/.test(s[i])&&s[i]!=='n'){out+='ッ';i++;continue}if(s[i]==='n'&&(i===s.length-1||!/[aiueoy]/.test(s[i+1]))){out+='ン';i++;continue}let found='';for(const k of keys){if(s.startsWith(k,i)){found=k;break}}if(found){out+=map[found];i+=found.length}else{i++;}}return out||String(input||'');}
+function validPassphrase(raw){const v=String(raw||'').trim();return v.length>=12&&v.length<=128&&!/[\0-\x1F\/\\]/.test(v);}
+function normalizeBirthday(v){const s=String(v||'').trim(),m=s.match(/^(\d{2})-(\d{2})$/);if(!m)return '';const mo=Number(m[1]),d=Number(m[2]);return mo>=1&&mo<=12&&d>=1&&d<=31?s:'';}
+function setAuthMessage(msg){$('auth-error').textContent=String(msg||'');}
+function setProfileMessage(msg){$('profile-error').textContent=String(msg||'');}
+let profileModalMode='register';
+function showProfileModal(profile={},needsJoin=true,mode=''){pendingProfile=profile||{};profileModalMode=mode||(needsJoin?'register':'edit');$('profile-name').value=profile.name||profile.displayName||'';$('profile-birthday').value=profile.birthday||'';$('profile-band').value=profile.bandName||'';$('profile-join-code').value='';$('join-code-field').style.display=needsJoin?'block':'none';$('profile-save-btn').textContent=profileModalMode==='edit'?'変更を申請':(profileModalMode==='complete'?'登録を完了':'登録して起動');setProfileMessage('');$('profile-modal').style.display='flex';}
+function hideProfileModal(){$('profile-modal').style.display='none';}
+function generatePassphrase(){const bytes=new Uint8Array(18);crypto.getRandomValues(bytes);let s='';for(const b of bytes)s+=b.toString(36).padStart(2,'0');return `lx-${s.slice(0,22)}`;}
+function profileDisplayName(profile){return String(profile?.name||profile?.displayName||'ユーザー').trim()||'ユーザー';}
+function applyProfile(profile){sessionUserKey=String(profile.userKey||profile.credentialKey||'');sessionUserName=profile.username||profile.name||'';sessionDisplayName=profileDisplayName(profile);sessionBirthday=profile.birthday||'';sessionBandId=String(profile.bandId||'');sessionBandName=String(profile.bandName||'');$('sync-id-input').value=sessionUserKey;$('identity-label').textContent=`${sessionDisplayName} / ${sessionBandName||'未所属'}`;if($('profile-summary'))$('profile-summary').innerHTML=`名前：${esc(sessionDisplayName)}<br>誕生日：${esc(sessionBirthday||'未登録')}<br>現在のバンド：${esc(sessionBandName||'未所属')}`;}
+function personIndexDocId(userKey){return String(userKey||'').replace(/[\/\0-\x1F]/g,'_').slice(0,120);}
+async function writePersonIndexBatch(batch,profile){
+  const key=String(profile?.userKey||profile?.credentialKey||sessionUserKey||'').trim();
+  const uid=String(profile?.authUid||auth.currentUser?.uid||'').trim();
+  if(!key||!uid)return;
+  batch.set(doc(db,'light_people_index',personIndexDocId(key)),{userKey:key,authUid:uid,name:String(profile.name||profile.displayName||'').slice(0,80),normalizedName:canonical(profile.name||profile.displayName||''),bandId:String(profile.bandId||''),bandName:String(profile.bandName||'').slice(0,100),role:String(profile.role||'').slice(0,80),visibility:'band',updatedAt:now()},{merge:true});
+}
+async function loadPeopleIndex(){
+  window.peopleIndex=[];
+  if(!auth.currentUser?.uid||!sessionBandId)return;
+  try{
+    const s=await getDocs(query(collection(db,'light_people_index'),where('bandId','==',sessionBandId),limit(120)));
+    window.peopleIndex=s.docs.map(d=>({id:d.id,...(d.data()||{})})).filter(x=>x.authUid&&x.name);
+  }catch(e){window.peopleIndex=[];void mx4LogError(e,'people-index-load');}
+}
+function rankedPeopleInText(text){
+  const q=canonical(text);if(!q||!window.peopleIndex?.length)return [];
+  return window.peopleIndex.map(p=>{const n=canonical(p.name||'');let score=0;if(n&&q.includes(n))score+=8;for(const t of mx4Terms(text)){if(n&&n===t)score+=5;if(n&&t.includes(n))score+=2;}if(p.userKey===sessionUserKey)score+=1;return{p,score};}).filter(x=>x.score>=5).sort((a,b)=>b.score-a.score).slice(0,4).map(x=>x.p);
+}
+function buildPersonContext(text){
+  const people=rankedPeopleInText(text);if(!people.length)return '';
+  let out='\n\n【関連する人物情報】\n';
+  for(const p of people)out+=`userKey=${p.userKey} | 名前=${p.name} | band=${p.bandName||''} | role=${p.role||'未登録'}\n`;
+  return out;
+}
+
+function safeBandId(name){const raw=canonical(name).replace(/[^a-z0-9ぁ-んァ-ヶ一-龠_-]+/gi,'-').replace(/^-+|-+$/g,'').slice(0,70);return raw||('band-'+Date.now().toString(36));}
+function textFromParts(parts){if(Array.isArray(parts))return parts.map(x=>typeof x==='string'?x:String(x?.text||'')).filter(Boolean).join('\n');if(typeof parts==='string')return parts;return String(parts?.text||'');}
+function normalizeHistory(history){if(!Array.isArray(history))return [];return history.map(x=>{const role=x?.role==='assistant'?'model':(x?.role==='model'?'model':'user');const text=textFromParts(x?.parts??x?.text??'');const images=Array.isArray(x?.images)?x.images.slice(0,2):[];return {role,parts:[{text}],...(images.length?{images}: {})};}).filter(x=>String(x.parts?.[0]?.text||'').trim()||x.images?.length);}
+let brainSaveTimer=null;function queueBrainSave(){clearTimeout(brainSaveTimer);brainSaveTimer=setTimeout(()=>saveBrain().catch(e=>console.debug('background brain save skipped',e)),1200);}
+async function sha256Hex(value){
+  const data=new TextEncoder().encode(String(value||''));
+  const hash=await crypto.subtle.digest('SHA-256',data);
+  return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function authEmailForPassphrase(passphrase){
+  const h=await sha256Hex(passphrase);
+  return `student-${h}@light-65413.firebaseapp.com`;
+}
+async function checkRegistrationCode(input){
+  const snap=await getDoc(doc(db,'light_public_settings','registration'));
+  if(!snap.exists()||snap.data()?.enabled!==true||!snap.data()?.codeHash)return true;
+  const hash=await sha256Hex(String(input||'').trim());
+  return hash===String(snap.data().codeHash||'');
+}
+function friendlyAuthError(e){
+  const code=String(e?.code||'');
+  if(code.includes('auth/invalid-credential')||code.includes('auth/wrong-password')||code.includes('auth/user-not-found')) return '合言葉が違うか、まだ登録されていません。';
+  if(code.includes('auth/email-already-in-use')) return 'この合言葉はすでに登録されています。';
+  if(code.includes('auth/weak-password')) return '合言葉が弱すぎます。12文字以上で作ってください。';
+  if(code.includes('auth/operation-not-allowed')) return 'FirebaseのAuthenticationで「メール/パスワード」を有効にしてください。';
+  return e?.message||'認証に失敗しました。';
+}
+
+async function startWithPassphrase(){
+  const passphrase=$('login-id-input').value.trim();
+  if(!validPassphrase(passphrase)){setAuthMessage('合言葉は12〜128文字で入力してください。');return;}
+  const b=$('execute-login-btn');b.disabled=true;window.authFlowBusy=true;
+  try{
+    const ok=await authLogin(passphrase);
+    if(ok)await resetAndBoot(passphrase);
+  }catch(e){console.error(e);setAuthMessage(friendlyAuthError(e));}
+  finally{window.authFlowBusy=false;b.disabled=false;}
+}
+$('execute-login-btn').addEventListener('click',startWithPassphrase);
+$('login-id-input').addEventListener('keypress',e=>{if(e.key==='Enter')startWithPassphrase();});
+$('generate-passphrase-btn').addEventListener('click',()=>{
+  const p=generatePassphrase();
+  $('login-id-input').value=p;
+  alert(`専用の合言葉を作りました。\n\n【 ${p} 】\n\n他の端末でも同じ合言葉を使えます。忘れない場所に保管してください。\n\n初回登録コードが設定されている場合は、それも必要です。`);
+  showProfileModal({},true,'register');
+});
+$('profile-cancel-btn').addEventListener('click',()=>{hideProfileModal();setAuthMessage('');});
+$('profile-edit-btn').addEventListener('click',()=>{showProfileModal({name:sessionDisplayName,birthday:sessionBirthday,bandName:sessionBandName},false);});
+$('profile-save-btn').addEventListener('click',async()=>{
+  const btn=$('profile-save-btn');btn.disabled=true;setProfileMessage('保存中...');
+  try{
+    if(profileModalMode==='register') await authRegister(String($('login-id-input').value||pendingProfile.userKey||'').trim());
+    else await completeProfile();
+    await resetAndBoot(sessionUserKey || String($('login-id-input').value||pendingProfile.userKey||'').trim());
+  }catch(e){console.error(e);setProfileMessage(friendlyAuthError(e));}
+  finally{btn.disabled=false;}
+});
+async function resetAndBoot(explicitKey=''){
+  if(!auth.currentUser||booting)return false;
+  booting=true;
+  try{
+    const ok=await loadCurrentProfile(explicitKey);if(!ok)return false;
+    loginScreen.style.display='none';mainApp.style.display='flex';resetState();await bootCloud();return true;
+  }finally{booting=false;}
+}
+function applyVoiceMode(){document.body.classList.toggle('voice-mode',voiceMode);const b=$('voice-mode-toggle-btn');if(b)b.textContent=voiceMode?'🎙️ 音声':'💬 チャット';}applyVoiceMode();function resetState(){window.selfReflections=[];window.userFacts=[];window.pdfKnowledge='';window.conversationHistory=[];window.memoryFiles=[];window.photoMemories=[];window.timelineEntries=[];window.lightBrain={summary:'',recentHistory:[]};window.recentConversationImages=[];window.pendingMemorySave=null;window.pendingChangeAwaitingAnswer=null;window.lastSuppressedMemory=null;window.lastSavedMemory=null;window.lastSuppressionId='';window.lastMemorySourceText='';window.lastMeaningfulUserText='';window.lastSavedMemoryAt=0;attachedPhotos=[];renderAttachments();chatLog.innerHTML='<div class="msg-sys"><strong>システム:</strong> クラウド連携中...</div>';updateUI();}
+function addLog(name,text,type='user',images=[]){
+  const div=document.createElement('div');div.className=type==='sys'?'msg-sys':type==='ai'?'msg-ai':type==='error'?'msg-error':'msg-user';
+  div.innerHTML=`<strong>${esc(name)}:</strong> ${esc(text).replace(/\n/g,'<br>')}`;
+  if(images?.length){const wrap=document.createElement('div');wrap.className='image-chat-card';images.forEach(x=>{const im=document.createElement('img');im.src=x.dataUrl||x;im.alt='添付画像';wrap.appendChild(im);});div.appendChild(wrap);}
+  chatLog.appendChild(div);chatLog.scrollTop=chatLog.scrollHeight;
+}
+async function initAuth(){
+  onAuthStateChanged(auth,async user=>{
+    if(!user){authReady=true;loginScreen.style.display='flex';mainApp.style.display='none';return;}
+    if(window.authFlowBusy||booting)return;
+    const remembered=localStorage.getItem('light_last_login')||'';
+    if(!remembered){await signOut(auth).catch(()=>{});authReady=true;return;}
+    try{
+      const result=await loadCurrentProfile(remembered);
+      if(result){loginScreen.style.display='none';mainApp.style.display='flex';resetState();await bootCloud();}
+      else if(auth.currentUser&&remembered){showProfileModal({},true);}
+    }catch(e){console.error(e);await signOut(auth).catch(()=>{});localStorage.removeItem('light_last_login');setAuthMessage('認証情報の読み込みに失敗しました。もう一度ログインしてください。');}
+    finally{authReady=true;}
+  });
+}
+function updateUI(){const personal=window.memoryFiles.filter(m=>m.enabled!==false&&m.scopeType==='personal'&&(m.scopeId===String(auth.currentUser?.uid||'')||m.scopeId===sessionUserKey)).length,shared=window.memoryFiles.filter(m=>m.enabled!==false&&m.scopeType!=='personal'&&applicableScope(m)).length;const brain=window.lightBrain.summary?'あり':'なし';$('brain-status-text').textContent=`個人記憶: ${personal}件 | 共有記憶: ${shared}件 | 写真: ${window.photoMemories.length}件 | 長期記憶: ${brain}`;}
+function applicableScope(m){const st=String(m.scopeType||''),sid=String(m.scopeId||'');if(st==='club')return true;if(st==='band')return sid===sessionBandId;if(st==='personal')return sid===String(auth.currentUser?.uid||'')||sid===sessionUserKey;if(st==='related')return Array.isArray(m.relatedUids)&&m.relatedUids.includes(String(auth.currentUser?.uid||''));return false;}
+async function loadBrain(){const s=await getDoc(doc(db,'light_brains',sessionUserKey));if(!s.exists()){window.lightBrain={summary:'',recentHistory:[]};return;}const d=s.data()||{};window.lightBrain={summary:String(d.summary||'').slice(0,3500),recentHistory:normalizeHistory(d.recentHistory).slice(-20)};window.conversationHistory=window.lightBrain.recentHistory.slice();}
+async function saveBrain(){await setDoc(doc(db,'light_brains',sessionUserKey),{authUid:auth.currentUser?.uid||'',userKey:sessionUserKey,username:sessionUserName,bandId:sessionBandId,bandName:sessionBandName,summary:String(window.lightBrain.summary||'').slice(0,3500),recentHistory:normalizeHistory(window.conversationHistory).slice(-20),updatedAt:now()});}
+function buildBrainContext(){return window.lightBrain.summary?`\n\n【ライトの長期記憶】\n${window.lightBrain.summary}`:'';}
+async function loadLegacy(){const s=await getDoc(doc(db,'light_memories',sessionUserKey));if(s.exists()){const d=s.data()||{};window.selfReflections=Array.isArray(d.reflections)?d.reflections:[];window.userFacts=Array.isArray(d.facts)?d.facts:[];}}
+async function loadMemoryFiles(){const qs=[];if(sessionUserKey)qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','personal'),where('scopeId','==',auth.currentUser?.uid||''))));if(sessionBandId)qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','band'),where('scopeId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','club'),where('scopeId','==','club'))));if(auth.currentUser?.uid)qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','related'),where('scopeId','==','related'),where('relatedUids','array-contains',auth.currentUser.uid))));const snaps=await Promise.all(qs);window.memoryFiles=[];for(const s of snaps)s.forEach(d=>{const x={id:d.id,...(d.data()||{})};if(x.suppressed!==true&&x.referenceAllowed!==false)window.memoryFiles.push(x);});window.memoryFiles=[...new Map(window.memoryFiles.map(x=>[x.id,x])).values()];window.memoryFiles.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));}
+async function loadPhotoMemories(){const qs=[];if(sessionUserKey)qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','personal'),where('scopeId','==',auth.currentUser?.uid||''))));if(sessionBandId)qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','band'),where('scopeId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','club'),where('scopeId','==','club'))));if(auth.currentUser?.uid)qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','related'),where('scopeId','==','related'),where('relatedUids','array-contains',auth.currentUser.uid))));const snaps=await Promise.all(qs);window.photoMemories=[];for(const s of snaps)s.forEach(d=>{const x={id:d.id,...(d.data()||{})};if(x.enabled!==false&&x.suppressed!==true&&x.referenceAllowed!==false)window.photoMemories.push(x);});window.photoMemories=[...new Map(window.photoMemories.map(x=>[x.id,x])).values()];window.photoMemories.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));}
+async function loadTimeline(){const qs=[];if(sessionBandId)qs.push(getDocs(query(collection(db,'light_history'),where('bandId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_history'),where('scopeType','==','club'))));const snaps=await Promise.all(qs);window.timelineEntries=[];for(const s of snaps)s.forEach(d=>window.timelineEntries.push({id:d.id,...(d.data()||{})}));window.timelineEntries=[...new Map(window.timelineEntries.map(x=>[x.id,x])).values()];window.timelineEntries.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.createdAt||0)-Number(a.createdAt||0));}
+function contextCategoryText(m){let s=`[${ARCHIVE_CATEGORIES[m.category]||m.category||'資料'}]`;if(m.staffRole&&m.staffRole!=='none')s+=` / ${STAFF_ROLES[m.staffRole]||m.staffRole}`;if(m.certainty)s+=` / 確度:${m.certainty}`;if(m.validity)s+=` / 有効:${m.validity}`;if(m.trouble)s+=` / トラブル:${m.trouble}`;if(m.countermeasure)s+=` / 対処:${m.countermeasure}`;return s;}
+function getApplicableFiles(){return window.memoryFiles.filter(applicableScope);}
+function rankedMemoryFiles(q){return getApplicableFiles().map(m=>({m,score:scoreFile(m,q)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score||Number(b.m.updatedAt||0)-Number(a.m.updatedAt||0)).slice(0,6).map(x=>x.m);}
+function findDirectAnswer(q){const hits=rankedMemoryFiles(q).filter(m=>m.directAnswer===true);if(!hits.length)return null;return hits[0].details;}
+function buildMemoryContext(q){const hits=rankedMemoryFiles(q);if(!hits.length)return '';let out='\n\n【関連する記憶ファイル】\n';for(const m of hits){const line=`${contextCategoryText(m)} | ${m.title||''} | tags:${(m.tags||m.keywords||[]).join(', ')} | event:${m.eventId||''}\n${m.details||''}\n`;if((out+line).length>5200)break;out+=line+'\n';}return out;}
+function buildPhotoContext(q){const qq=String(q||'').trim().toLowerCase();if(!qq)return '';const words=qq.split(/[\s、。,.！？!?・#]+/).map(x=>x.trim()).filter(x=>x.length>1);const scored=window.photoMemories.map(p=>{const hay=String([p.title,p.tags?.join(' '),p.category,p.staffRole,p.aiSummary,p.humanNote,p.eventTitle,p.bandName,p.date].join(' ')).toLowerCase();let score=0;if(qq&&hay.includes(qq))score+=8;for(const w of words){if(hay.includes(w))score+=2;}if(p.bandId===sessionBandId)score+=1;return{p,score};}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,4).map(x=>x.p);if(!scored.length)return '';let out='\n\n【関連する写真記録】\n';for(const p of scored){out+=`id=${p.id} | ${p.title||'写真'} | ${p.date||''} | ${ARCHIVE_CATEGORIES[p.category]||p.category||''} | ${(p.tags||[]).join(', ')} | event=${p.eventId||''} | staff=${STAFF_ROLES[p.staffRole]||p.staffRole||'none'}\n${p.aiSummary||''}\n${p.additionalNotes?.length?`追加記録:${p.additionalNotes.map(x=>x.text).join(' / ')}`:''}\n`;if(out.length>3600)break;}return out;}
+function buildTimelineContext(q=''){const qq=canonical(q);const words=qq.split(/\s+/).filter(x=>x.length>1);const ranked=window.timelineEntries.map(t=>{let score=t.bandId===sessionBandId?1:0;const hay=canonical([t.title,t.details,(t.tags||[]).join(' '),t.date,t.bandName].join(' '));for(const w of words){if(hay.includes(w))score+=2;}return{t,score};}).sort((a,b)=>b.score-a.score||String(b.t.date||'').localeCompare(String(a.t.date||''))).slice(0,8).map(x=>x.t);if(!ranked.length)return '';let out='\n\n【軽音楽部タイムライン】\n';for(const t of ranked){out+=`id=${t.id} | ${t.date||''} | ${t.title||''} | band=${t.bandName||''} | tags=${(t.tags||[]).join(', ')}\n${t.details||''}\nlinkedPhotos=${(t.photoIds||[]).length}\n\n`;if(out.length>3800)break;}return out;}
+function wantsRecentImages(q){return /(さっき|さきほど|この写真|その写真|前の写真|さっきの写真|直前の写真|上の写真|この画像|その画像)/.test(String(q||''));}
+function adaptivePlan(text,hasImage){return hasImage?['image']:['normal'];}
+function normalizeTags(a){return [...new Set((Array.isArray(a)?a:[]).map(x=>String(x||'').trim()).filter(Boolean))].slice(0,20);}
+function currentDate(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function detectSituation(text,hasImage=false){const t=String(text||'');const tags=[];if(/ライブ|本番|ステージ|対バン|出演|演奏|転換/.test(t))tags.push('ライブ・本番');if(/リハ|リハーサル|練習|スタジオ/.test(t))tags.push('リハーサル・練習');if(/PA|音響|マイク|ミキサー|モニター|FOH|返し/.test(t))tags.push('PA・音響');if(/ローディ|搬入|搬出|機材運搬|ケーブル/.test(t))tags.push('ローディ・機材');if(/照明|灯体|DMX|明かり/.test(t))tags.push('照明');if(/プロモーター|告知|宣伝|集客|チケット/.test(t))tags.push('プロモーション');if(/トラブル|故障|鳴らない|ハウリング|音が出ない|焦る|困った/.test(t))tags.push('トラブル対応');if(/顧問|幹部|部長|副部長|進行|運営/.test(t))tags.push('部活運営');if(hasImage)tags.push('画像あり');return tags.length?tags.join(' / '):'通常会話';}
+function extractUserConfirmedPersonLabels(text){const t=String(text||'');const labels=[];const patterns=[/この人(?:は|が)[：: ]?([^、。！？
+]{1,40})/g,/名前(?:は|が)[：: ]?([^、。！？
+]{1,40})/g,/この声(?:は|が)[：: ]?([^、。！？
+]{1,40})/g,/担当(?:は|が)[：: ]?([^、。！？
+]{1,40})/g];for(const re of patterns){for(const m of t.matchAll(re)){const v=String(m[1]||'').trim().replace(/(です|だよ|です。|だ。)$/,'').trim();if(v&&v.length<=40)labels.push(v);}}return [...new Set(labels)].slice(0,8);}
+function explicitMemoryCommand(text){return /覚えて(?:おいて)?|記憶して|記録して|覚えといて/.test(String(text||''));}
+function explicitNoSaveCommand(text){return /覚えないで|保存しないで|記録しないで|覚えさせない/.test(String(text||''));}
+function explicitForgetCommand(text){return /忘れて|忘れろ|記憶から消して|記憶しないで/.test(String(text||''));}
+function updateModeUI(){
+  const el=$('avatar-mode-badge');
+  if(!el)return;
+  const m=(window.operationMode==='forced_oto'||window.autoMode==='oto')?'● アバターモード / OTO':'● アバターモード / LIGHT';
+  el.textContent=m;
+  el.style.color=m.includes('OTO')?'#7f9cff':'#ff7eb3';
+}
+function historyForAI(history){return normalizeHistory(history).slice(-12).map(x=>({role:x.role==='model'?'assistant':'user',text:textFromParts(x.parts)}));}
+function parseJsonLoose(text){const raw=String(text||'').trim();try{return JSON.parse(raw);}catch(_){const m=raw.match(/```(?:json)?\s*([\s\S]*?)```/i);if(m)try{return JSON.parse(m[1]);}catch(__){}const a=raw.indexOf('{'),b=raw.lastIndexOf('}');if(a>=0&&b>a)try{return JSON.parse(raw.slice(a,b+1));}catch(__){}throw new Error('AIのJSON応答を解釈できませんでした。');}}
+
+async function loadAIProviders(){
+  try{
+    const s=await getDocs(collection(db,'light_ai_providers'));
+    window.aiProviders=s.docs.map(d=>({id:d.id,...(d.data()||{})}))
+      .filter(p=>p.enabled!==false&&p.apiKey&&p.model)
+      .sort((a,b)=>Number(a.priority||100)-Number(b.priority||100));
+    apiConfigLoaded=true;
+    return window.aiProviders;
+  }catch(e){console.error(e);window.aiProviders=[];throw e;}
+}
+function providerUrl(p){
+  if(p.type==='gemini') return `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(p.model)}:generateContent`;
+  const base=(p.baseUrl||'').replace(/\/+$/,'');
+  if(p.type==='openai') return `https://api.openai.com/v1/chat/completions`;
+  if(p.type==='openai_compatible') return /\/chat\/completions$/i.test(base)?base:`${base}/chat/completions`;
+  if(p.type==='anthropic') return 'https://api.anthropic.com/v1/messages';
+  return '';
+}
+async function fetchWithTimeout(url,options,ms=45000){
+  const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),ms);
+  try{return await fetch(url,{...options,signal:controller.signal});}finally{clearTimeout(timer);}
+}
+async function callClientProvider(p,payload){
+  const type=String(p.type||'').toLowerCase();
+  const system=String(payload.system||'');
+  const messages=Array.isArray(payload.messages)?payload.messages.slice(-20):[];
+  const maxTokens=Math.max(100,Math.min(2200,Number(payload.maxOutputTokens||800)));
+  const jsonMode=Boolean(payload.jsonMode);
+  let url=providerUrl(p),headers={'Content-Type':'application/json'},body={};
+  if(!url)throw new Error('AIプロバイダーの設定が不正です。');
+  if(type==='gemini'){
+    headers['x-goog-api-key']=p.apiKey;
+    const contents=messages.map(m=>({
+      role:m.role==='assistant'?'model':'user',
+      parts:[
+        {text:String(m.text||'').slice(0,14000)},
+        ...((m.images||[]).slice(0,2).map(img=>({inline_data:{mime_type:String(img.mimeType||'image/jpeg'),data:String(img.base64||'')}})))
+      ]
+    }));
+    body={contents,systemInstruction:{parts:[{text:system.slice(0,16000)}]},generationConfig:{maxOutputTokens:maxTokens}};
+    if(jsonMode)body.generationConfig.responseMimeType='application/json';
+  }else if(type==='openai'||type==='openai_compatible'){
+    headers.Authorization=`Bearer ${p.apiKey}`;
+    const out=[];if(system)out.push({role:'system',content:system.slice(0,16000)});
+    for(const m of messages){
+      const role=m.role==='assistant'?'assistant':'user';
+      if(m.images?.length){
+        const content=[{type:'text',text:String(m.text||'').slice(0,14000)}];
+        for(const img of m.images.slice(0,2))content.push({type:'image_url',image_url:{url:`data:${String(img.mimeType||'image/jpeg')};base64,${String(img.base64||'')}`}});
+        out.push({role,content});
+      }else out.push({role,content:String(m.text||'').slice(0,14000)});
+    }
+    body={model:p.model,messages:out,max_tokens:maxTokens};
+    if(jsonMode)body.response_format={type:'json_object'};
+  }else if(type==='anthropic'){
+    headers['x-api-key']=p.apiKey;
+    headers['anthropic-version']='2023-06-01';
+    headers['anthropic-dangerous-direct-browser-access']='true';
+    body={model:p.model,system:system.slice(0,16000),max_tokens:maxTokens,messages:messages.map(m=>{
+      const content=[{type:'text',text:String(m.text||'').slice(0,14000)}];
+      for(const img of (m.images||[]).slice(0,2))content.push({type:'image',source:{type:'base64',media_type:String(img.mimeType||'image/jpeg'),data:String(img.base64||'')}});
+      return {role:m.role==='assistant'?'assistant':'user',content};
+    })};
+  }
+  const res=await fetchWithTimeout(url,{method:'POST',headers,body:JSON.stringify(body)});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok){const err=new Error(`HTTP ${res.status}`);err.status=res.status;throw err;}
+  let out='';
+  if(type==='gemini')out=data?.candidates?.[0]?.content?.parts?.map(x=>x.text||'').join('')||'';
+  else if(type==='anthropic')out=data?.content?.map(x=>x.text||'').join('')||'';
+  else out=typeof data?.choices?.[0]?.message?.content==='string'?data.choices[0].message.content:'';
+  if(!out)throw new Error('AIから回答が返ってきませんでした。');
+  return {text:out,provider:p.label||p.id,model:p.model};
+}
+async function requestAI(payload){
+  if(!apiConfigLoaded)await loadAIProviders();
+  if(!window.aiProviders?.length)throw new Error('AIがまだ設定されていません。管理者サイトでAIプロバイダーを登録してください。');
+  const retryCount=Math.max(0,Math.min(2,Number(payload?.retries??1)));
+  let lastErr=null;
+  for(const p of window.aiProviders){
+    for(let attempt=0;attempt<=retryCount;attempt++){
+      try{return await callClientProvider(p,payload);}
+      catch(e){
+        lastErr=e;console.warn('AI provider failed',p.label||p.id,'attempt',attempt+1,e);
+        if(attempt<retryCount)await sleep(250*(attempt+1));
+      }
+    }
+  }
+  throw lastErr||new Error('登録済みAIを利用できませんでした。');
+}
+
+function stripBrain(reply){const ms=[...String(reply||'').matchAll(/\[BRAIN:\s*([\s\S]*?)\]/g)];let summary='';if(ms.length)summary=ms[ms.length-1][1].trim().slice(0,3500);const cleaned=String(reply||'').replace(/\[BRAIN:\s*[\s\S]*?\]/g,'').trim();return{cleaned,summary};}
+async function generateChat(text,photos){const imageNow=photos.length>0;if(imageNow)window.recentConversationImages=photos.slice(-2);const history=historyForAI(window.conversationHistory);const label=text||'この写真を見て';const current={role:'user',text:label,images:(photos||[]).slice(0,2).map(im=>({mimeType:im.mimeType,base64:im.base64}))};if(!imageNow&&wantsRecentImages(text))current.images=window.recentConversationImages.slice(-2).map(im=>({mimeType:im.mimeType,base64:im.base64}));const messages=[...history,current];const si=makeSystemInstruction(text,imageNow);const complex=/(コード|設計|分析|比較|原因|計画|複雑|調べて|デバッグ|詳しく)/.test(text||'');const result=await requestAI({messages,system:si,maxOutputTokens:complex?1400:700,jsonMode:false});const parsed=stripBrain(result.text);if(parsed.summary)window.lightBrain.summary=parsed.summary;window.conversationHistory.push({role:'user',parts:[{text:label}]},{role:'model',parts:[{text:parsed.cleaned}]});window.conversationHistory=normalizeHistory(window.conversationHistory).slice(-12);queueBrainSave();return{reply:parsed.cleaned,provider:result.provider};}
+function findTimelineMatch(catalog){const date=String(catalog.date||'');const title=canonical(catalog.timelineTitle||catalog.title||'');let best=null,score=0;for(const t of window.timelineEntries){let s=0;if(date&&t.date===date)s+=5;if(title&&canonical(`${t.title||''} ${t.tags?.join(' ')||''}`).includes(title))s+=4;const tt=canonical((t.tags||[]).join(' '));for(const tag of catalog.timelineTags||[]){if(tag&&tt.includes(canonical(tag)))s+=1;}if(t.bandId===sessionBandId)s+=2;if(s>score){score=s;best=t;}}return score>=7?best:null;}
+async function upsertTimelineFromCatalog(catalog,imageId,memoryId){if(!catalog.shouldCreateTimeline)return '';const match=findTimelineMatch(catalog);const date=String(catalog.date||currentDate()).slice(0,10);const title=String(catalog.timelineTitle||catalog.title||'出来事').trim();const details=String(catalog.timelineDetails||catalog.summary||'').trim();const tags=normalizeTags([...(catalog.timelineTags||[]),...(catalog.tags||[])].slice(0,16));if(match){const photoIds=[...new Set([...(match.photoIds||[]),imageId].filter(Boolean))],memoryIds=[...new Set([...(match.memoryIds||[]),memoryId].filter(Boolean))];const after={...match,date:match.date||date,title:match.title||title,details:match.details?`${match.details}\n\n追加記録：${details}`:details,tags:[...new Set([...(match.tags||[]),...tags])],photoIds,memoryIds,updatedAt:now(),lastLinkedAt:now()};await updateDoc(doc(db,'light_history',match.id),after);await addDoc(collection(db,'light_history_edits'),{historyId:match.id,action:'link',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,authUid:auth.currentUser?.uid||'',timestamp:now(),before:match,after});return match.id;}const ref=await addDoc(collection(db,'light_history'),{date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName,scopeType:'band',createdAt:now(),createdBy:sessionUserKey,createdByName:sessionDisplayName,authUid:auth.currentUser?.uid||'',photoIds:imageId?[imageId]:[],memoryIds:memoryId?[memoryId]:[]});await addDoc(collection(db,'light_history_edits'),{historyId:ref.id,action:'add',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,authUid:auth.currentUser?.uid||'',timestamp:now(),before:null,after:{id:ref.id,date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName,photoIds:imageId?[imageId]:[],memoryIds:memoryId?[memoryId]:[]}});window.timelineEntries.unshift({id:ref.id,date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName,createdAt:now(),photoIds:imageId?[imageId]:[],memoryIds:memoryId?[memoryId]:[]});return ref.id;}
+function explicitCommand(text){return /(覚えて|記録して|資料にして|資料館|部史に|タイムラインに|追加して|更新して|修正して|追記して|付け足して|追加|更新|修正|追記)/.test(String(text||''));}
+const ACTION_SCHEMA={type:'object',properties:{action:{type:'string',enum:['none','add_timeline','update_timeline','update_photo','add_memory']},targetQuery:{type:'string'},title:{type:'string'},details:{type:'string'},date:{type:'string'},tags:{type:'array',items:{type:'string'}},category:{type:'string',enum:['personal','band','club','live_event','live_staff','staff_shared','daily','none']},staffRole:{type:'string',enum:['pa','roady','promoter','lighting','none']},scopeType:{type:'string',enum:['personal','band','club','none']},note:{type:'string'}},required:['action','targetQuery','title','details','date','tags','category','staffRole','scopeType','note']};
+async function planExplicitAction(text){const prompt=`ユーザーの依頼を資料館/部史への操作に変換してください。明示依頼がないものはaction=none。削除依頼もnone。
+ユーザー:${sessionDisplayName}
+バンド:${sessionBandName}
+現在日付:${currentDate()}
+依頼:${text}
+利用可能な操作:add_timeline=部史追加, update_timeline=既存部史更新, update_photo=写真記録への追記, add_memory=記憶ファイル追加。
+返すJSONのactionは none / add_timeline / update_timeline / update_photo / add_memory のいずれか。categoryは personal / band / club / live_event / live_staff / staff_shared / daily / none、staffRoleは pa / roady / promoter / lighting / none、scopeTypeは personal / band / club / none。`;const result=await requestAI({messages:[{role:'user',text:prompt}],system:'資料館の操作プランナーとしてJSONだけを返してください。',maxOutputTokens:600,jsonMode:true});return parseJsonLoose(result.text);}
+async function fallbackFromMemory(text){const direct=findDirectAnswer(text);if(direct){const reply=String(direct);window.conversationHistory.push({role:'user',parts:[{text}]},{role:'model',parts:[{text:reply}]});window.conversationHistory=normalizeHistory(window.conversationHistory).slice(-20);queueBrainSave();return{reply,fromMemory:true};}const hits=rankedMemoryFiles(text);if(hits.length){const reply=`保存してある資料を見ると、${hits[0].title||'この件'}についてこう記録されてるぜ。\n\n${hits[0].details||''}`;return{reply,fromMemory:true};}return null;}
+async function callLight(text,photos){try{return await generateChat(text,photos);}catch(e){const fb=await fallbackFromMemory(text);if(fb){addLog('システム','AIに接続できなかったため、保存済み記憶を使って回答します。','sys');return{reply:fb.reply,fromMemory:true};}throw e;}}
+function assessUrgency(text){const t=String(text||'');let score=0;if(/今|現在|すぐ|至急|急いで|本番中|ライブ中|ステージ中|あと\s*[0-9０-９]+分|間に合わ|止まった|鳴らない|出ない|ハウリング|故障|壊れた|危ない|判断して|決めて/.test(t))score+=3;if(/PA|音響|ミキサー|モニター|マイク|ローディ|搬入|搬出|照明|DMX|プロモーター|進行|転換|顧問|幹部|機材|アンプ|ケーブル/.test(t))score+=2;if(/どう思う|相談|悩んで|話し合い|会議|重要/.test(t))score+=1;return score;}
+function standaloneOverride(text){const t=String(text||'').trim().replace(/[。、！？!?.,]+$/g,'').trim();if(/^(ナイトフォール|nightfall)$/i.test(t))return 'oto';if(/^(デイブレイク|daybreak)$/i.test(t))return 'automatic';return null;}
+function setOperationalOverride(mode){window.forcedModeOverride=mode==='oto'?'oto':null;window.operationMode=window.forcedModeOverride?'forced_oto':'automatic';window.autoMode=window.forcedModeOverride||'light';updateModeUI();}
+/* Text/voice handlers installed by mightyX v4 runtime. */
+/* Photo handlers installed by mightyX v4 runtime. */
+async function preparePhoto(file){if(!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error('JPEG / PNG / WebPの写真を選んでください。');const url=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('写真の読み込みに失敗しました。'));r.readAsDataURL(file)});const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=()=>rej(new Error('画像として読み込めませんでした。'));i.src=url});const canvas=document.createElement('canvas');let w=img.naturalWidth,h=img.naturalHeight,max=960,scale=Math.min(1,max/Math.max(w,h));w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,w,h);let q=.72,out=canvas.toDataURL('image/jpeg',q);for(let i=0;i<4&&out.length>450000;i++){q=Math.max(.42,q-.08);out=canvas.toDataURL('image/jpeg',q);}const base64=out.split(',')[1]||'';return{dataUrl:out,base64,mimeType:'image/jpeg',originalName:file.name,width:w,height:h};}
+window.isMuted=true;const muteBtn=$('mute-toggle-btn');muteBtn.textContent='🔇 音声 OFF';$('open-settings-btn').addEventListener('click',()=>$('settings-modal').style.display='flex');$('close-settings-btn').addEventListener('click',()=>$('settings-modal').style.display='none');muteBtn.addEventListener('click',()=>{window.isMuted=!window.isMuted;muteBtn.textContent=window.isMuted?'🔇 音声 OFF':'🔊 音声 ON';muteBtn.style.borderColor=window.isMuted?'#bf616a':'#ff7eb3';if(window.isMuted){speechSynthesis.cancel();if(window.currentAudio)window.currentAudio.pause();}});window.currentAudio=null;window.speak=t=>{if(window.isMuted)return;speechSynthesis.cancel();const clean=String(t||'').replace(/[「」『』（）()【】_~〜]/g,'').trim();if(!clean)return;const audio=new Audio(`https://api.tts.quest/v3/voicevox/synthesis?text=${encodeURIComponent(clean)}&speaker=8`);window.currentAudio=audio;audio.play().catch(()=>{const u=new SpeechSynthesisUtterance(clean);u.lang='ja-JP';u.rate=1.1;u.pitch=1.2;speechSynthesis.speak(u)});};
+$('voice-mode-toggle-btn').addEventListener('click',()=>{voiceMode=!voiceMode;localStorage.setItem('light_voice_mode',voiceMode?'1':'0');applyVoiceMode();if(voiceMode)addLog('システム','音声モード：マイクボタンで話して、ライトの返答を音声でも受け取れるぜ。','sys');});
+$('view-brain-btn').addEventListener('click',()=>{const s=`【長期記憶】\n${window.lightBrain.summary||'(なし)'}\n\n【自己改善ルール】\n${window.selfReflections.join('\n')||'(なし)'}\n\n【事実記憶】\n${window.userFacts.join('\n')||'(なし)'}`;alert(s);});
+let cameraStream=null;function stopCamera(){if(cameraStream){cameraStream.getTracks().forEach(t=>t.stop());cameraStream=null;}$('camera-video').srcObject=null;}function closeCamera(){stopCamera();$('camera-modal').style.display='none';}
+/* PD================================================================
+   mightyX v4 — current-spec runtime
+   Priority: latest decisions > legacy behavior.
+   This layer is deliberately additive so the existing visual UI stays intact.
+   ================================================================ */
+const MX4={
+  memoryBusy:false, docBusy:false, relationBusy:false, timetableBusy:false,
+  cameraBusy:false, backgroundErrors:0, activeRequestIds:new Set(),
+  lastScheduleAt:0, lastRelationAt:0, lastDocAt:0
+};
+
+function mx4PrivacyFromPlan(p,text=''){
+  const raw=String(p?.privacy||'').trim();
+  const allowed=['public','band','related','private_relationship','private_romantic','private_family','private_confidential'];
+  if(!allowed.includes(raw)) return 'private_relationship';
+  if(raw==='private_family') return raw;
+  if(/内緒|秘密|誰にも言わない|二人だけ|私だけ|ここだけ/.test(String(text||''))) return 'private_confidential';
+  return raw;
+}
+function mx4AdminVisible(privacy,text='',preferred=null){
+  if(privacy==='private_family') return false;
+  if(preferred===false) return false;
+  if(privacy==='private_confidential' && /内緒|秘密|誰にも言わない|二人だけ|私だけ|ここだけ/.test(String(text||''))) return false;
+  return true;
+}
+function mx4ScopeForPrivacy(privacy,requested='personal'){
+  if(['private_relationship','private_romantic','private_family','private_confidential'].includes(privacy)) return 'personal';
+  if(privacy==='related') return 'related';
+  if(requested==='club'||privacy==='public') return 'club';
+  return 'band';
+}
+function mx4SafeFileName(name,fallback='file'){
+  const n=String(name||fallback).normalize('NFKC').replace(/[^a-zA-Z0-9._-]/g,'_').slice(0,90);
+  return n||fallback;
+}
+function mx4MimeExt(mime){const m=String(mime||'').toLowerCase();if(m.includes('png'))return 'png';if(m.includes('webp'))return 'webp';if(m.includes('pdf'))return 'pdf';return 'jpg';}
+function mx4DateTimeLabel(ms){return ms?new Date(Number(ms)).toLocaleString('ja-JP',{dateStyle:'short',timeStyle:'short'}):'日時不明';}
+
+
+function mx4CsvUids(uids){
+  return `,${[...new Set((Array.isArray(uids)?uids:[]).map(x=>String(x||'').trim()).filter(Boolean).slice(0,30))].join(',')},`;
+}
+function mx4NoSaveTargetText(text){const t=String(text||'').trim();const cleaned=t.replace(/(?:覚えないで|保存しないで|記録しないで|覚えさせない)/g,'').replace(/^[：:、,\s]+|[：:、,\s]+$/g,'').trim();return cleaned||t;}
+function mx4ActiveSuppressionMatch(text,s){
+  if(!s||s.active===false||String(s.authUid||'')!==String(auth.currentUser?.uid||''))return false;
+  return scoreSearchHay([s.targetText,s.title,s.summary,s.memoryId||''].join(' '),text)>=6;
+}
+async function mx4LoadSuppressions(force=false){
+  if(!auth.currentUser?.uid)return [];
+  if(!force&&Array.isArray(window.memorySuppressions))return window.memorySuppressions;
+  try{
+    const sn=await getDocs(query(collection(db,'light_memory_suppressions'),where('authUid','==',auth.currentUser.uid)));
+    window.memorySuppressions=sn.docs.map(d=>({id:d.id,...d.data()})).sort((x,y)=>Number(y.updatedAt||y.createdAt||0)-Number(x.updatedAt||x.createdAt||0));
+    return window.memorySuppressions;
+  }catch(e){window.memorySuppressions=[];void mx4LogError(e,'suppression-load');return [];}
+}
+async function mx4RecordSuppression(kind,targetText,{memoryId='',imageId='',documentId='',title='',summary='',reason='user_request'}={}){
+  if(!auth.currentUser?.uid)return false;
+  const t=String(targetText||'').trim();if(!t)return false;
+  const existing=(await mx4LoadSuppressions(true)).find(x=>x.active!==false&&x.kind===kind&&((memoryId&&x.memoryId===memoryId)||scoreSearchHay([x.targetText,x.title,x.summary].join(' '),t)>=8));
+  const data={kind,targetText:t.slice(0,2500),memoryId:String(memoryId||''),imageId:String(imageId||''),documentId:String(documentId||''),title:String(title||'').slice(0,120),summary:String(summary||'').slice(0,1200),reason:String(reason||'user_request').slice(0,200),authUid:auth.currentUser.uid,userKey:sessionUserKey,active:true,createdAt:existing?.createdAt||now(),updatedAt:now()};
+  try{
+    let id='';
+    if(existing){await updateDoc(doc(db,'light_memory_suppressions',existing.id),data);id=existing.id;}
+    else {const ref=await addDoc(collection(db,'light_memory_suppressions'),data);id=ref.id;}
+    window.lastSuppressionId=id;
+    if(memoryId)window.lastSuppressedMemory={kind:'memory',id:memoryId};
+    await mx4LoadSuppressions(true);return true;
+  }catch(e){void mx4LogError(e,'suppression-save');return false;}
+}
+async function mx4DeactivateSuppression(id,restoredBy='user'){
+  if(!id)return false;
+  try{await updateDoc(doc(db,'light_memory_suppressions',id),{active:false,restoredAt:now(),restoredBy,updatedAt:now()});if(window.lastSuppressionId===id)window.lastSuppressionId='';await mx4LoadSuppressions(true);return true;}catch(e){void mx4LogError(e,'suppression-deactivate');return false;}
+}
+async function mx4FindActiveSuppression(text,kind=''){
+  const list=await mx4LoadSuppressions();return list.find(x=>x.active!==false&&(!kind||x.kind===kind)&&mx4ActiveSuppressionMatch(text,x))||null;
+}
+async function mx4MemoryAudit(action,targetId,before,after,sourceType='user'){
+  try{const privacy=String(after?.privacy||before?.privacy||'private_relationship');const adminVisible=privacy!=='private_family'&&((after?.adminVisible!==false)&&(before?.adminVisible!==false));await addDoc(collection(db,'light_history_edits'),{targetType:'memory',targetId:String(targetId||''),action,editorType:sourceType,editor:sessionUserKey||'system',editorName:sessionDisplayName||'',authUid:auth.currentUser?.uid||'',timestamp:now(),before:before||null,after:after||null,privacy,adminVisible});}catch(e){void mx4LogError(e,'memory-audit');}
+}
+
+async function mx4SyncLinkedSource(data,suppressed,sourceType='user'){
+  const stamp=now();
+  if(data?.imageId){
+    const r=doc(db,'light_images',String(data.imageId));
+    const snap=await getDoc(r).catch(()=>null);
+    if(snap?.exists()){
+      const before=snap.data()||{};
+      const after={...before,suppressed,referenceAllowed:!suppressed,enabled:!suppressed,updatedAt:stamp};
+      await updateDoc(r,{suppressed,referenceAllowed:!suppressed,enabled:!suppressed,updatedAt:stamp,suppressedBy:suppressed?sourceType:'',suppressionReason:suppressed?sourceType:'',restoredAt:suppressed?null:stamp,restoredBy:suppressed?'':sourceType});
+      await mx4MemoryAudit(suppressed?'linked_photo_suppress':'linked_photo_restore',String(data.imageId),before,after,sourceType);
+    }
+  }
+  if(data?.documentId){
+    const r=doc(db,'light_documents',String(data.documentId));
+    const snap=await getDoc(r).catch(()=>null);
+    if(snap?.exists()){
+      const before=snap.data()||{};
+      const after={...before,suppressed,referenceAllowed:!suppressed,enabled:!suppressed,updatedAt:stamp};
+      await updateDoc(r,{suppressed,referenceAllowed:!suppressed,enabled:!suppressed,updatedAt:stamp,suppressedBy:suppressed?sourceType:'',suppressionReason:suppressed?sourceType:'',restoredAt:suppressed?null:stamp,restoredBy:suppressed?'':sourceType});
+      await mx4MemoryAudit(suppressed?'linked_document_suppress':'linked_document_restore',String(data.documentId),before,after,sourceType);
+    }
+  }
+}
+
+async function mx4DeleteSubcollection(parentCollection,parentId,subcollection){
+  try{const sn=await getDocs(collection(db,parentCollection,parentId,subcollection));for(const d of sn.docs)await deleteDoc(d.ref);}catch(e){void mx4LogError(e,`subcollection-delete:${parentCollection}/${parentId}/${subcollection}`);}
+}
+
+async function mx4LogError(error,context=''){
+  try{
+    const e=error instanceof Error?error:new Error(String(error||'unknown'));
+    await addDoc(collection(db,'light_error_logs'),{
+      authUid:auth.currentUser?.uid||'',userKey:sessionUserKey||'',page:'index',
+      message:String(e.message||e).slice(0,1200),stack:String(e.stack||'').slice(0,3000),
+      context:String(context||'').slice(0,500),severity:'error',createdAt:now()
+    });
+  }catch(_){/* logging must never break the app */}
+}
+
+/* ---------------- authentication hardening ---------------- */
+async function mx4LoadProfileByKey(key){
+  const snap=await getDoc(doc(db,'light_users',key));
+  return snap.exists()?{ref:snap.ref,data:snap.data()||{}}:null;
+}
+async function authLogin(passphrase){
+  setAuthMessage('認証中...');
+  const key=String(passphrase||'').trim();
+  if(!validPassphrase(key)) throw new Error('合言葉は12〜128文字で入力してください。');
+  const email=await authEmailForPassphrase(key);
+  await signInWithEmailAndPassword(auth,email,key); // Login never falls through to registration.
+  const user=auth.currentUser;
+  if(!user) throw new Error('認証は完了しましたが、Firebaseのユーザー情報を取得できませんでした。');
+  try{
+    const profile=await mx4LoadProfileByKey(key);
+    if(!profile){
+      await signOut(auth).catch(()=>{});localStorage.removeItem('light_last_login');
+      throw new Error('Firebase認証は成功しましたが、プロフィールがありません。新規登録から登録してください。');
+    }
+    if(profile.data.authUid && profile.data.authUid!==user.uid){
+      await signOut(auth).catch(()=>{});localStorage.removeItem('light_last_login');
+      throw new Error('この合言葉のプロフィールと認証アカウントが一致しません。管理者確認が必要です。');
+    }
+    const loginPatch={lastLoginAt:now(),loginCount:Number(profile.data.loginCount||0)+1};
+    if(!profile.data.authUid)loginPatch.authUid=user.uid;
+    await updateDoc(profile.ref,loginPatch);
+    localStorage.setItem('light_last_login',key);
+    applyProfile({userKey:key,...profile.data,authUid:user.uid});
+    if(!profile.data.name||!profile.data.birthday||!profile.data.bandName){showProfileModal(profile.data,false,'complete');return false;}
+    return true;
+  }catch(e){
+    if(auth.currentUser?.uid===user.uid)await signOut(auth).catch(()=>{});
+    if(String(e?.message||'').includes('プロフィールがありません')||String(e?.message||'').includes('認証アカウント'))throw e;
+    throw new Error(`ログイン後のプロフィール読み込みに失敗しました。${e?.message||''}`.trim());
+  }
+}
+
+async function authRegister(passphrase){
+  const key=String(passphrase||'').trim();
+  const name=$('profile-name').value.trim();
+  const birthday=normalizeBirthday($('profile-birthday').value);
+  const bandName=$('profile-band').value.trim();
+  const joinCode=$('profile-join-code').value.trim();
+  if(!validPassphrase(key))return setProfileMessage('合言葉が不正です。生成した合言葉をそのまま使ってください。'),false;
+  if(!name)return setProfileMessage('名前を入力してください。'),false;
+  if(!birthday)return setProfileMessage('誕生日は MM-DD 形式で入力してください。'),false;
+  if(!bandName)return setProfileMessage('現在のバンド名を入力してください。'),false;
+  const gateSnap=await getDoc(doc(db,'light_public_settings','registration'));
+  if(gateSnap.exists()&&gateSnap.data()?.enabled===true){if(!(await checkRegistrationCode(joinCode)))return setProfileMessage('初回登録コードが違います。'),false;}
+  const existing=await mx4LoadProfileByKey(key);
+  const email=await authEmailForPassphrase(key);
+  // Hold the auth-state listener only for the part that can change Firebase Auth state.
+  window.authFlowBusy=true;
+  let cred=null;
+  try{
+    if(auth.currentUser && auth.currentUser.email===email) cred=auth.currentUser;
+    else if(auth.currentUser) await signOut(auth).catch(()=>{});
+    if(!cred){
+      try{cred=(await createUserWithEmailAndPassword(auth,email,key)).user;}
+      catch(e){
+        if(String(e?.code||'')!=='auth/email-already-in-use')throw e;
+        cred=(await signInWithEmailAndPassword(auth,email,key)).user;
+      }
+    }
+    if(existing && existing.data?.authUid && existing.data.authUid!==cred.uid) throw new Error('この合言葉は別の認証アカウントに対応しています。');
+    if(existing && existing.data?.authUid===cred.uid){
+      await signOut(auth).catch(()=>{});
+      throw new Error('この合言葉はすでに登録済みです。ログイン画面から起動してください。');
+    }
+    const bandId=safeBandId(bandName), stamp=now();
+    const profile={userKey:key,credentialKey:key,authUid:cred.uid,username:canonical(name),name,displayName:name,birthday,bandId,bandName,createdAt:stamp,lastLoginAt:stamp,loginCount:1};
+    const batch=writeBatch(db);
+    batch.set(doc(db,'light_users',key),profile,{merge:true});
+    batch.set(doc(db,'light_bands',bandId),{bandId,name:bandName,normalizedName:canonical(bandName),createdAt:stamp,updatedAt:stamp,createdByUid:cred.uid},{merge:true});
+    batch.set(doc(db,'light_band_members',`${bandId}_${cred.uid}`),{uid:cred.uid,userKey:key,bandId,bandName,createdAt:stamp,updatedAt:stamp});
+    await writePersonIndexBatch(batch,profile);
+    await batch.commit();
+    localStorage.setItem('light_last_login',key);applyProfile(profile);hideProfileModal();return true;
+  }catch(e){
+    console.error('authRegister failed',e);await mx4LogError(e,'authRegister');
+    // A newly created Auth account may remain when Firestore failed. It is recoverable
+    // by repeating registration with the same passphrase; we leave no active app session.
+    if(auth.currentUser?.uid){const ps=await getDoc(doc(db,'light_users',key)).catch(()=>null);if(!ps?.exists())await signOut(auth).catch(()=>{});}
+    throw e;
+  }finally{
+    window.authFlowBusy=false;
+  }
+}
+
+async function loadCurrentProfile(explicitKey=''){
+  const user=auth.currentUser;if(!user)return false;
+  const key=String(explicitKey||localStorage.getItem('light_last_login')||'').trim();
+  if(!key){await signOut(auth).catch(()=>{});return false;}
+  const profile=await mx4LoadProfileByKey(key);
+  if(!profile){await signOut(auth).catch(()=>{});localStorage.removeItem('light_last_login');setAuthMessage('ログイン状態はありましたが、プロフィールが見つかりません。合言葉を確認してください。');return false;}
+  const data=profile.data;
+  if(data.authUid&&data.authUid!==user.uid){await signOut(auth).catch(()=>{});localStorage.removeItem('light_last_login');throw new Error('Firebase認証UIDとプロフィールUIDが一致しません。');}
+  if(!data.authUid){await updateDoc(profile.ref,{authUid:user.uid,lastLoginAt:now()});data.authUid=user.uid;}
+  applyProfile({userKey:key,...data});localStorage.setItem('light_last_login',key);
+  if(!data.name||!data.birthday||!data.bandName){showProfileModal(data,false,'complete');return false;}
+  return true;
+}
+
+async function completeProfile(){
+  const name=$('profile-name').value.trim(),birthday=normalizeBirthday($('profile-birthday').value),bandName=$('profile-band').value.trim();
+  if(!name)return setProfileMessage('名前を入力してください。'),false;
+  if(!birthday)return setProfileMessage('誕生日は MM-DD 形式で入力してください。'),false;
+  if(!bandName)return setProfileMessage('現在のバンド名を入力してください。'),false;
+  const old=await mx4LoadProfileByKey(sessionUserKey);const current=old?.data||{};const oldBandId=String(current.bandId||'');const bandId=safeBandId(bandName);
+  const payload={name,displayName:name,birthday,bandName,bandId,authUid:auth.currentUser?.uid||'',userKey:sessionUserKey,username:current.username||canonical(name),updatedAt:now()};
+  const changed=['name','birthday','bandName','bandId'].some(k=>String(current[k]||'')!==String(payload[k]||''));
+  if(profileModalMode==='edit'&&changed&&old?.data){
+    await addDoc(collection(db,'light_change_requests'),{targetUid:auth.currentUser.uid,action:'updateProfile',summary:'プロフィール変更の確認',payload,status:'pending',createdAt:now(),createdBy:auth.currentUser.uid,createdByType:'user',source:'user_correction',privacy:'private_relationship',adminVisible:true});
+    setProfileMessage('変更を記録した。次の自然なタイミングで確認してから正式反映するぜ。');hideProfileModal();await loadPendingChangeRequests();return true;
+  }
+  const stamp=now();const batch=writeBatch(db);
+  batch.set(doc(db,'light_users',sessionUserKey),payload,{merge:true});
+  if(auth.currentUser?.uid){batch.set(doc(db,'light_bands',bandId),{bandId,name:bandName,normalizedName:canonical(bandName),createdAt:current.bandId===bandId?(current.updatedAt||stamp):stamp,updatedAt:stamp,createdByUid:auth.currentUser.uid},{merge:true});batch.set(doc(db,'light_band_members',`${bandId}_${auth.currentUser.uid}`),{uid:auth.currentUser.uid,userKey:sessionUserKey,bandId,bandName,updatedAt:stamp});}
+  await writePersonIndexBatch(batch,{...current,...payload});
+  await batch.commit();
+  if(oldBandId&&oldBandId!==bandId&&auth.currentUser?.uid)await deleteDoc(doc(db,'light_band_members',`${oldBandId}_${auth.currentUser.uid}`)).catch(()=>{});
+  applyProfile({...current,...payload});hideProfileModal();localStorage.setItem('light_last_login',sessionUserKey);return true;
+}
+
+
+function mx4Terms(text){
+  const q=String(text||'').trim();if(!q)return [];
+  const out=new Set([q]);
+  try{const seg=new Intl.Segmenter('ja',{granularity:'word'});for(const part of seg.segment(q)){if(part.isWordLike&&String(part.segment).trim().length>=2)out.add(String(part.segment).trim());}}
+  catch(_){for(const x of q.split(/[\s、。,.！？!?・#]+/))if(x.length>=2)out.add(x);}
+  return [...out].slice(0,24).map(canonical).filter(x=>x.length>=2);
+}
+function scoreSearchHay(hay,q){const terms=mx4Terms(q);let score=0;const h=canonical(hay);const full=canonical(q);if(full&&h.includes(full))score+=8;for(const w of terms){if(h.includes(w))score+=2;}return score;}
+function scoreFile(m,q){return scoreSearchHay([m.title,m.details,m.keywords?.join(' '),m.category,m.subcategory,m.staffRole,m.bandName,m.sourceName].join(' '),q)+(m.eventId&&/ライブ/.test(String(q||''))?1:0);}
+function bestPhoto(q){let best=null,score=0;for(const p of window.photoMemories){let s=scoreSearchHay([p.title,p.tags?.join(' '),p.aiSummary,p.category,p.staffRole,p.eventTitle,p.date].join(' '),q);if(p.bandId===sessionBandId)s+=1;if(s>score){score=s;best=p;}}return score>=3?best:null;}
+function bestTimeline(q){let best=null,score=0;for(const t of window.timelineEntries){let s=scoreSearchHay([t.title,t.details,t.tags?.join(' '),t.date,t.bandName].join(' '),q);if(t.bandId===sessionBandId)s+=1;if(s>score){score=s;best=t;}}return score>=3?best:null;}
+
+/* ---------------- document + PDF memory ---------------- */
+async function extractPdfText(file){
+  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;let txt='';
+  for(let i=1;i<=pdf.numPages;i++){const page=await pdf.getPage(i);txt+=(await page.getTextContent()).items.map(x=>x.str).join(' ')+'\n';}
+  return {text:txt.trim(),pages:pdf.numPages};
+}
+function mx4ChunkText(text,size=18000){const out=[];const raw=String(text||'');for(let i=0;i<raw.length;i+=size)out.push(raw.slice(i,i+size));return out;}
+async function persistPdfDocument(file,text,pages,decision={}){
+  const privacy=mx4PrivacyFromPlan(decision,'');
+  const scopeType=mx4ScopeForPrivacy(privacy,'personal');
+  const uid=auth.currentUser?.uid||'';if(!uid)return '';
+  let relatedUids=Array.isArray(decision.relatedUids)?decision.relatedUids.filter(x=>typeof x==='string'&&x.trim()).slice(0,30):[];
+  if(scopeType==='related'&&!relatedUids.includes(uid))relatedUids=[uid,...relatedUids].filter(Boolean).slice(0,30);
+  const scopeId=scopeType==='personal'?uid:scopeType==='club'?'club':scopeType==='related'?'related':sessionBandId;if(!scopeId)return '';
+  const storageRoot=scopeType==='personal'?`users/${uid}`:scopeType==='related'?`users/${uid}/related`:scopeType==='club'?'club':`bands/${scopeId}`;
+  const docId='doc-'+now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
+  const path=`${storageRoot}/documents/${docId}/${mx4SafeFileName(file.name,'document.pdf')}`;
+  const chunks=mx4ChunkText(text,12000);const stamp=now();const privacyText=String(decision.sourceText||text||'');
+  const adminVisible=mx4AdminVisible(privacy,privacyText,decision.adminVisible);
+  const ddata={documentId:docId,storagePath:path,title:String(decision.title||file.name).slice(0,120),originalName:file.name,mimeType:'application/pdf',size:file.size,pages,scopeType,scopeId,bandId:sessionBandId,bandName:sessionBandName,privacy,adminVisible,memoryPriority:Math.max(1,Math.min(10,Number(decision.memoryPriority)||5)),certainty:decision.certainty||'confirmed',validity:decision.validity||'current',tags:normalizeTags(decision.tags||[]),keywords:normalizeTags(decision.tags||[]),kind:'pdf',status:'processing',enabled:true,referenceAllowed:true,suppressed:false,createdAt:stamp,updatedAt:stamp,authUid:uid,createdBy:sessionUserKey,ownerUid:uid,relatedUids,chunkCount:chunks.length};
+  try{
+    await uploadBytes(storageRef(storage,path),new Blob([await file.arrayBuffer()],{type:'application/pdf'}),{contentType:'application/pdf',customMetadata:{scopeType,scopeId,privacy,adminVisible:String(adminVisible),kind:'pdf',ownerUid:uid,relatedUidsCsv:mx4CsvUids(relatedUids)}});
+    await setDoc(doc(db,'light_documents',docId),ddata);
+    for(let start=0;start<chunks.length;start+=400){const batch=writeBatch(db);for(let i=start;i<Math.min(start+400,chunks.length);i++)batch.set(doc(db,'light_documents',docId,'chunks',String(i)),{index:i,text:chunks[i],keywords:mx4Terms(chunks[i]).slice(0,30),createdAt:stamp});await batch.commit();}
+    const memRef=await addDoc(collection(db,'light_memory_files'),{title:ddata.title,details:String(decision.summary||text.slice(0,3500)),sourceName:file.name,documentId:docId,storagePath:path,category:decision.category||'club',kind:'pdf',scopeType,scopeId,bandId:sessionBandId,bandName:sessionBandName,privacy,adminVisible,memoryPriority:ddata.memoryPriority,referencePriority:'context-dependent',certainty:ddata.certainty,validity:ddata.validity,tags:ddata.tags,keywords:ddata.keywords,enabled:true,status:'ready',directAnswer:false,referenceAllowed:true,suppressed:false,authUid:uid,createdBy:sessionUserKey,ownerUid:uid,relatedUids,createdAt:stamp,updatedAt:stamp});
+    await updateDoc(doc(db,'light_documents',docId),{status:'ready',memoryFileId:memRef.id,updatedAt:now()});
+    window.lastSavedMemory={kind:'memory',id:memRef.id};window.lastSavedMemoryAt=now();window.lastMemorySourceText=String(decision.sourceText||file.name||'').slice(0,2500);
+    return docId;
+  }catch(e){
+    await deleteDoc(doc(db,'light_documents',docId)).catch(()=>{});await mx4DeleteSubcollection('light_documents',docId,'chunks');await deleteObject(storageRef(storage,path)).catch(()=>{});void mx4LogError(e,'pdf-persist');throw e;
+  }
+}
+async function decidePdfMemory(file,text,pages){
+  const base={title:file.name,memoryPriority:5,category:'club',privacy:'private_relationship',validity:'current',certainty:'confirmed',tags:['PDF'],summary:text.slice(0,1500),shouldSave:false};
+  if(!auth.currentUser?.uid)return base;
+  try{
+    const prompt=`資料ファイルを長期保存すべきか判定してください。\nファイル名:${file.name}\nページ数:${pages}\n本文:${text.slice(0,12000)}\n長期保存対象は、今後の軽音楽部活動・ライブ運営・機材・人物・トラブル対処・重要な規則など、再利用価値が高いものだけ。単なる一時資料や今回だけの情報なら保存しない。JSONのみ。`;
+    const r=await requestAI({messages:[{role:'user',text:prompt}],system:'PDF記憶判定器。JSONのみ。{shouldSave:boolean,title:string,summary:string,category:string,privacy:string,memoryPriority:number,certainty:string,validity:string,tags:string[],relatedUids:string[]}',maxOutputTokens:500,jsonMode:true});
+    return {...base,...parseJsonLoose(r.text),sourceText:text.slice(0,2000)};
+  }catch(e){console.debug('PDF memory decision skipped',e);return base;}
+}
+async function handlePdfUpload(file){
+  if(MX4.docBusy)return;MX4.docBusy=true;addLog('システム',`PDF「${file.name}」を読み込み中...`,'sys');
+  try{
+    const parsed=await extractPdfText(file);const temp=parsed.text.slice(0,18000);window.pdfKnowledge=`\n\n【追加知識：${file.name}】\n${temp}`;window.pdfKnowledgeAt=now();window.pdfKnowledgeName=file.name;
+    addLog('ライト','その資料、一時的に読んだぜ。重要そうな部分はあとで長期記憶に整理する。','ai');
+    void (async()=>{
+      try{const d=await decidePdfMemory(file,parsed.text,parsed.pages);if(d.shouldSave){await persistPdfDocument(file,parsed.text,parsed.pages,d);addLog('システム',`PDF「${file.name}」を長期資料として保存したぜ。`,'sys');}window.documentsLoadedAt=now();}
+      catch(e){console.error(e);void mx4LogError(e,'pdf-background');}
+    })();
+  }catch(err){console.error(err);addLog('システム','PDF読み込みに失敗しました。','error');void mx4LogError(err,'pdf-upload');}
+  finally{MX4.docBusy=false;$('pdf-upload').value='';}
+}
+async function loadDocuments(){
+  const qs=[];if(sessionUserKey)qs.push(getDocs(query(collection(db,'light_documents'),where('scopeType','==','personal'),where('scopeId','==',auth.currentUser?.uid||''))));if(sessionBandId)qs.push(getDocs(query(collection(db,'light_documents'),where('scopeType','==','band'),where('scopeId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_documents'),where('scopeType','==','club'),where('scopeId','==','club'))));if(auth.currentUser?.uid)qs.push(getDocs(query(collection(db,'light_documents'),where('scopeType','==','related'),where('scopeId','==','related'),where('relatedUids','array-contains',auth.currentUser.uid))));
+  const snaps=await Promise.all(qs);window.documents=[];for(const sn of snaps)sn.forEach(d=>{const x={id:d.id,...d.data()};if(x.suppressed!==true&&x.referenceAllowed!==false&&x.enabled!==false&&x.status!=='processing')window.documents.push(x);});window.documents=[...new Map(window.documents.map(x=>[x.id,x])).values()];
+}
+async function buildDocumentContext(q){
+  if(!window.documents?.length)return '';const ranked=window.documents.map(d=>{let score=scoreSearchHay([d.title,d.originalName,d.tags?.join(' '),d.keywords?.join(' '),d.category].join(' '),q);if(d.bandId===sessionBandId)score+=1;return{d,score};}).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,3);
+  if(!ranked.length)return '';let out='\n\n【関連PDF資料】\n';
+  for(const {d} of ranked){try{const terms=mx4Terms(q).slice(0,24);let sn=null;if(terms.length){sn=await getDocs(query(collection(db,'light_documents',d.id,'chunks'),where('keywords','array-contains-any',terms),limit(24)));}if(!sn||sn.empty)sn=await getDocs(query(collection(db,'light_documents',d.id,'chunks'),limit(8)));const chunks=sn.docs.map(x=>({i:Number(x.data()?.index)||0,t:String(x.data()?.text||'')})).sort((a,b)=>a.i-b.i);let best=chunks.map(c=>{let sc=0;for(const w of terms)if(c.t.toLowerCase().includes(w))sc+=2;return{...c,sc};}).sort((a,b)=>b.sc-a.sc||a.i-b.i).slice(0,3);out+=`資料:${d.title||d.originalName}\n`;for(const c of best)out+=c.t.slice(0,1400)+'\n';}catch(e){console.debug('document chunk read skipped',e);}if(out.length>4500)break;}
+  return out;
+}
+
+/* ---------------- relations / graph ---------------- */
+function mx4RelationAllowedText(text){return !/(仲良し|親友|付き合って|恋人|付き合い|好き同士|カップル|デート)/.test(String(text||''));}
+async function saveRelation({aType,aId,bType,bId,relationType,scopeType,scopeId,strength=0.5,confidence=1,status='confirmed',sourceType='system',adminVisible=true,privacy='public',relatedUids=[]}){
+  if(!aType||!aId||!bType||!bId||aType===bType&&aId===bId)return null;
+  if(!mx4RelationAllowedText(`${relationType||''}`))return null;
+  const effectivePrivacy=mx4PrivacyFromPlan({privacy},'');
+  const effectiveScopeType=mx4ScopeForPrivacy(effectivePrivacy,scopeType||'personal');
+  const effectiveScopeId=effectiveScopeType==='personal'?(auth.currentUser?.uid||''):effectiveScopeType==='related'?'related':effectiveScopeType==='club'?'club':(scopeId||sessionBandId);
+  if(!effectiveScopeType||!effectiveScopeId)return null;
+  const key=canonical([effectiveScopeType,effectiveScopeId,aType,aId,bType,bId,relationType].join('|')).replace(/[^a-z0-9|_-]/g,'').slice(0,120);
+  const id='rel-'+btoa(unescape(encodeURIComponent(key))).replace(/[^a-zA-Z0-9]/g,'').slice(0,60);
+  const stamp=now();
+  let cleanRelated=[...new Set((Array.isArray(relatedUids)?relatedUids:[]).filter(Boolean).slice(0,30))];
+  if(effectiveScopeType==='related'&&auth.currentUser?.uid&&!cleanRelated.includes(auth.currentUser.uid))cleanRelated=[auth.currentUser.uid,...cleanRelated].slice(0,30);
+  const p={aType,aId,bType,bId,relationType:relationType||'related',scopeType:effectiveScopeType,scopeId:effectiveScopeId,privacy:effectivePrivacy,ownerUid:auth.currentUser?.uid||'',relatedUids:cleanRelated,strength:Math.max(0,Math.min(1,Number(strength)||0)),confidence:Math.max(0,Math.min(1,Number(confidence)||0)),status,sourceType,adminVisible,referenceAllowed:true,suppressed:false,createdAt:stamp,lastEvidenceAt:stamp,updatedAt:stamp,authUid:auth.currentUser?.uid||'',createdBy:sessionUserKey||'system'};
+  try{await setDoc(doc(db,'light_relations',id),p,{merge:true});return id;}catch(e){console.debug('relation save skipped',e);void mx4LogError(e,'relation-save');return null;}
+}
+function mx4RelationEdgeScore(e){const ageDays=Math.max(0,(now()-Number(e.lastEvidenceAt||e.updatedAt||e.createdAt||now()))/86400000);const decay=Math.max(.1,Math.pow(.5,ageDays/180));return Number(e.strength||0)*Number(e.confidence||0)*decay;}
+async function traverseRelations(seedType,seedId,scopes,depth=6){
+  if(!seedType||!seedId)return [];
+  const scopeList=Array.isArray(scopes)?scopes:[scopes];const maxDepth=Math.max(5,Math.min(10,Number(depth)||6));let frontier=[`${seedType}:${seedId}`];const seen=new Set(frontier),edges=[];
+  for(let d=0;d<maxDepth&&frontier.length;d++){
+    const next=[];
+    for(const node of frontier){const cut=node.indexOf(':');const nt=node.slice(0,cut),ni=node.slice(cut+1);
+      const jobs=[];
+      for(const sc of scopeList){if(!sc?.scopeType||!sc?.scopeId)continue;jobs.push(getDocs(query(collection(db,'light_relations'),where('scopeType','==',sc.scopeType),where('scopeId','==',sc.scopeId),where('aType','==',nt),where('aId','==',ni),limit(20))));jobs.push(getDocs(query(collection(db,'light_relations'),where('scopeType','==',sc.scopeType),where('scopeId','==',sc.scopeId),where('bType','==',nt),where('bId','==',ni),limit(20))));}
+      const snaps=await Promise.allSettled(jobs);
+      for(const rr of snaps){if(rr.status!=='fulfilled')continue;rr.value.forEach(ds=>{if(edges.length>=120)return;const x={id:ds.id,...ds.data()};if(x.referenceAllowed===false||x.suppressed===true||x.status==='rejected')return;const other=x.aType===nt&&x.aId===ni?`${x.bType}:${x.bId}`:`${x.aType}:${x.aId}`;x._depth=d+1;x._score=mx4RelationEdgeScore(x)/(d+1);edges.push(x);if(!seen.has(other)){seen.add(other);next.push(other);}});}
+    }
+    frontier=next;
+  }
+  return edges.sort((a,b)=>Number(b._score||0)-Number(a._score||0)).slice(0,80);
+}
+async function buildRelationContext(text){
+  if(!/(誰|人|メンバー|バンド|機材|アンプ|ギター|ベース|ドラム|マイク|ケーブル|トラブル|対処|前に|この人|この機材|関係|つながり|担当)/.test(String(text||'')))return '';
+  try{
+    const seeds=rankedPeopleInText(text).length?rankedPeopleInText(text):[{userKey:sessionUserKey}];const edges=[];for(const seed of seeds.slice(0,2)){const part=await traverseRelations('person',seed.userKey,[{scopeType:'band',scopeId:sessionBandId},{scopeType:'club',scopeId:'club'},{scopeType:'personal',scopeId:auth.currentUser?.uid||''},{scopeType:'related',scopeId:'related'}],6);edges.push(...part);}if(!edges.length)return '';
+    const uniq=[...new Map(edges.map(e=>[e.id,e])).values()].sort((a,b)=>Number(b._score||0)-Number(a._score||0));
+    let out='\n\n【関連グラフ（必要な範囲のみ）】\n';for(const e of uniq.slice(0,12))out+=`${e.aType}:${e.aId} --${e.relationType||'related'}--> ${e.bType}:${e.bId} / strength:${Number(e.strength||0).toFixed(2)} / confidence:${Number(e.confidence||0).toFixed(2)} / status:${e.status||'confirmed'}\n`;return out;
+  }catch(e){console.debug('relation traversal skipped',e);return '';}
+}
+
+/* ---------------- timetable / live state ---------------- */
+async function loadTimetable(){
+  if(MX4.timetableBusy)return;MX4.timetableBusy=true;
+  try{
+    const qs=[];qs.push(getDocs(query(collection(db,'light_timetable'),where('scopeType','==','club'),where('scopeId','==','club'))));if(sessionBandId)qs.push(getDocs(query(collection(db,'light_timetable'),where('scopeType','==','band'),where('scopeId','==',sessionBandId))));
+    const today=currentDate();const changes=await getDocs(query(collection(db,'light_timetable_changes'),where('date','>=',today.slice(0,8)+'01'))).catch(()=>null);
+    const snaps=await Promise.all(qs);window.timetableEntries=[];for(const sn of snaps)sn.forEach(d=>window.timetableEntries.push({id:d.id,...d.data()}));window.timetableEntries=[...new Map(window.timetableEntries.map(x=>[x.id,x])).values()];
+    const changeMap=new Map();if(changes)changes.forEach(d=>{const x=d.data()||{};if(!x.timetableId)return;const prev=changeMap.get(x.timetableId);if(!prev||Number(x.createdAt||0)>Number(prev.createdAt||0))changeMap.set(x.timetableId,{id:d.id,...x});});
+    window.timetableEntries=window.timetableEntries.map(x=>{const c=changeMap.get(x.id);const shift=Number(c?.delayMinutes||0)*60000;return {...x,appliedChange:c||null,effectiveStartAtMs:Number(c?.newStartAtMs||x.startAtMs||0)+(!c?.newStartAtMs?shift:0),effectiveEndAtMs:Number(c?.newEndAtMs||x.endAtMs||0)+(!c?.newEndAtMs?shift:0),effectiveStatus:c?.status||x.status||'confirmed'};}).sort((a,b)=>Number(a.effectiveStartAtMs)-Number(b.effectiveStartAtMs));
+    MX4.lastScheduleAt=now();
+  }catch(e){console.debug('timetable load skipped',e);window.timetableEntries=window.timetableEntries||[];await mx4LogError(e,'timetable-load');}
+  finally{MX4.timetableBusy=false;}
+}
+function getCurrentTimetableState(){
+  const ms=now();const confirmed=(window.timetableEntries||[]).filter(e=>String(e.confirmation||'confirmed')==='confirmed'&&String(e.effectiveStatus||'confirmed')==='confirmed');
+  const active=confirmed.filter(e=>Number(e.effectiveStartAtMs||0)<=ms&&(!e.effectiveEndAtMs||ms<=Number(e.effectiveEndAtMs))).sort((a,b)=>Number(a.effectiveStartAtMs)-Number(b.effectiveStartAtMs));
+  const upcoming=confirmed.filter(e=>Number(e.effectiveStartAtMs||0)>ms).sort((a,b)=>Number(a.effectiveStartAtMs)-Number(b.effectiveStartAtMs));
+  return {active,upcoming};
+}
+function buildTimetableContext(){
+  const st=getCurrentTimetableState();let out='\n\n【現在のタイムテーブル状況】\n';
+  out+=`現在時刻:${new Date().toLocaleString('ja-JP')}\n`;
+  if(st.active.length){out+='現在進行中:\n';for(const e of st.active.slice(0,4))out+=`- ${e.bandName||e.bandId||'出演者不明'} / ${mx4DateTimeLabel(e.effectiveStartAtMs)}〜${mx4DateTimeLabel(e.effectiveEndAtMs)} / delay:${e.appliedChange?.delayMinutes||0}分 / status:${e.confirmation||'confirmed'} / members:${(e.members||[]).join(', ')} / instruments:${(e.instruments||[]).join(', ')} / equipment:${(e.equipment||[]).join(', ')}\n`;}else out+='現在進行中の確定出演情報は記録上ありません。分からないものは推測しない。\n';
+  if(st.upcoming.length){out+='次の確定予定:\n';for(const e of st.upcoming.slice(0,4))out+=`- ${e.bandName||e.bandId||'出演者不明'} / ${mx4DateTimeLabel(e.effectiveStartAtMs)}〜${mx4DateTimeLabel(e.effectiveEndAtMs)} / delay:${e.appliedChange?.delayMinutes||0}分\n`;}
+  return out;
+}
+function updateLiveSituationForMode(text){
+  const st=getCurrentTimetableState();const live=st.active.length>0;const urgency=assessUrgency(text)+(live?2:0);if(window.forcedModeOverride){window.autoMode='oto';return 'oto';}
+  const specialist=/(PA|音響|ミキサー|モニター|マイク|ローディ|搬入|搬出|照明|DMX|プロモーター|進行|転換|機材|アンプ|ケーブル)/.test(String(text||''));
+  const important=/(会議|話し合い|決める|判断|重要|顧問|幹部|運営|進行)/.test(String(text||''));
+  const next=(urgency>=5||(live&&(specialist||important))||(urgency>=3&&specialist))?'oto':'light';window.autoMode=next;return next;
+}
+
+/* ---------------- memory decision / history ---------------- */
+const MEMORY_DECISION_FALLBACK={shouldSave:false,needsConfirmation:false,title:'',details:'',memoryType:'fact',memoryPriority:3,certainty:'unverified',validity:'current',privacy:'private_relationship',category:'personal',tags:[],relatedUids:[],reason:'not enough evidence',action:'new'};
+function mx4ShouldConsiderMemory(text){const t=String(text||'');return explicitMemoryCommand(t)||/(今後|いつも|大事|重要|好き|苦手|得意|担当|役割|バンド|ライブ|本番|トラブル|故障|対処|機材|誕生日|名前|顧問|部長|ローディ|PA|照明|プロモーター)/.test(t);}
+function mx4Temporary(text){return /(今回だけ|今だけ|一時的|今日だけ|今回限り|この間だけ|その場だけ|仮に)/.test(String(text||''));}
+async function planConversationMemory(text,reply){
+  const fallback={...MEMORY_DECISION_FALLBACK,shouldSave:explicitMemoryCommand(text)&&!mx4Temporary(text),needsConfirmation:explicitMemoryCommand(text)&&mx4Temporary(text),title:`会話からの記憶：${String(text).slice(0,40)}`,details:String(text).slice(0,3000),memoryPriority:explicitMemoryCommand(text)?8:4,certainty:'user_stated',privacy:mx4PrivacyFromPlan({},text),category:'personal',tags:['会話記憶'],action:'new',reason:'fallback'};
+  try{
+    const existing=rankedMemoryFiles(text).slice(0,5).map(x=>({id:x.id,title:x.title,details:String(x.details||'').slice(0,1000),memoryType:x.memoryType,certainty:x.certainty,validity:x.validity,privacy:x.privacy,memoryPriority:x.memoryPriority}));
+    const prompt=`会話内容から長期記憶の保存計画をJSONで作成してください。\nユーザー発言:${String(text||'').slice(0,5000)}\nライト/Otoの返答:${String(reply||'').slice(0,3000)}\n既存の関連記憶候補:${JSON.stringify(existing).slice(0,7000)}\nルール:\n- 重要性が低い雑談は保存しない。\n- 明示的な「覚えて」は原則保存。ただし明らかに一時的ならneedsConfirmation=true。\n- 「覚えないで/保存しないで/記録しないで/覚えさせない」は保存しない。\n- 「忘れて」は保存しない。\n- 本人発言とAI推定を分離。\n- factsとmightyX自身の判断はmemoryTypeで分ける。\n- 既存記憶と同じならduplicate、内容が更新ならupdate、古い事実として残すならpast、矛盾があり確認が必要ならconflict。\n- actionはnew/update/past/duplicate/conflict/none。duplicateならshouldSave=false。conflictはshouldSave=falseかcandidate相当。\n- privacyはpublic/band/related/private_relationship/private_romantic/private_family/private_confidential。恋愛や親密さは推測しない。\n- memoryPriorityは1〜10。referencePriorityは固定値にしない。\nJSON:{shouldSave,needsConfirmation,title,details,memoryType,category,tags,memoryPriority,certainty,validity,privacy,relatedUids,action,targetMemoryId,reason}`;
+    const r=await requestAI({messages:[{role:'user',text:prompt}],system:'記憶判定器。JSONだけを返す。既存記憶との重複/更新/過去化/矛盾を最優先で判定する。',maxOutputTokens:750,jsonMode:true,retries:1});
+    const p={...fallback,...parseJsonLoose(r.text)};p.privacy=mx4PrivacyFromPlan(p,text);p.memoryPriority=Math.max(1,Math.min(10,Number(p.memoryPriority)||3));p.tags=normalizeTags(p.tags);p.relatedUids=Array.isArray(p.relatedUids)?p.relatedUids.slice(0,30):[];if(explicitMemoryCommand(text)&&!explicitNoSaveCommand(text)&&!explicitForgetCommand(text)&&!mx4Temporary(text)){p.shouldSave=true;p.needsConfirmation=false;if(['none','conflict','duplicate'].includes(p.action))p.action=p.action==='duplicate'?'duplicate':'new';}if(explicitNoSaveCommand(text)||explicitForgetCommand(text)){p.shouldSave=false;p.needsConfirmation=false;}return p;
+  }catch(e){console.debug('memory planner failed',e);return fallback;}
+}
+window.pendingMemorySave=null;
+function pendingMemoryChoice(text){const t=String(text||'').trim().replace(/[。、！？!?.,]+$/g,'').trim();if(/^(はい|うん|そう|そうだね|覚えて|覚えておいて|覚えといて|今後も覚えて|お願い|それでいい|いいよ|いい|OK|ok|おけ|おｋ)$/i.test(t))return 'yes';if(/^(いいえ|いや|やめて|いらない|今回はいい|今はいい|今だけでいい|覚えないで|保存しないで|記録しないで|今回は覚えなくていい)$/i.test(t))return 'no';return null;}
+async function restoreSuppressedTarget(target){
+  if(!auth.currentUser?.uid)return false;const list=await mx4LoadSuppressions(true);let s=null;
+  if(target)s=list.find(x=>x.active!==false&&mx4ActiveSuppressionMatch(target,x));
+  if(!s&&window.lastSuppressionId)s=list.find(x=>x.active!==false&&x.id===window.lastSuppressionId);
+  if(!s&&window.lastSuppressedMemory?.id)s=list.find(x=>x.active!==false&&x.memoryId===window.lastSuppressedMemory.id);
+  if(!s){const recent=list.filter(x=>x.active!==false).sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));const newest=recent[0];if(newest&&now()-Number(newest.updatedAt||newest.createdAt||0)<=10*60*1000)s=newest;}
+  if(!s)return false;
+  try{
+    let restored=false;
+    if(s.memoryId){const ms=await getDoc(doc(db,'light_memory_files',s.memoryId));if(ms.exists()){const before=ms.data()||{};const stamp=now();await updateDoc(ms.ref,{suppressed:false,referenceAllowed:true,enabled:true,restoredAt:stamp,restoredBy:sessionUserKey});await mx4SyncLinkedSource({imageId:s.imageId||before.imageId,documentId:s.documentId||before.documentId},false,'user_restore');await mx4MemoryAudit('restore',s.memoryId,before,{...before,suppressed:false,referenceAllowed:true,enabled:true,restoredAt:stamp,restoredBy:sessionUserKey},'user');restored=true;}}
+    if(!restored&&s.kind==='no_save'&&s.targetText){const p=await planConversationMemory(s.targetText,'');await persistConversationMemory({...p,shouldSave:true,needsConfirmation:false,action:'new'},s.targetText,{bypassSuppression:true});restored=true;}
+    if(restored){await mx4DeactivateSuppression(s.id,'user');await loadMemoryFiles();updateUI();window.lastSuppressedMemory=null;return true;}
+  }catch(e){void mx4LogError(e,'remember-restore');}return false;
+}
+async function handleRememberOverride(text){
+  const t=String(text||'').trim();if(!auth.currentUser?.uid)return false;
+  if(window.pendingMemorySave){const choice=pendingMemoryChoice(t);if(choice==='no'){const source=window.pendingMemorySave.sourceText;window.pendingMemorySave=null;await mx4RecordSuppression('no_save',mx4NoSaveTargetText(source),{reason:'temporary_declined'});addLog(window.autoMode==='oto'?'オト':'ライト','了解。今回は覚えないでおく。','ai');return true;}if(choice==='yes'){const p=window.pendingMemorySave.plan,source=window.pendingMemorySave.sourceText;window.pendingMemorySave=null;try{await persistConversationMemory({...p,shouldSave:true,needsConfirmation:false},source,{bypassSuppression:true});addLog(window.autoMode==='oto'?'オト':'ライト','了解。今後のために覚えておく。','ai');}catch(e){void mx4LogError(e,'remember-confirm');addLog('システムエラー','記憶の保存に失敗した。','error');}return true;}}
+  if(explicitNoSaveCommand(t)){await mx4RecordSuppression('no_save',mx4NoSaveTargetText(t),{summary:mx4NoSaveTargetText(t),reason:'explicit_no_save'});return true;}
+  const normalized=t.replace(/[。！？!?]+$/g,'').trim();if(/^(やっぱり(?:覚えて|覚えておいて|覚えといて)|もう一度(?:覚えて|覚えておいて)|再び(?:覚えて|覚えておいて))$/.test(normalized)){const restored=await restoreSuppressedTarget('');if(restored)addLog(window.autoMode==='oto'?'オト':'ライト','了解。前に外した記憶を、また覚えておく状態に戻した。','ai');return restored;}
+  if(explicitMemoryCommand(t))return false;
+  return false;
+}
+async function persistConversationMemory(plan,sourceText,options={}){
+  if(!plan?.shouldSave||!auth.currentUser?.uid||explicitNoSaveCommand(sourceText)||explicitForgetCommand(sourceText))return false;
+  if(plan.needsConfirmation&&!options.bypassSuppression)return false;
+  if(!options.bypassSuppression&&await mx4FindActiveSuppression(sourceText,'no_save'))return false;
+  const privacy=mx4PrivacyFromPlan(plan,sourceText),scopeType=mx4ScopeForPrivacy(privacy,plan.category==='club'?'club':plan.category==='personal'?'personal':'band');
+  const scopeId=scopeType==='personal'?auth.currentUser.uid:scopeType==='club'?'club':scopeType==='related'?'related':sessionBandId;if(!scopeId)return false;
+  const adminVisible=mx4AdminVisible(privacy,sourceText,plan.adminVisible),stamp=now();
+  let relatedUids=Array.isArray(plan.relatedUids)?plan.relatedUids.filter(x=>typeof x==='string'&&x.trim()).slice(0,30):[];
+  if(scopeType==='related'&&!relatedUids.includes(auth.currentUser.uid))relatedUids=[auth.currentUser.uid,...relatedUids].slice(0,30);
+  const targetId=String(plan.targetMemoryId||'');
+  if(['duplicate','conflict','none'].includes(plan.action))return false;
+  if(plan.action==='update'&&targetId){
+    const target=await getDoc(doc(db,'light_memory_files',targetId));
+    if(!target.exists()||!mxMemoryAllowed(target.data()))return false;
+    const before=target.data()||{};
+    const targetOwner=String(before.ownerUid||before.authUid||'');
+    if(String(before.scopeType||'')!=='personal'||targetOwner!==auth.currentUser.uid)return false;
+    const next={title:String(plan.title||before.title||'').slice(0,120),details:String(plan.details||before.details||sourceText).slice(0,4000),memoryType:plan.memoryType||before.memoryType||'fact',category:plan.category||before.category||'personal',memoryPriority:Math.max(1,Math.min(10,Number(plan.memoryPriority)||Number(before.memoryPriority)||3)),certainty:plan.certainty||before.certainty||'user_stated',validity:'current',tags:normalizeTags(plan.tags?.length?plan.tags:before.tags),keywords:normalizeTags(plan.tags?.length?plan.tags:before.keywords),privacy:before.privacy||privacy,adminVisible:before.adminVisible!==false,sourceType:plan.sourceType||'user_correction',sourceUserKey:sessionUserKey,sourceText:String(sourceText).slice(0,3000)};
+    if(explicitMemoryCommand(sourceText)){const newRef=doc(collection(db,'light_memory_files'));const historical={...before,validity:'historical',status:'past',updatedAt:stamp,updatedBy:sessionUserKey};const current={...before,...next,validity:'current',status:'ready',suppressed:false,referenceAllowed:true,enabled:true,ownerUid:auth.currentUser.uid,authUid:auth.currentUser.uid,createdBy:'user_explicit_remember',createdAt:stamp,updatedAt:stamp};const batch=writeBatch(db);batch.update(target.ref,historical);batch.set(newRef,current);await batch.commit();await mx4MemoryAudit('updateMemory_explicit',targetId,before,historical,'user');await mx4MemoryAudit('updateMemory_explicit_created',newRef.id,null,current,'user');window.lastSavedMemory={kind:'memory',id:newRef.id};window.lastSavedMemoryAt=now();window.lastMemorySourceText=String(sourceText).slice(0,2500);await loadMemoryFiles();updateUI();return newRef.id;}
+    const req=await addDoc(collection(db,'light_change_requests'),{targetUid:auth.currentUser.uid,action:'updateMemory',summary:'既存の記憶を更新する確認',payload:{memoryId:targetId,before,next,sourceText:String(sourceText).slice(0,3000)},status:'pending',createdAt:stamp,createdBy:auth.currentUser.uid,createdByType:'user',source:'user_correction',privacy:before.privacy||privacy,adminVisible:before.adminVisible!==false});
+    window.pendingChangeAwaitingAnswer=req.id;window.pendingChangePromptedAt=now();window.pendingChangePromptRequestId=req.id;
+    addLog(window.autoMode==='oto'?'オト':'ライト','前の記録を更新する形になる。新しい内容で反映していいか、確認させて。','ai');
+    return false;
+  }
+
+  const ref=await addDoc(collection(db,'light_memory_files'),{title:String(plan.title||sourceText.slice(0,40)).slice(0,120),details:String(plan.details||sourceText).slice(0,4000),memoryType:plan.memoryType||'fact',category:plan.category||scopeType,scopeType,scopeId,bandId:sessionBandId,bandName:sessionBandName,ownerUid:auth.currentUser.uid,relatedUids,memoryPriority:Math.max(1,Math.min(10,Number(plan.memoryPriority)||3)),referencePriority:'context-dependent',certainty:plan.certainty||'user_stated',validity:plan.action==='past'?'historical':(plan.validity||'current'),sourceType:plan.sourceType||'user_statement',sourceUserKey:sessionUserKey,sourceText:String(sourceText).slice(0,3000),privacy,adminVisible,tags:normalizeTags(plan.tags),keywords:normalizeTags(plan.tags),enabled:true,status:'ready',referenceAllowed:true,suppressed:false,authUid:auth.currentUser.uid,createdBy:sessionUserKey,createdAt:stamp,updatedAt:stamp});
+  window.lastSavedMemory={kind:'memory',id:ref.id};window.lastSavedMemoryAt=now();if(scopeType==='band'&&sessionBandId)await saveRelation({aType:'person',aId:sessionUserKey,bType:'band',bId:sessionBandId,relationType:'member_of_band',scopeType:'band',scopeId:sessionBandId,strength:1,confidence:1,sourceType:'profile',adminVisible:true,privacy:'band',relatedUids:[auth.currentUser.uid]});await loadMemoryFiles();updateUI();return ref.id;
+}
+async function saveMemoryCandidate(text,reply=''){
+  const t=String(text||'').trim();if(!t||!auth.currentUser?.uid||!mx4ShouldConsiderMemory(t)||explicitForgetCommand(t))return;window.lastMemorySourceText=t.slice(0,2500);
+  try{
+    if(explicitNoSaveCommand(t)){const target=mx4NoSaveTargetText(t);if(window.lastSavedMemory?.id){const snap=await getDoc(doc(db,'light_memory_files',window.lastSavedMemory.id));if(snap.exists()){const x=snap.data()||{};await updateDoc(snap.ref,{suppressed:true,referenceAllowed:false,enabled:false,suppressedAt:now(),suppressedBy:sessionUserKey,suppressionReason:'explicit_no_save'});await mx4SyncLinkedSource(x,true,'explicit_no_save');await mx4RecordSuppression('no_save',target||String(x.title||x.details||''),{memoryId:snap.id,imageId:x.imageId||'',documentId:x.documentId||'',title:x.title,summary:x.details,reason:'explicit_no_save'});window.lastSuppressedMemory={kind:x.kind||'memory',id:snap.id,imageId:x.imageId||'',documentId:x.documentId||''};window.lastSavedMemory=null;await loadMemoryFiles();updateUI();return;}}const fallbackTarget=target&&target!==t?target:(window.lastMemorySourceText||window.lastMeaningfulUserText||'');if(fallbackTarget)await mx4RecordSuppression('no_save',fallbackTarget,{summary:fallbackTarget,reason:'explicit_no_save'});return;}
+    if(await mx4FindActiveSuppression(t,'no_save'))return;
+    const plan=await planConversationMemory(t,reply);
+    if(plan.needsConfirmation){window.pendingMemorySave={plan,sourceText:t,createdAt:now()};addLog('ライト','この話は一時的な内容にも見えるけど、今後も覚えておくかだけ確認させて。','ai');return;}
+    if(plan.shouldSave){await persistConversationMemory(plan,t);return;}
+    if(['unverified','hypothesis','inferred'].includes(plan.certainty)||plan.action==='conflict'){const privacy=mx4PrivacyFromPlan(plan,t);await addDoc(collection(db,'light_memory_candidates'),{candidateText:t,summary:plan.details||t,title:plan.title||'',reason:plan.reason||'要確認',status:'pending',scopeType:'personal',scopeId:auth.currentUser.uid,authUid:auth.currentUser.uid,userKey:sessionUserKey,bandId:sessionBandId,bandName:sessionBandName,memoryPriority:Number(plan.memoryPriority||3),certainty:plan.certainty||'unverified',validity:plan.validity||'current',privacy,adminVisible:mx4AdminVisible(privacy,t),referenceAllowed:true,suppressed:false,createdAt:now(),updatedAt:now(),action:plan.action||'conflict',targetMemoryId:plan.targetMemoryId||''});}
+  }catch(e){console.debug('memory save skipped',e);void mx4LogError(e,'memory-background');}
+}
+
+/* ---------------- photo memory / Storage ---------------- */
+const CATALOG_SCHEMA={type:'object',properties:{shouldSave:{type:'boolean'},title:{type:'string'},category:{type:'string',enum:['personal','band','club','live_event','live_staff','staff_shared','daily']},subcategory:{type:'string'},staffRole:{type:'string',enum:['pa','roady','promoter','lighting','none']},scopeType:{type:'string',enum:['personal','band','club']},privacy:{type:'string',enum:['public','band','related','private_relationship','private_romantic','private_family','private_confidential']},tags:{type:'array',items:{type:'string'}},summary:{type:'string'},aiObservation:{type:'string'},humanNoteSuggested:{type:'string'},date:{type:'string'},dateSource:{type:'string'},shouldCreateTimeline:{type:'boolean'},timelineTitle:{type:'string'},timelineDetails:{type:'string'},timelineTags:{type:'array',items:{type:'string'}},trouble:{type:'string'},personCandidates:{type:'array',items:{type:'object'}},instrumentCandidates:{type:'array',items:{type:'object'}},equipmentCandidates:{type:'array',items:{type:'object'}},relatedUids:{type:'array',items:{type:'string'}}},required:['shouldSave','title','category','subcategory','staffRole','scopeType','privacy','tags','summary','aiObservation','humanNoteSuggested','date','dateSource','shouldCreateTimeline','timelineTitle','timelineDetails','timelineTags','trouble','personCandidates','instrumentCandidates','equipmentCandidates']};
+async function catalogPhotoWithAI(photo,text,chatReply){
+  const prompt=`写真を軽音楽部の記録として整理してください。保存する価値があるかも判定してください。\n現在日付:${currentDate()}\nユーザー:${sessionDisplayName}\nバンド:${sessionBandName}\n発言:${text||'(写真だけ)'}\n返答:${chatReply||''}\nルール:\n- shouldSave=trueは将来の軽音楽部活動で再利用価値がある場合だけ。明らかな一時写真/雑談写真ならfalse。\n- 保存しないで等があればfalse。\n- 複数人写真では人物を無理に特定せず、まず楽器・機材・状況を分析。\n- personCandidatesは見た目や文脈から候補に過ぎない人物情報。必ずconfidence 0〜1とstatus=candidateを付ける。\n- 仲の良さ/恋愛関係は推測しない。\n- aiObservationは写真から見えることだけ。推測は別にする。\n- privacyがprivate_familyまたはprivate_confidentialで本当に秘密として示される場合はadminVisible=false相当。\nJSONのみ。`;
+  const result=await requestAI({messages:[{role:'user',text:prompt,images:[{mimeType:photo.mimeType,base64:photo.base64}]}],system:'写真記録の司書。JSONだけ。人物同定は候補にとどめる。',maxOutputTokens:1000,jsonMode:true});return parseJsonLoose(result.text);
+}
+async function archivePhoto(photo,catalog,originalText){
+  if(catalog?.shouldSave!==true||explicitNoSaveCommand(originalText))return '';
+  const privacy=mx4PrivacyFromPlan(catalog,originalText),scopeType=mx4ScopeForPrivacy(privacy,catalog.scopeType||'band'),uid=auth.currentUser?.uid||'';if(!uid)return '';
+  let relatedUids=Array.isArray(catalog.relatedUids)?catalog.relatedUids.filter(x=>typeof x==='string'&&x.trim()).slice(0,30):[];if(scopeType==='related'&&!relatedUids.includes(uid))relatedUids=[uid,...relatedUids].filter(Boolean).slice(0,30);
+  const scopeId=scopeType==='personal'?uid:scopeType==='club'?'club':scopeType==='related'?'related':sessionBandId;if(!scopeId)return '';
+  const imageId='img-'+now().toString(36)+'-'+Math.random().toString(36).slice(2,8);const ext=mx4MimeExt(photo.mimeType);const storageRoot=scopeType==='personal'?`users/${uid}`:scopeType==='related'?`users/${uid}/related`:scopeType==='club'?'club':`bands/${scopeId}`;const path=`${storageRoot}/photos/${imageId}.${ext}`;const blob=await (await fetch(photo.dataUrl)).blob();const stamp=now(),adminVisible=mx4AdminVisible(privacy,originalText,catalog.adminVisible);
+  const personCandidates=(Array.isArray(catalog.personCandidates)?catalog.personCandidates:[]).slice(0,8).map(p=>({label:String(p.label||p.name||'不明').slice(0,80),confidence:Math.max(0,Math.min(1,Number(p.confidence)||0)),status:'candidate',reason:String(p.reason||'').slice(0,300)}));
+  const idata={imageId,storagePath:path,storageStatus:'processing',authUid:uid,userKey:sessionUserKey,username:sessionUserName,displayName:sessionDisplayName,bandId:sessionBandId,bandName:sessionBandName,ownerUid:uid,relatedUids,scopeType,scopeId,title:String(catalog.title||`写真 ${new Date().toLocaleString('ja-JP')}`).slice(0,120),category:catalog.category||'band',subcategory:catalog.subcategory||'',staffRole:catalog.staffRole||'none',privacy,adminVisible,tags:normalizeTags([...(catalog.tags||[]),'写真']),aiSummary:String(catalog.summary||'').slice(0,4500),aiObservation:String(catalog.aiObservation||'').slice(0,3500),humanNote:String(catalog.humanNoteSuggested||'').slice(0,1500),sourceText:String(originalText||'').slice(0,2000),date:String(catalog.date||'').slice(0,10),dateSource:catalog.dateSource||'unknown',mimeType:photo.mimeType||'image/jpeg',width:photo.width,height:photo.height,originalName:photo.originalName||'',createdAt:stamp,updatedAt:stamp,enabled:true,referenceAllowed:true,suppressed:false,status:'processing',personCandidates,instrumentCandidates:Array.isArray(catalog.instrumentCandidates)?catalog.instrumentCandidates.slice(0,8):[],equipmentCandidates:Array.isArray(catalog.equipmentCandidates)?catalog.equipmentCandidates.slice(0,8):[]};
+  try{
+    await uploadBytes(storageRef(storage,path),blob,{contentType:photo.mimeType||'image/jpeg',customMetadata:{scopeType,scopeId,privacy,adminVisible:String(adminVisible),kind:'photo',ownerUid:uid,relatedUidsCsv:mx4CsvUids(relatedUids)}});
+    await setDoc(doc(db,'light_images',imageId),idata);
+    const mf=await addDoc(collection(db,'light_memory_files'),{title:idata.title,details:`${idata.aiSummary}\n\nAI観察：${idata.aiObservation}\n\nトラブル：${String(catalog.trouble||'(なし)')}\n\n人間メモ：${idata.humanNote||'(なし)'}`,keywords:idata.tags,tags:idata.tags,category:idata.category,subcategory:idata.subcategory,staffRole:idata.staffRole,scopeType,scopeId,bandId:sessionBandId,bandName:sessionBandName,kind:'photo',imageId,storagePath:path,sourceName:idata.originalName||'会話中の写真',directAnswer:false,enabled:true,status:'processing',eventId:'',privacy,adminVisible,referenceAllowed:true,suppressed:false,authUid:uid,createdBy:sessionUserKey,ownerUid:uid,relatedUids,createdAt:stamp,updatedAt:stamp,personCandidates});
+    await updateDoc(doc(db,'light_images',imageId),{status:'ready',updatedAt:now(),memoryFileId:mf.id});await updateDoc(doc(db,'light_memory_files',mf.id),{status:'ready',updatedAt:now()});window.lastSavedMemory={kind:'photo',id:mf.id,imageId};window.lastSavedMemoryAt=now();window.lastMemorySourceText=String(originalText||photo.originalName||'').slice(0,2500);
+    if(scopeType==='band')await saveRelation({aType:'person',aId:sessionUserKey,bType:'photo',bId:imageId,relationType:'uploaded_photo',scopeType:'band',scopeId:sessionBandId,strength:.55,confidence:1,sourceType:'user_action',adminVisible,privacy,relatedUids:[uid]});
+    for(const p of personCandidates)if(p.confidence>=.55)await saveRelation({aType:'photo',aId:imageId,bType:'person',bId:canonical(p.label),relationType:'person_candidate',scopeType,scopeId,strength:.25,confidence:p.confidence,status:'candidate',sourceType:'ai_vision',adminVisible,privacy,relatedUids:[uid]});
+    const eventId=await upsertTimelineFromCatalog(catalog,imageId,mf.id);if(eventId){await updateDoc(doc(db,'light_images',imageId),{eventId,eventTitle:catalog.timelineTitle||catalog.title||'',updatedAt:now()});await updateDoc(doc(db,'light_memory_files',mf.id),{eventId,updatedAt:now()});await saveRelation({aType:'photo',aId:imageId,bType:'event',bId:eventId,relationType:'photo_of_event',scopeType:scopeType==='personal'?'band':scopeType,scopeId:scopeType==='personal'?sessionBandId:scopeId,strength:.75,confidence:.8,sourceType:'ai_catalog',adminVisible,privacy,relatedUids:[uid]});}
+    return imageId;
+  }catch(e){
+    await deleteDoc(doc(db,'light_images',imageId)).catch(()=>{});await deleteObject(storageRef(storage,path)).catch(()=>{});void mx4LogError(e,'photo-persist');throw e;
+  }
+}
+async function autoArchivePhotos(photos,display,reply){
+  if(!photos.length||explicitNoSaveCommand(display))return;let ok=0;
+  for(const photo of photos){try{const c=await catalogPhotoWithAI(photo,display,reply);if(c?.shouldSave===true){await archivePhoto(photo,c,display);ok++;}}catch(err){console.error('写真自動記録エラー',err);void mx4LogError(err,'photo-background');}}
+  try{await Promise.all([loadMemoryFiles(),loadPhotoMemories(),loadTimeline()]);updateUI();if(ok)addLog('システム',`${ok}枚の写真をAI判断で資料館に記録したぜ。`,'sys');}catch(e){console.debug(e);}
+}
+
+/* ---------------- pending admin changes ---------------- */
+async function loadPendingChangeRequests(){
+  if(!auth.currentUser)return;try{const s=await getDocs(query(collection(db,'light_change_requests'),where('targetUid','==',auth.currentUser.uid),where('status','==','pending')));window.pendingChangeRequests=s.docs.map(d=>({id:d.id,...d.data()}));}catch(e){window.pendingChangeRequests=[];void mx4LogError(e,'change-request-load');}
+}
+async function surfacePendingChangeAtStartup(){
+  if(!window.pendingChangeRequests?.length||window.pendingChangeAwaitingAnswer)return;
+  const r=window.pendingChangeRequests[0];window.pendingChangeAwaitingAnswer=r.id;window.pendingChangePromptedAt=now();window.pendingChangePromptRequestId=r.id;
+  const brief=String(r.summary||'管理者からの変更確認があります。').slice(0,300);const prompt=`そういえば、${brief}。反映してよければ「この変更で大丈夫」と言ってくれ。`;
+  addLog('ライト',prompt,'ai');if(!window.isMuted)window.speak(prompt);
+}
+function pendingChangeContext(){if(!window.pendingChangeRequests?.length)return '';return '\n\n【本人確認待ちの管理者変更】\n'+window.pendingChangeRequests.slice(0,3).map(x=>`requestId=${x.id} / ${x.summary||'変更あり'} / 詳細:${JSON.stringify(x.payload||{}).slice(0,800)}`).join('\n')+'\nシステム通知として割り込まず、自然な会話の区切りで確認する。確認できなければ次回起動へ持ち越す。';}
+function isExplicitChangeConfirmation(text){const t=String(text||'').trim();return /(この変更.*確認|変更.*確認した|その変更.*反映|変更.*反映して(いい|ください|くれ)|反映していい|この内容で反映|その内容で反映|この変更で大丈夫|これで大丈夫)/.test(t)&&!/(変更について何|変更とは)/.test(t);}
+function isExplicitChangeRejection(text){return /(この変更.*やめ|変更.*却下|その変更.*やめ|反映しない|この変更.*違う|変更.*拒否)/.test(String(text||''));}
+async function confirmPendingChange(id,approved){
+  const r=await getDoc(doc(db,'light_change_requests',id));if(!r.exists()||!auth.currentUser)return false;const d=r.data()||{};if(d.targetUid!==auth.currentUser.uid||d.status!=='pending')return false;
+  try{
+    if(approved&&d.payload){
+      if(d.action==='suppressMemory'&&d.payload.memoryId){const mr=await getDoc(doc(db,'light_memory_files',d.payload.memoryId));if(!mr.exists())return false;const before=mr.data();const stamp=now();await updateDoc(mr.ref,{suppressed:true,referenceAllowed:false,enabled:false,updatedAt:stamp,suppressedBy:'user_after_admin_request',suppressionReason:'confirmed_admin_request'});await mx4SyncLinkedSource(before,true,'confirmed_admin_request');await mx4MemoryAudit('admin_request_suppress',d.payload.memoryId,before,{...before,suppressed:true,referenceAllowed:false,enabled:false,updatedAt:stamp},'user');}
+      else if(d.action==='updateMemory'&&d.payload?.memoryId&&d.payload?.next){
+        const mr=await getDoc(doc(db,'light_memory_files',d.payload.memoryId));if(!mr.exists()||!mxMemoryAllowed(mr.data()))return false;
+        const before=mr.data()||{};if(String(before.ownerUid||before.authUid||'')!==String(auth.currentUser.uid))return false;
+        const next={...d.payload.next};const newRef=doc(collection(db,'light_memory_files'));const stamp=now();
+        const historical={...before,validity:'historical',status:'past',updatedAt:stamp,updatedBy:sessionUserKey};
+        const current={...before,...next,validity:'current',status:'ready',suppressed:false,referenceAllowed:true,enabled:true,ownerUid:auth.currentUser.uid,authUid:auth.currentUser.uid,createdBy:'user_after_confirmation',createdAt:stamp,updatedAt:stamp,sourceType:next.sourceType||'user_correction',sourceUserKey:sessionUserKey,sourceText:String(d.payload.sourceText||next.sourceText||'').slice(0,3000)};
+        const batch=writeBatch(db);batch.update(mr.ref,historical);batch.set(newRef,current);await batch.commit();
+        await mx4MemoryAudit('updateMemory_confirmed',d.payload.memoryId,before,historical,'user');await mx4MemoryAudit('updateMemory_created',newRef.id,null,current,'user');window.lastSavedMemory={kind:'memory',id:newRef.id};window.lastSavedMemoryAt=now();window.lastMemorySourceText=String(d.payload.sourceText||'').slice(0,2500);
+      }
+      else if(d.action==='addMemory'&&d.payload){const p=d.payload;const privacy=mx4PrivacyFromPlan(p,'');const scopeType=mx4ScopeForPrivacy(privacy,p.scopeType||'personal');const scopeId=scopeType==='personal'?auth.currentUser.uid:scopeType==='club'?'club':sessionBandId;const ref=await addDoc(collection(db,'light_memory_files'),{...p,scopeType,scopeId,privacy,adminVisible:mx4AdminVisible(privacy,String(p.sourceText||'')),authUid:auth.currentUser.uid,ownerUid:auth.currentUser.uid,userKey:sessionUserKey,createdAt:now(),updatedAt:now(),createdBy:'admin_after_user_confirmation',status:'ready',enabled:true,referenceAllowed:true,suppressed:false});await mx4MemoryAudit('admin_request_add',ref.id,null,p,'user');}
+      else if(d.action==='approveCandidate'&&d.payload?.candidateId){
+        const cs=await getDoc(doc(db,'light_memory_candidates',d.payload.candidateId));
+        if(!cs.exists())return false;
+        const c=cs.data()||{};
+        if(String(c.authUid||'')!==String(auth.currentUser.uid)||c.adminVisible===false||c.privacy==='private_family')return false;
+        const ref=await addDoc(collection(db,'light_memory_files'),{
+          title:String(c.title||`会話からの記憶：${String(c.candidateText||'').slice(0,50)}`).slice(0,120),
+          details:String(c.summary||c.candidateText||''),scopeType:'personal',scopeId:auth.currentUser.uid,userKey:sessionUserKey,
+          bandId:c.bandId||sessionBandId,bandName:c.bandName||sessionBandName,category:c.category||'personal',
+          memoryPriority:Number(c.memoryPriority)||3,referenceAllowed:true,suppressed:false,certainty:c.certainty||'confirmed',validity:c.validity||'current',
+          privacy:c.privacy||'private_relationship',adminVisible:c.adminVisible!==false,tags:['自動記憶','承認済み',...(Array.isArray(c.tags)?c.tags.slice(0,8):[])],
+          keywords:Array.isArray(c.tags)?c.tags.slice(0,8):['自動記憶'],enabled:true,status:'ready',candidateId:d.payload.candidateId,
+          action:c.action||'new',sourceType:'candidate_approval_confirmed',createdAt:now(),updatedAt:now(),createdBy:'user_after_admin_request',authUid:auth.currentUser.uid,ownerUid:auth.currentUser.uid
+        });
+        await updateDoc(cs.ref,{status:'approved',memoryId:ref.id,approvedAt:now(),approvedBy:auth.currentUser.uid});
+        await mx4MemoryAudit('candidate_approved',ref.id,null,{candidateId:d.payload.candidateId},'user');
+      }
+      else if(d.action==='suppressPhoto'&&d.payload?.imageId){
+        const ir=await getDoc(doc(db,'light_images',d.payload.imageId));if(!ir.exists())return false;const before=ir.data()||{};
+        if(String(before.ownerUid||before.authUid||'')!==String(auth.currentUser.uid))return false;const stamp=now();
+        await updateDoc(ir.ref,{suppressed:true,referenceAllowed:false,enabled:false,updatedAt:stamp,suppressedBy:'user_after_admin_request',suppressionReason:'confirmed_admin_request'});
+        await mx4SyncLinkedSource({imageId:d.payload.imageId},true,'confirmed_admin_request');
+        await addDoc(collection(db,'light_history_edits'),{targetType:'photo',targetId:d.payload.imageId,action:'admin_request_suppress',editorType:'user',editor:sessionUserKey,authUid:auth.currentUser.uid,timestamp:stamp,before,after:{...before,suppressed:true,referenceAllowed:false,enabled:false},privacy:before.privacy||'private_relationship',adminVisible:before.adminVisible!==false});
+      }
+      else if(d.action==='suppressDocument'&&d.payload?.documentId){
+        const dr=await getDoc(doc(db,'light_documents',d.payload.documentId));if(!dr.exists())return false;const before=dr.data()||{};
+        if(String(before.ownerUid||before.authUid||'')!==String(auth.currentUser.uid))return false;const stamp=now();
+        await updateDoc(dr.ref,{suppressed:true,referenceAllowed:false,enabled:false,updatedAt:stamp,suppressedBy:'user_after_admin_request',suppressionReason:'confirmed_admin_request'});
+        await mx4SyncLinkedSource({documentId:d.payload.documentId},true,'confirmed_admin_request');
+        await addDoc(collection(db,'light_history_edits'),{targetType:'document',targetId:d.payload.documentId,action:'admin_request_suppress',editorType:'user',editor:sessionUserKey,authUid:auth.currentUser.uid,timestamp:stamp,before,after:{...before,suppressed:true,referenceAllowed:false,enabled:false},privacy:before.privacy||'private_relationship',adminVisible:before.adminVisible!==false});
+      }
+      else if((d.action==='updateUser'||d.action==='updateProfile')&&d.payload){const old=await mx4LoadProfileByKey(sessionUserKey);const before=old?.data||{};const next={...before,...d.payload,authUid:auth.currentUser.uid,userKey:sessionUserKey,updatedAt:now()};const stamp=now(),batch=writeBatch(db);batch.set(doc(db,'light_users',sessionUserKey),next,{merge:true});if(next.bandId&&next.bandName)batch.set(doc(db,'light_bands',next.bandId),{bandId:next.bandId,name:next.bandName,normalizedName:canonical(next.bandName),updatedAt:stamp,createdByUid:auth.currentUser.uid},{merge:true});if(next.bandId)batch.set(doc(db,'light_band_members',`${next.bandId}_${auth.currentUser.uid}`),{uid:auth.currentUser.uid,userKey:sessionUserKey,bandId:next.bandId,bandName:next.bandName,updatedAt:stamp});await writePersonIndexBatch(batch,next);await batch.commit();if(before.bandId&&before.bandId!==next.bandId)await deleteDoc(doc(db,'light_band_members',`${before.bandId}_${auth.currentUser.uid}`)).catch(()=>{});await addDoc(collection(db,'light_history_edits'),{targetType:'profile',targetId:sessionUserKey,action:'admin_request_update',editorType:'user',editor:sessionUserKey,editorName:sessionDisplayName,authUid:auth.currentUser.uid,timestamp:stamp,before,after:next,privacy:'private_relationship',adminVisible:true});applyProfile(next);}
+    }
+    await updateDoc(doc(db,'light_change_requests',id),{status:approved?'confirmed':'rejected',confirmedAt:now(),confirmedBy:auth.currentUser.uid,updatedAt:now()});window.pendingChangeAwaitingAnswer=null;await loadPendingChangeRequests();await loadMemoryFiles();updateUI();return true;
+  }catch(e){await mx4LogError(e,'change-request-confirm');return false;}
+}
+
+/* ---------------- system instruction + boot ---------------- */
+function makeSystemInstruction(text,imageNow){
+  const isOto=(window.operationMode==='forced_oto')||(window.operationMode==='automatic'&&window.autoMode==='oto');
+  const persona=isOto?'あなたはmightyXのOto。私、で簡潔に話す。PA、ローディ、プロモーター、照明、顧問・幹部、全体進行を優先。時間圧が高いときは結論→理由→次の行動。必要な質問だけ。':'あなたはmightyXのLight。あたし、で自然に話す。明るく親しみやすいが事実は正確。簡単な部活相談は自分で解決し、必要なら自動的にOtoへ引き継ぐ。';
+  const stance='mightyX共通方針：感情には寄り添うが、相手に合わせて事実や判断を変えない。確認済みの事実、過去記録、本人発言、観察、推定、仮説を分ける。分からないことは分からない。判断に必要な情報が足りなければ最小限の質問をする。一方の人物の話だけで別の人物を悪者と断定しない。非公開情報を別人へ漏らさない。新情報で判断を更新する。自分の判断を絶対視しない。恋愛関係や親密さを同席・頻度等から推測しない。';
+  const tctx=buildTimetableContext();
+  const docCtx=window._mx4DocContext||'';const relCtx=window._mx4RelationContext||'';const pending=pendingChangeContext();
+  return `${persona}\n${stance}\nユーザー：${sessionDisplayName} / バンド：${sessionBandName||'未所属'}\n現在モード：${isOto?'Oto':'Light'}\n${tctx}\n${buildMemoryContext(text)}\n${buildPhotoContext(text)}\n${buildTimelineContext(text)}\n${docCtx}\n${relCtx}\n${pending}\n${window.pdfKnowledge&&/PDF|資料|説明書|マニュアル|書類|文書|この資料|さっきの資料|今の資料|読んだ/.test(String(text||''))&&now()-Number(window.pdfKnowledgeAt||0)<180000?`【一時資料】\n${window.pdfKnowledge.slice(0,5000)}\n`:''}会話履歴：\n${historyForAI(window.conversationHistory).slice(-10).map(x=>`${x.role}: ${x.text}`).join('\n')}\nユーザー発言：${String(text||'')}\n${imageNow?'画像が添付されている。画像から分かることと推測を分ける。複数人なら人物同定を急がず、まず楽器・機材・状況を分析する。':''}\n管理者変更待ちがある場合もシステム通知のように割り込まず自然な区切りで確認する。\n回答だけを返す。`;
+}
+function updateOperationalMode(text){
+  if(window.forcedModeOverride){window.autoMode='oto';return 'oto';}
+  const next=updateLiveSituationForMode(text);window.autoMode=next;updateModeUI();return next;
+}
+function maybeAutoSwitchMode(text){
+  const prev=avatarRuntime.mode||'light';const next=updateOperationalMode(text);const shouldOto=next==='oto';
+  if(shouldOto&&prev!=='oto'){avatarRuntime.mode='oto';if(avatarConfig.betaEnabled)showAvatarMode('oto');addLog('システム','ここはOtoの方が早いと判断した。','sys');}
+  if(!shouldOto&&prev==='oto'&&/(解決|助かった|大丈夫|もう平気|終わった|ありがとう)/.test(String(text||''))){avatarRuntime.mode='light';if(avatarConfig.betaEnabled)showAvatarMode('light');}
+}
+async function loadCurrentContextsForQuery(text){
+  window._mx4DocContext='';window._mx4RelationContext='';
+  if(/資料|PDF|説明書|マニュアル|書類|文書|去年|以前の資料/.test(String(text||'')))window._mx4DocContext=await buildDocumentContext(text);
+  if(/誰|人|メンバー|関係|つながり|機材|アンプ|ギター|ベース|ドラム|マイク|ケーブル|トラブル|対処|前に/.test(String(text||'')))window._mx4RelationContext=await buildRelationContext(text);
+}
+async function bootCloud(){
+  try{await Promise.all([loadBrain(),loadLegacy(),loadMemoryFiles(),loadPhotoMemories(),loadTimeline(),loadDocuments(),loadTimetable(),loadPeopleIndex(),loadAvatarConfig(),loadAIProviders(),loadPendingChangeRequests(),mx4LoadSuppressions()]);updateUI();addLog('システム',`「${sessionDisplayName}」の記憶と「${sessionBandName||'未所属'}」の共有資料を読み込んだぜ。`,'sys');const msg=`おかえり、${sessionDisplayName}。今日もよろしくな！`;addLog('ライト',msg,'ai');if(!window.isMuted)window.speak(msg);await surfacePendingChangeAtStartup();}catch(e){console.error(e);addLog('システムエラー','クラウドとの通信に一部失敗しました。使える機能から継続します。','error');void mx4LogError(e,'boot');}}
+
+/* ---------------- camera / text / voice ---------------- */
+async function openCamera(){
+  if(MX4.cameraBusy)return;MX4.cameraBusy=true;const modal=$('camera-modal'),video=$('camera-video'),msgEl=$('camera-message');modal.style.display='flex';msgEl.textContent='カメラの許可を確認中...';
+  try{if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia)throw new Error('HTTPSで開いているページでのみカメラを使えます。');cameraStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});video.srcObject=cameraStream;msgEl.textContent='撮影できます。複数人なら人物特定を急がず、まず楽器・機材・状況を見ます。';}
+  catch(e){console.error(e);msgEl.textContent=e.message||'カメラを起動できませんでした。';stopCamera();void mx4LogError(e,'camera-start');}
+  finally{MX4.cameraBusy=false;}
+}
+function cameraIntent(text){return /^(これ|これを|これ見て|これ見てー|見て|見てー|ちょっと見て|これ見せる|これ見せて|これ見せるね|見てみて|こっち見て|これ確認して|これ見てくれる)[！!。、。〜~ー\s]*$/i.test(String(text||'').trim());}
+function installV4Camera(){
+  $('camera-btn').addEventListener('click',openCamera);
+  $('camera-close-btn').addEventListener('click',closeCamera);$('camera-cancel-btn').addEventListener('click',closeCamera);
+  $('camera-capture-btn').addEventListener('click',async()=>{const video=$('camera-video'),canvas=$('camera-canvas');if(!cameraStream||!video.videoWidth){$('camera-message').textContent='カメラ映像がまだ準備できていません。';return;}let w=video.videoWidth,h=video.videoHeight,max=960,scale=Math.min(1,max/Math.max(w,h));w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));canvas.width=w;canvas.height=h;canvas.getContext('2d').drawImage(video,0,0,w,h);const dataUrl=canvas.toDataURL('image/jpeg',.72);attachedPhotos=[{dataUrl,base64:dataUrl.split(',')[1]||'',mimeType:'image/jpeg',originalName:`camera-${Date.now()}.jpg`,width:w,height:h}];renderAttachments();closeCamera();addLog('システム','カメラ画像を添付したぜ。','sys');});
+}
+function clearAttachments(){attachedPhotos=[];renderAttachments();}
+function renderAttachments(){$('attach-thumbs').innerHTML='';if(!attachedPhotos.length){$('attach-bar').classList.remove('visible');return;}attachedPhotos.forEach(p=>{const im=document.createElement('img');im.src=p.dataUrl;im.alt='写真';$('attach-thumbs').appendChild(im);});$('attach-info').textContent=`${attachedPhotos.length}枚の写真を添付中。AIが保存価値を判断して必要な場合だけ資料館に記録します。保存したくない場合は「保存しないで」と書いてね。`;$('attach-bar').classList.add('visible');}
+function installV4PhotoHandlers(){
+  $('photo-btn').addEventListener('click',()=>$('photo-input').click());$('photo-input').addEventListener('change',async e=>{const files=[...(e.target.files||[])].slice(0,4);if(!files.length)return;try{attachedPhotos=[];for(const f of files)attachedPhotos.push(await preparePhoto(f));renderAttachments();}catch(err){console.error(err);alert(err.message||'写真を読み込めませんでした。');void mx4LogError(err,'photo-prepare');}e.target.value='';});$('photo-clear-btn').addEventListener('click',clearAttachments);
+}
+async function processUserInputCore(text){
+  const raw=String(text||'').trim();const override=standaloneOverride(raw);if(override){setOperationalOverride(override);avatarRuntime.mode=override==='oto'?'oto':'light';if(avatarConfig.betaEnabled)showAvatarMode(avatarRuntime.mode);addLog('システム',override==='oto'?'Otoを強制使用します。':'通常の自動判断に戻します。','sys');return;}
+  if(!raw&&!attachedPhotos.length)return;
+  if(cameraIntent(raw)&&!attachedPhotos.length){await openCamera();return;}
+  if(await handleForgetRequest(raw))return;
+  if(await handleRememberOverride(raw))return;
+  if(window.pendingChangeRequests?.length){
+    if(window.pendingChangeAwaitingAnswer&&window.pendingChangePromptedAt&&now()-window.pendingChangePromptedAt<=120000){
+      const r=window.pendingChangeRequests.find(x=>x.id===window.pendingChangeAwaitingAnswer)||window.pendingChangeRequests[0];
+      if(isExplicitChangeConfirmation(raw)){const ok=await confirmPendingChange(r.id,true);addLog('ライト',ok?'確認した。変更を正式に反映した。':'変更の反映に失敗した。','ai');return;}
+      if(isExplicitChangeRejection(raw)){const ok=await confirmPendingChange(r.id,false);addLog('ライト',ok?'了解。今回の変更は反映しない。':'変更確認の更新に失敗した。','ai');return;}
+    }
+    if(isExplicitChangeConfirmation(raw)){const r=window.pendingChangeRequests[0];const ok=await confirmPendingChange(r.id,true);addLog('ライト',ok?'確認した。変更を正式に反映した。':'変更の反映に失敗した。','ai');return;}
+    if(isExplicitChangeRejection(raw)){const r=window.pendingChangeRequests[0];const ok=await confirmPendingChange(r.id,false);addLog('ライト',ok?'了解。今回の変更は反映しない。':'変更確認の更新に失敗した。','ai');return;}
+    if(window.pendingChangeAwaitingAnswer){window.pendingChangeAwaitingAnswer=null;window.pendingChangePromptedAt=0;window.pendingChangePromptRequestId='';}
+  }
+  maybeAutoSwitchMode(raw);const photos=attachedPhotos.slice();const display=raw||'この写真を見て！';
+  if(/今|現在|本番|ライブ|ステージ|次|誰が演奏/.test(raw))await loadTimetable();await loadCurrentContextsForQuery(raw);
+  addLog('あなた',display,'user',photos);if(raw)window.lastMeaningfulUserText=raw.slice(0,2500);sendBtn.disabled=true;chatInput.disabled=true;talkBtn.disabled=true;$('photo-btn').disabled=true;sendBtn.textContent='🧠';
+  try{const result=await callLight(display,photos);addLog(window.autoMode==='oto'?'オト':'ライト',result.reply,'ai');if(!window.isMuted)window.speak(result.reply);void saveMemoryCandidate(raw,result.reply);void scheduleSpontaneousConversation(raw,result.reply);if(photos.length)void autoArchivePhotos(photos,display,result.reply);
+    if(explicitCommand(raw)&&(!photos.length||/(部史|タイムライン|写真.*追記|写真.*更新|写真.*修正|付け足して)/.test(raw))&&!/写真.*見て/.test(raw)){void (async()=>{try{const plan=await planExplicitAction(raw);await applyExplicitAction(plan,raw);}catch(e){console.error(e);void mx4LogError(e,'explicit-action');}})();}
+  }catch(e){console.error(e);addLog('システムエラー',e.message||'AI通信に失敗しました。保存済み情報で続行できる場合はそうします。','error');void mx4LogError(e,'chat');}
+  finally{sendBtn.disabled=false;chatInput.disabled=false;talkBtn.disabled=false;$('photo-btn').disabled=false;sendBtn.textContent='送信';clearAttachments();chatInput.focus();}
+}
+function installV4TextVoice(){
+  $('send-btn').addEventListener('click',()=>{const t=chatInput.value;chatInput.value='';void processUserInput(t);});chatInput.addEventListener('keypress',e=>{if(e.key==='Enter')void processUserInput(chatInput.value),chatInput.value='';});
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){talkBtn.style.display='none';return;}const r=new SR();r.lang='ja-JP';r.continuous=true;r.interimResults=true;let finalText='';let silenceTimer=null;
+  const reset=()=>{clearTimeout(silenceTimer);talkBtn.textContent='🔴';talkBtn.style.background='linear-gradient(135deg,#ff758c,#ff7eb3)';};
+  const finish=()=>{clearTimeout(silenceTimer);const t=finalText.trim();finalText='';if(t){chatInput.value=t;void processUserInput(t);chatInput.value='';}r.stop();reset();};
+  talkBtn.addEventListener('click',()=>{try{finalText='';r.start();talkBtn.textContent='👂';talkBtn.style.background='#f1c40f';}catch(_){}});
+  r.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){const part=e.results[i][0].transcript;if(e.results[i].isFinal)finalText+=part+' ';else interim+=part;}chatInput.value=(finalText+interim).trim();clearTimeout(silenceTimer);silenceTimer=setTimeout(finish,900);const whole=(finalText+interim).trim();if(/^(ナイトフォール|デイブレイク)$/i.test(whole))finish();};r.onerror=()=>reset();r.onend=()=>reset();
+}
+
+/* ---------------- explicit action / relation extension ---------------- */
+async function mx4OriginalApplyExplicitAction(plan,originalText){
+  if(!plan||plan.action==='none')return false;
+  const stamp=now();
+  if(plan.action==='update_timeline'){
+    const q=String(plan.targetQuery||plan.title||originalText||'').trim();
+    const target=bestTimeline(q)||window.timelineEntries.find(x=>String(x.id)===q);
+    if(!target)return false;
+    const before={...target};
+    const patch={updatedAt:stamp,updatedBy:sessionUserKey};
+    if(String(plan.title||'').trim())patch.title=String(plan.title).trim().slice(0,120);
+    if(String(plan.details||'').trim())patch.details=String(plan.details).trim().slice(0,5000);
+    if(Array.isArray(plan.tags)&&plan.tags.length)patch.tags=normalizeTags(plan.tags);
+    await updateDoc(doc(db,'light_history',target.id),patch);
+    await addDoc(collection(db,'light_history_edits'),{
+      historyId:target.id,action:'update',editorType:'light',editor:sessionUserKey,
+      editorName:sessionDisplayName,authUid:auth.currentUser?.uid||'',timestamp:stamp,
+      before,after:{...before,...patch}
+    });
+    await loadTimeline();
+    return true;
+  }
+  if(plan.action==='update_photo'){
+    const q=String(plan.targetQuery||'').trim();
+    const target=(window.photoMemories||[]).map(x=>({x,score:scoreSearchHay(
+      [x.id,x.imageId,x.title,x.originalName,x.tags?.join(' '),x.aiSummary,x.eventTitle,x.date,x.bandName].join(' '),q)}))
+      .sort((a,b)=>b.score-a.score)[0]?.x;
+    if(!target)return false;
+    const imagePatch={updatedAt:stamp,updatedBy:sessionUserKey};
+    if(String(plan.title||'').trim())imagePatch.title=String(plan.title).trim().slice(0,120);
+    if(String(plan.details||'').trim()){
+      const add=String(plan.details).trim().slice(0,2000);
+      imagePatch.additionalNotes=Array.isArray(target.additionalNotes)?[...target.additionalNotes,{text:add,createdAt:stamp,createdBy:sessionUserKey}]:[{text:add,createdAt:stamp,createdBy:sessionUserKey}];
+    }
+    await updateDoc(doc(db,'light_images',target.id),imagePatch);
+    const associated=(window.memoryFiles||[]).filter(x=>x.imageId===target.id);
+    for(const m of associated){
+      const before={...m};
+      const mp={updatedAt:stamp};
+      if(imagePatch.title)mp.title=imagePatch.title;
+      if(String(plan.details||'').trim())mp.details=`${String(m.details||'')}\n\n追加記録：${String(plan.details).trim().slice(0,2000)}`.slice(0,5000);
+      await updateDoc(doc(db,'light_memory_files',m.id),mp);
+      await addDoc(collection(db,'light_history_edits'),{
+        targetType:'photo_memory',targetId:m.id,action:'update',editorType:'light',
+        editor:sessionUserKey,authUid:auth.currentUser?.uid||'',timestamp:stamp,
+        before,after:{...before,...mp}
+      });
+    }
+    await loadPhotoMemories();await loadMemoryFiles();
+    return true;
+  }
+  if(plan.action==='add_memory'){
+    const privacy=mx4PrivacyFromPlan(plan,originalText);
+    const scopeType=mx4ScopeForPrivacy(privacy,plan.scopeType||'personal');
+    const scopeId=scopeType==='personal'?(auth.currentUser?.uid||''):scopeType==='club'?'club':sessionBandId;
+    if(!scopeId)return false;
+    const data={
+      title:String(plan.title||originalText.slice(0,40)).slice(0,120),
+      details:String(plan.details||originalText).slice(0,4000),
+      memoryType:'fact',category:plan.category||'personal',
+      scopeType,scopeId,bandId:sessionBandId,bandName:sessionBandName,
+      memoryPriority:Math.max(1,Math.min(10,Number(plan.memoryPriority||7))),
+      referencePriority:'context-dependent',certainty:'user_stated',validity:'current',
+      privacy,adminVisible:mx4AdminVisible(privacy,originalText),
+      tags:normalizeTags(plan.tags||[]),keywords:normalizeTags(plan.tags||[]),
+      enabled:true,referenceAllowed:true,suppressed:false,
+      authUid:auth.currentUser?.uid||'',createdBy:sessionUserKey,createdAt:stamp,updatedAt:stamp,
+      sourceType:'user_statement'
+    };
+    const ref=await addDoc(collection(db,'light_memory_files'),data);
+    window.lastSavedMemory={kind:'memory',id:ref.id};window.lastSavedMemoryAt=now();
+    await loadMemoryFiles();updateUI();
+    return true;
+  }
+  return false;
+}
+
+
+async function applyExplicitAction(plan,originalText){if(!plan||plan.action==='none')return false;if(plan.action==='add_timeline'){const date=(plan.date||currentDate()).slice(0,10),title=plan.title||'出来事',details=plan.details||originalText,tags=normalizeTags(plan.tags);const ref=await addDoc(collection(db,'light_history'),{date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName,scopeType:'club',scopeId:'club',createdAt:now(),createdBy:sessionUserKey,createdByName:sessionDisplayName,authUid:auth.currentUser?.uid||'',photoIds:[],memoryIds:[]});await addDoc(collection(db,'light_history_edits'),{historyId:ref.id,action:'add',editorType:'light',editor:sessionUserKey,editorName:sessionDisplayName,authUid:auth.currentUser?.uid||'',timestamp:now(),before:null,after:{id:ref.id,date,title,details,tags,bandId:sessionBandId,bandName:sessionBandName}});await loadTimeline();return true;}
+  return await mx4OriginalApplyExplicitAction(plan,originalText)||false;
+}
+
+/* ---------------- install listeners once ---------------- */
+installV4Camera();installV4PhotoHandlers();installV4TextVoice();applyVoiceMode();
+$('pdf-btn').addEventListener('click',()=>$('pdf-upload').click());$('pdf-upload').addEventListener('change',e=>{const f=e.target.files?.[0];if(f)void handlePdfUpload(f);});
+$('logout-btn').addEventListener('click',async()=>{settingsModal.style.display='none';localStorage.removeItem('light_last_login');await signOut(auth);location.reload();});
+$('sync-id-input').addEventListener('click',()=>navigator.clipboard?.writeText($('sync-id-input').value).catch(()=>{}));
+/* The rest of the original UI listeners (mute/settings/avatar) remain intact. */
+
+initAuth();
+const container=$('avatar-container');
+const avatarScene=new THREE.Scene();const avatarCamera=new THREE.PerspectiveCamera(32,1,.1,100);avatarCamera.position.set(0,1.35,5.2);
+const avatarRenderer=new THREE.WebGLRenderer({alpha:true,antialias:true});avatarRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));avatarRenderer.setSize(320,360,false);container.appendChild(avatarRenderer.domElement);
+const avatarLight=new THREE.HemisphereLight(0xffffff,0x222222,1.6);avatarScene.add(avatarLight);const avatarKey=new THREE.DirectionalLight(0xff7eb3,1.5);avatarKey.position.set(2,3,4);avatarScene.add(avatarKey);
+const avatarFallback=new THREE.Group();const fm=new THREE.MeshBasicMaterial({color:0xff7eb3,wireframe:true});const fh=new THREE.Mesh(new THREE.IcosahedronGeometry(.75,1),fm);fh.position.y=1.1;avatarFallback.add(fh);const fb=new THREE.Mesh(new THREE.CylinderGeometry(.42,.72,1.5,7,1,true),fm);fb.position.y=-.35;avatarFallback.add(fb);avatarScene.add(avatarFallback);
+
+async function loadAvatarAsset(url,label){
+  if(!url)return null;
+  try{
+    const {GLTFLoader}=await import('https://esm.sh/three@0.128.0/examples/jsm/loaders/GLTFLoader.js');
+    const loader=new GLTFLoader();
+    let loaded=null;
+    try{
+      const {VRMLoaderPlugin,VRMUtils}=await import('https://esm.sh/@pixiv/three-vrm@1.0.9');
+      loader.register(parser=>new VRMLoaderPlugin(parser));
+      const gltf=await new Promise((res,rej)=>loader.load(url,res,undefined,rej));
+      loaded=gltf.userData?.vrm||gltf;
+      try{if(gltf.scene)VRMUtils.removeUnnecessaryJoints(gltf.scene);}catch(_){}
+    }catch(_){
+      loaded=await new Promise((res,rej)=>loader.load(url,res,undefined,rej));
+    }
+    const obj=loaded.scene||loaded.humanoid?.scene||loaded;
+    obj.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
+    obj.rotation.y=Math.PI;obj.visible=false;avatarScene.add(obj);
+    return {raw:loaded,obj};
+  }catch(e){console.error('avatar load failed',label,e);return null;}
+}
+function base64ToBlobUrl(base64,mime){
+  const bin=atob(String(base64||''));const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  return URL.createObjectURL(new Blob([bytes],{type:mime||'model/gltf-binary'}));
+}
+async function loadAvatarFile(role){
+  const meta=await getDoc(doc(db,'light_avatar_files',role));
+  if(!meta.exists()||meta.data()?.enabled===false)return '';
+  const s=await getDocs(collection(db,'light_avatar_files',role,'chunks'));
+  const chunks=[];s.forEach(d=>chunks.push({index:Number(d.data()?.index??d.id),data:String(d.data()?.data||'')}));
+  chunks.sort((a,b)=>a.index-b.index);
+  if(!chunks.length)return '';
+  return base64ToBlobUrl(chunks.map(x=>x.data).join(''),meta.data()?.mimeType||'model/gltf-binary');
+}
+async function loadAvatarConfig(){
+  try{
+    const snap=await getDoc(doc(db,'light_avatar_config','main'));
+    if(snap.exists())avatarConfig={...avatarConfig,...(snap.data()||{})};
+    avatarRuntime.mode='light';avatarRuntime.loaded=false;avatarRuntime.lightObject=null;avatarRuntime.otoObject=null;
+    document.body.classList.remove('oto-mode');$('avatar-error').style.display='none';
+    if(!avatarConfig.betaEnabled){document.body.classList.remove('avatar-mode');$('avatar-mode-badge').style.display='none';avatarFallback.visible=true;return;}
+    document.body.classList.add('avatar-mode');$('avatar-mode-badge').textContent='● アバターモード / LIGHT';
+    const lightUrl=await loadAvatarFile('light');
+    if(!lightUrl){$('avatar-error').style.display='block';$('avatar-error').textContent='Lightアバターが未登録です。管理者サイトで後から追加できます。';avatarFallback.visible=true;return;}
+    const light=await loadAvatarAsset(lightUrl,'Light');
+    if(light){avatarRuntime.lightObject=light;light.obj.visible=true;avatarRuntime.loaded=true;avatarFallback.visible=false;}
+    else{avatarFallback.visible=true;$('avatar-error').style.display='block';$('avatar-error').textContent='Lightアバターを読み込めませんでした。';}
+    setTimeout(()=>{try{URL.revokeObjectURL(lightUrl);}catch(_){}},60000);
+    resizeAvatar();
+  }catch(e){console.error(e);$('avatar-error').style.display='block';$('avatar-error').textContent='アバター設定を読み込めませんでした。';}
+}
+function resizeAvatar(){const w=container.clientWidth||320,h=container.clientHeight||360;avatarCamera.aspect=w/h;avatarCamera.updateProjectionMatrix();avatarRenderer.setSize(w,h,false);}
+window.addEventListener('resize',resizeAvatar);
+function showAvatarMode(mode){
+  avatarRuntime.mode=mode;
+  document.body.classList.toggle('oto-mode',mode==='oto');
+  $('avatar-mode-badge').textContent=mode==='oto'?'● アバターモード / OTO':'● アバターモード / LIGHT';
+  if(avatarRuntime.lightObject?.obj)avatarRuntime.lightObject.obj.visible=mode==='light';
+  if(avatarRuntime.otoObject?.obj)avatarRuntime.otoObject.obj.visible=mode==='oto';
+  if(mode==='oto'&&!avatarRuntime.otoObject){
+    loadAvatarFile('oto').then(url=>url?loadAvatarAsset(url,'Oto').then(x=>({x,url})):({x:null,url:''})).then(({x,url})=>{
+      if(x){avatarRuntime.otoObject=x;x.obj.visible=true;if(avatarRuntime.lightObject?.obj)avatarRuntime.lightObject.obj.visible=false;avatarRuntime.loaded=true;}
+      else{addLog('システム','Otoアバターがまだ登録されていません。管理者サイトで後から追加できます。','sys');}
+      if(url)setTimeout(()=>{try{URL.revokeObjectURL(url);}catch(_){}},60000);
+    });
+  }
+}
+function avatarAnimate(){requestAnimationFrame(avatarAnimate);const t=Date.now()*.001;if(avatarRuntime.loaded){const active=avatarRuntime.mode==='oto'?avatarRuntime.otoObject?.obj:avatarRuntime.lightObject?.obj;if(active){active.position.y=Math.sin(t*1.1)*.015;}}avatarRenderer.render(avatarScene,avatarCamera);}avatarAnimate();resizeAvatar();
+
+/* mightyX vNext additive runtime: current-spec reconciliation */
+const MXV={turn:0,lastInputAt:0,lastProactiveAt:0,proactiveCooldown:90000,forgetBusy:false};
+function mxNow(){return Date.now();}
+function mxSuppressionWords(t){return /(忘れて|忘れといて|記憶から外して|記憶から消して|記憶から削除)/.test(String(t||''));}
+function mxForgetTargetText(t){return String(t||'').replace(/(忘れて|忘れといて|記憶から外して|記憶から消して|記憶から削除)/g,'').trim();}
+function mxForgetScore(x,q){
+  const hay=canonical([x.title,x.details,x.keywords?.join(' '),x.tags?.join(' '),x.sourceName,x.sourceText].join(' '));
+  const qq=canonical(q); if(!qq)return 0;
+  let score=hay.includes(qq)?10:0; for(const term of mx4Terms(q))if(hay.includes(term))score+=2; return score;
+}
+async function handleForgetRequest(text){
+  if(!mxSuppressionWords(text)||!auth.currentUser?.uid||MXV.forgetBusy)return false;
+  MXV.forgetBusy=true;
+  try{
+    const target=mxForgetTargetText(text);let changed=0;
+    if(!target&&window.lastSavedMemory?.id){
+      const id=window.lastSavedMemory.id;
+      const snap=await getDoc(doc(db,'light_memory_files',id));
+      if(snap.exists()&&mxMemoryAllowed(snap.data())&&String(snap.data()?.ownerUid||snap.data()?.authUid||'')===String(auth.currentUser.uid)){
+        const before=snap.data();
+        await updateDoc(snap.ref,{suppressed:true,referenceAllowed:false,enabled:false,suppressedAt:now(),suppressedBy:sessionUserKey,suppressionReason:'user_forget'});
+        window.lastSuppressedMemory={kind:before.kind||'memory',id,imageId:before.imageId||'',documentId:before.documentId||''};window.lastSavedMemory=null;
+        await mx4SyncLinkedSource(before,true,'user_forget');
+        await mx4RecordSuppression('forget',String(before.title||before.details||window.lastMemorySourceText||''),{memoryId:id,imageId:before.imageId||'',documentId:before.documentId||'',title:before.title,summary:before.details,reason:'user_forget'});
+        await mx4MemoryAudit('suppress',id,before,{...before,suppressed:true,referenceAllowed:false,enabled:false},'user');
+        changed=1;
+      }
+    }else if(target||window.lastMemorySourceText||window.lastMeaningfulUserText){
+      const searchTarget=target||window.lastMemorySourceText||window.lastMeaningfulUserText;
+      const qFiles=[];
+      if(sessionUserKey)qFiles.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','personal'),where('scopeId','==',auth.currentUser.uid))));
+      if(sessionBandId)qFiles.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','band'),where('scopeId','==',sessionBandId))));
+      qFiles.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','club'),where('scopeId','==','club'))));
+      qFiles.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','related'),where('scopeId','==','related'),where('relatedUids','array-contains',auth.currentUser.uid))));
+      const [fileSnaps,candSnap]=await Promise.all([
+        Promise.all(qFiles),
+        getDocs(query(collection(db,'light_memory_candidates'),where('authUid','==',auth.currentUser.uid)))
+      ]);
+      const matches=[];
+      for(const snap of fileSnaps||[]){
+        snap.forEach(d=>{
+          const x=d.data()||{};
+          if(!mxMemoryAllowed(x))return;
+          const score=mxForgetScore(x,searchTarget);
+          if(score>0)matches.push({kind:'memory',id:d.id,ref:d.ref,score,data:x});
+        });
+      }
+      candSnap.forEach(d=>{
+        const x=d.data()||{};
+        if(x.suppressed===true)return;
+        const score=mxForgetScore(x,searchTarget);
+        if(score>0)matches.push({kind:'candidate',id:d.id,ref:d.ref,score,data:x});
+      });
+      matches.sort((a,b)=>b.score-a.score||Number(b.data.updatedAt||b.data.createdAt||0)-Number(a.data.updatedAt||a.data.createdAt||0));
+      const forgetMany=/(全部|全て|すべて|全部の記録|この件を全部)/.test(String(text||''));
+      const topScore=Number(matches[0]?.score||0),secondScore=Number(matches[1]?.score||0);
+      const targets=forgetMany?matches.slice(0,10):(topScore>0 && (matches.length===1||topScore>=secondScore+2)?matches.slice(0,1):[]);
+      for(const m of targets){
+        if(m.kind==='memory'){
+          const stamp=now();const before=m.data||{};
+          await updateDoc(m.ref,{suppressed:true,referenceAllowed:false,enabled:false,suppressedAt:stamp,suppressedBy:sessionUserKey,suppressionReason:'user_forget',updatedAt:stamp});
+          await mx4SyncLinkedSource(before,true,'user_forget');
+          await mx4RecordSuppression('forget',searchTarget||String(before.title||before.details||''),{memoryId:m.id,imageId:before.imageId||'',documentId:before.documentId||'',title:before.title,summary:before.details,reason:'user_forget'});
+          await mx4MemoryAudit('suppress',m.id,before,{...before,suppressed:true,referenceAllowed:false,enabled:false,updatedAt:stamp},'user');
+        }else{
+          const stamp=now();const before=m.data||{};
+          await updateDoc(m.ref,{suppressed:true,referenceAllowed:false,status:'rejected',rejectedReason:'user_forget',updatedAt:stamp});
+          await mx4RecordSuppression('forget',searchTarget||String(before.title||before.candidateText||''),{title:before.title,summary:before.summary||before.candidateText,reason:'user_forget'});
+          await addDoc(collection(db,'light_history_edits'),{targetType:'memory_candidate',targetId:m.id,action:'suppress',editorType:'user',editor:sessionUserKey,authUid:auth.currentUser.uid,timestamp:stamp,before,after:{...before,suppressed:true,status:'rejected',updatedAt:stamp}});
+        }
+        changed++;
+        if(!window.lastSuppressedMemory)window.lastSuppressedMemory={kind:m.kind,id:m.id};
+      }
+    }
+    if(changed){
+      await loadMemoryFiles();
+      updateUI();
+      addLog('システム',`「${target||'直前に覚えた内容'}」を通常の記憶参照から外した。勝手には復活させない。`,'sys');
+    }else{
+      addLog('システム','該当する記憶を特定できなかったため、勝手に広範囲を消さなかった。対象をもう少し具体的に言ってくれれば探せる。','sys');
+    }
+  }catch(e){
+    console.error('forget handling failed',e);
+    addLog('システムエラー','記憶の参照停止に失敗した。','error');
+    void mx4LogError(e,'forget');
+  }finally{
+    MXV.forgetBusy=false;
+  }
+  return true;
+}
+
+function mxMemoryAllowed(m){return m&&m.suppressed!==true&&m.referenceAllowed!==false;}
+function mxBuildRelations(obj){
+  const rel=[];if(sessionUserKey)rel.push({type:'person',id:sessionUserKey});if(sessionBandId)rel.push({type:'band',id:sessionBandId});if(obj?.eventId)rel.push({type:'event',id:obj.eventId});if(obj?.imageId)rel.push({type:'photo',id:obj.imageId});if(obj?.staffRole&&obj.staffRole!=='none')rel.push({type:'staff',id:obj.staffRole});return rel;
+}
+async function scheduleSpontaneousConversation(userText,reply){
+  MXV.turn++;MXV.lastInputAt=mxNow();
+  if(MXV.turn<2||mxNow()-MXV.lastProactiveAt<MXV.proactiveCooldown)return;
+  if(!String(userText||'').trim())return;
+  const lowEnergy=/^(疲れた|しんどい|眠い|だるい|今日はもういい)[！!。． ]*$/.test(String(userText).trim());
+  const ack=/^(ありがとう|了解|OK|おけ|はい|うん|わかった)[！!。． ]*$/.test(String(userText).trim());
+  const closeCue=/(ありがとう|助かった|またね|おやすみ|じゃあね|今日はここまで|終わり|また今度)/.test(String(userText||''));const reflective=/(疲れた|しんどい|眠い|だるい|楽しかった|嬉しかった|悔しかった|緊張した|よかった|残念だった|大変だった|面白かった)/.test(String(userText||''));const recentSave=Number(window.lastSavedMemoryAt||0)>0&&mxNow()-Number(window.lastSavedMemoryAt||0)<180000;const hasPendingChange=Array.isArray(window.pendingChangeRequests)&&window.pendingChangeRequests.length>0;const ended=ack||lowEnergy||closeCue||reflective||recentSave||hasPendingChange;
+  if(!ended)return;
+  const localTurn=MXV.turn;const modeNow=(window.operationMode==='forced_oto'||window.autoMode==='oto')?'oto':'light';
+  setTimeout(async()=>{
+    if(localTurn!==MXV.turn||mxNow()-MXV.lastInputAt<2400)return;
+    try{
+      const prompt=`mightyXの会話継続判定。目的は「無理に会話を続ける」ことではなく、本当に今聞く価値があるときだけ短い自発質問を1つ作ること。最近の発言:${String(userText).slice(0,1800)}\n直前の回答:${String(reply||'').slice(0,1800)}\nモード:${modeNow}\nユーザー低エネルギー:${lowEnergy?'true':'false'}\n保留中の管理者変更:${hasPendingChange?'true':'false'}\n条件:低エネルギーなら無理な深掘りを避ける。連続追及しない。価値が薄ければspeak=false。保留中の管理者変更がある場合、現在の話を遮らず自然に次の話題へ移るタイミングなら変更確認を次の話題として優先してよい。システム通知のように割り込まない。\n質問すべきならJSON {"speak":true,"question":"..."}、不要なら {"speak":false,"question":""}。Lightは人・関係・部活生活を深める質問、Otoは症状・条件・原因候補を深掘りする質問。テンプレを使わず、その場の文脈から生成。`;
+      const r=await requestAI({messages:[{role:'user',text:prompt}],system:'会話探索判定。JSONだけ。不要なら必ずspeak=false。',maxOutputTokens:180,jsonMode:true});
+      const p=parseJsonLoose(r.text);if(!p?.speak||!p.question)return; if(localTurn!==MXV.turn)return;
+      MXV.lastProactiveAt=mxNow();addLog(modeNow==='oto'?'オト':'ライト',String(p.question).slice(0,500),'ai');if(!window.isMuted)window.speak(String(p.question).slice(0,500));
+    }catch(e){console.debug('spontaneous conversation skipped',e);}
+  },2800);
+}
+/* The formal memory search must never revive suppressed records. */
+async function processUserInput(text){return processUserInputCore(text);}
+
+
+</script></body></html>
