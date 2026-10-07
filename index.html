@@ -124,6 +124,11 @@ let session={key:'',uid:'',name:'',birthday:'',bandId:'',bandName:'',profile:nul
 let authReady=false,booted=false,authBusy=false,registrationBusy=false;
 let profileModalMode='register';
 let windowVoiceMode=localStorage.getItem('light_voice_mode')==='1';
+let voiceConversationActive=false;
+let voiceRecognition=null;
+let voiceSpeaking=false;
+let voiceFinalText='';
+let voiceSilenceTimer=null;
 let operationMode='automatic';
 let forcedModeOverride=null;
 let autoMode='light';
@@ -140,7 +145,23 @@ const state={
   memoryFiles:[],photos:[],timeline:[],relations:[],timetable:[],timetableChanges:[],pendingChanges:[],history:[],
   providers:[],documents:[],pdfContexts:[],brain:null,connection:'online',apiAvailable:true,
 };
-window.isMuted=true;
+window.isMuted=false;
+window.currentAudio=null;
+function speakText(text){
+  if(window.isMuted)return Promise.resolve();
+  const clean=String(text||'').replace(/[「」『』（）()【】_~〜]/g,'').trim();
+  if(!clean)return Promise.resolve();
+  voiceSpeaking=true;
+  try{speechSynthesis.cancel();}catch(_){ }
+  return new Promise(resolve=>{
+    const u=new SpeechSynthesisUtterance(clean);
+    u.lang='ja-JP';u.rate=1.08;u.pitch=1.12;
+    const done=()=>{voiceSpeaking=false;resolve();if(windowVoiceMode&&voiceConversationActive)setTimeout(startVoiceRecognition,250);};
+    u.onend=done;u.onerror=done;
+    try{speechSynthesis.speak(u);}catch(_){done();}
+  });
+}
+window.speak=speakText;
 window.currentAudio=null;
 window.pdfKnowledge='';
 
@@ -286,7 +307,7 @@ async function processUserInputCore(text,photos=[]){
   if(!photos.length&&/(これ見て|これ見せる|見てー|見て！|カメラで見せる|カメラで見て)/.test(t)){pendingCameraText=t;await openCamera();return;}
   const mode=maybeAutoSwitch(t);const display=t||'この写真を見て！';addLog('あなた',display,'user',photos);state.history.push({role:'user',text:display});state.history=state.history.slice(-20);sendUiBusy(true);setStatus(mode==='oto'?'Otoが対応中…':'考え中…');
   try{const result=await generateChat(display,photos,mode);const reply=String(result.reply||fallbackReply(display,mode));addLog(mode==='oto'?'オト':'ライト',reply,'ai');state.history.push({role:'assistant',text:reply});state.history=state.history.slice(-20);void saveConversationHistory();void persistMemoryDecision(display,result.memory||{});if(photos.length)void handlePhotoDecision(photos,display,result.photo||{},mode);scheduleProactive(display,reply,result.proactive||{},mode);if(!window.isMuted)window.speak(reply);}catch(e){console.error(e);await writeErrorLog('processUserInput',e);const fb=await fallbackFromMemory(display);const reply=fb||fallbackReply(display,mode);addLog(mode==='oto'?'オト':'ライト',reply,'ai');if(!state.providers.length)setStatus('AIプロバイダー未設定。');else setStatus('AI通信に失敗。保存済み記憶は利用できる。');}finally{sendUiBusy(false);if(state.connection==='online')setStatus('');clearAttachments();}}
-function sendUiBusy(b){$('send-btn').disabled=b;$('chat-input').disabled=b;$('talk-btn').disabled=b;$('photo-btn').disabled=b;}
+function sendUiBusy(b){$('send-btn').disabled=b;$('chat-input').disabled=b;$('photo-btn').disabled=b;if(!windowVoiceMode)$('talk-btn').disabled=b;}
 $('send-btn').addEventListener('click',()=>{const t=$('chat-input').value;$('chat-input').value='';processUserInputCore(t,attachedPhotos.slice());});$('chat-input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing){e.preventDefault();$('send-btn').click();}});
 async function fallbackFromMemory(text){const hits=rankMemoryFiles(text);if(!hits.length)return null;return`保存してある記録を見ると、${hits[0].title||'この件'}についてはこう残ってるぜ。\n${String(hits[0].details||'').slice(0,1200)}`;}
 async function saveConversationHistory(){if(!session.key||!session.uid)return;try{await setDoc(doc(db,'light_memories',session.key),{history:state.history.slice(-20),updatedAt:now(),authUid:session.uid},{merge:true});}catch(e){logSafe('history save',e);}}
@@ -304,14 +325,62 @@ function renderAttachments(){$('attach-thumbs').innerHTML='';if(!attachedPhotos.
 function clearAttachments(){attachedPhotos=[];renderAttachments();}
 $('photo-btn').addEventListener('click',()=>$('photo-input').click());$('photo-input').addEventListener('change',async e=>{const files=[...(e.target.files||[])].slice(0,4);if(!files.length)return;try{attachedPhotos=[];for(const f of files)attachedPhotos.push(await preparePhoto(f));renderAttachments();}catch(err){alert(err.message||'写真を読み込めませんでした。');}e.target.value='';});$('photo-clear-btn').addEventListener('click',clearAttachments);
 
-function voiceUI(){document.body.classList.toggle('voice-mode',windowVoiceMode);$('voice-mode-toggle-btn').textContent=windowVoiceMode?'🎙️ 音声モード':'💬 チャット';}
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(SR){const r=new SR();r.lang='ja-JP';r.continuous=true;r.interimResults=true;let finalText='',silenceTimer=null;function finishVoice(){clearTimeout(silenceTimer);const t=finalText.trim();if(t)processUserInputCore(t,[]);finalText='';try{r.stop();}catch(_){}$('talk-btn').textContent='🔴';}
-r.onresult=e=>{let interim='';for(let i=e.resultIndex;i<e.results.length;i++){const s=e.results[i][0].transcript;e.results[i].isFinal?finalText+=s+' ':interim+=s;}$('chat-input').value=(finalText+interim).trim();clearTimeout(silenceTimer);silenceTimer=setTimeout(finishVoice,950);const single=(finalText+interim).trim();if(/^(ナイトフォール|デイブレイク|nightfall|daybreak)$/i.test(single)&&e.results[e.results.length-1]?.isFinal)finishVoice();};r.onerror=e=>{logSafe('speech error',e);$('talk-btn').textContent='🔴';};r.onend=()=>{$('talk-btn').textContent='🔴';};$('talk-btn').addEventListener('click',()=>{if($('talk-btn').disabled)return;try{finalText='';$('chat-input').value='';r.start();$('talk-btn').textContent='👂';}catch(e){logSafe('speech start',e);}});}else $('talk-btn').style.display='none';
+function voiceUI(){
+  document.body.classList.toggle('voice-mode',windowVoiceMode);
+  $('voice-mode-toggle-btn').textContent=windowVoiceMode?'🎙️ リアルタイム会話':'💬 チャット';
+  $('talk-btn').title=windowVoiceMode?(voiceConversationActive?'音声会話を停止':'音声会話を開始'):'音声入力';
+  $('talk-btn').textContent=windowVoiceMode?(voiceConversationActive?'⏹️':'🎙️'):'🔴';
+}
 
-window.speak=t=>{if(window.isMuted)return;speechSynthesis.cancel();const clean=String(t||'').replace(/[「」『』（）()【】_~〜]/g,'').trim();if(!clean)return;const audio=new Audio(`https://api.tts.quest/v3/voicevox/synthesis?text=${encodeURIComponent(clean)}&speaker=8`);window.currentAudio=audio;audio.play().catch(()=>{const u=new SpeechSynthesisUtterance(clean);u.lang='ja-JP';u.rate=1.08;u.pitch=1.15;speechSynthesis.speak(u);});};
+function clearVoiceTimer(){if(voiceSilenceTimer){clearTimeout(voiceSilenceTimer);voiceSilenceTimer=null;}}
+function stopVoiceRecognition(){clearVoiceTimer();if(voiceRecognition){try{voiceRecognition.stop();}catch(_){}}}
+function finishVoiceUtterance(){
+  clearVoiceTimer();
+  const t=voiceFinalText.trim();
+  voiceFinalText='';
+  if(!t)return;
+  stopVoiceRecognition();
+  processUserInputCore(t,[]).finally(()=>{
+    if(windowVoiceMode && voiceConversationActive && !voiceSpeaking){setTimeout(startVoiceRecognition,250);}
+  });
+}
+function startVoiceRecognition(){
+  if(!windowVoiceMode||!voiceConversationActive||!voiceRecognition||voiceSpeaking)return;
+  clearVoiceTimer();voiceFinalText='';
+  try{voiceRecognition.start();}catch(_){/* already running */}
+  voiceUI();
+}
+function startVoiceConversation(){
+  if(!voiceRecognition){addLog('システム','このブラウザではリアルタイム音声入力を利用できません。','error');return;}
+  windowVoiceMode=true;voiceConversationActive=true;localStorage.setItem('light_voice_mode','1');voiceUI();startVoiceRecognition();
+  addLog('システム','リアルタイム会話を開始した。話しかけてくれ。','sys');
+}
+function stopVoiceConversation(){
+  voiceConversationActive=false;stopVoiceRecognition();voiceUI();addLog('システム','リアルタイム会話を停止した。','sys');
+}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(SR){
+  const r=new SR();voiceRecognition=r;r.lang='ja-JP';r.continuous=true;r.interimResults=true;
+  r.onresult=e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const s=e.results[i][0].transcript;
+      if(e.results[i].isFinal)voiceFinalText+=s+' ';else interim+=s;
+    }
+    $('chat-input').value=(voiceFinalText+interim).trim();
+    clearVoiceTimer();
+    if((voiceFinalText+interim).trim())voiceSilenceTimer=setTimeout(finishVoiceUtterance,900);
+    const single=(voiceFinalText+interim).trim();
+    if(/^(ナイトフォール|デイブレイク|nightfall|daybreak)$/i.test(single)&&e.results[e.results.length-1]?.isFinal)finishVoiceUtterance();
+  };
+  r.onerror=e=>{logSafe('speech recognition',e);if(voiceConversationActive&&e.error!=='aborted')setTimeout(startVoiceRecognition,500);};
+  r.onend=()=>{if(windowVoiceMode&&voiceConversationActive&&!voiceSpeaking)setTimeout(startVoiceRecognition,200);};
+  $('talk-btn').addEventListener('click',()=>{if(windowVoiceMode){voiceConversationActive?stopVoiceConversation():startVoiceConversation();}else{try{r.start();}catch(_){}}});
+}else{$('talk-btn').style.display='none';$('voice-mode-toggle-btn').disabled=true;}
+
+$('mute-toggle-btn').textContent=window.isMuted?'🔇 音声 OFF':'🔊 音声 ON';
 $('mute-toggle-btn').addEventListener('click',()=>{window.isMuted=!window.isMuted;$('mute-toggle-btn').textContent=window.isMuted?'🔇 音声 OFF':'🔊 音声 ON';if(window.isMuted){speechSynthesis.cancel();if(window.currentAudio)window.currentAudio.pause();}});
-$('voice-mode-toggle-btn').addEventListener('click',()=>{windowVoiceMode=!windowVoiceMode;localStorage.setItem('light_voice_mode',windowVoiceMode?'1':'0');voiceUI();});
+$('voice-mode-toggle-btn').addEventListener('click',()=>{if(windowVoiceMode){stopVoiceConversation();windowVoiceMode=false;localStorage.setItem('light_voice_mode','0');voiceUI();}else{windowVoiceMode=true;localStorage.setItem('light_voice_mode','1');startVoiceConversation();}});
 
 $('open-settings-btn').addEventListener('click',async()=>{await loadPendingChanges();$('settings-modal').style.display='flex';});$('close-settings-btn').addEventListener('click',()=>$('settings-modal').style.display='none');
 $('logout-btn').addEventListener('click',async()=>{await signOut(auth);localStorage.removeItem('light_last_login');location.reload();});
