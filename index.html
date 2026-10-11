@@ -85,7 +85,7 @@ button,input,textarea,select{touch-action:manipulation}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import { getFirestore,doc,getDoc,setDoc,addDoc,collection,getDocs,updateDoc,deleteDoc,query,where,writeBatch,limit } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
-import { initializeAppCheck,ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js";
+import { initializeAppCheck,ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js";
 import { getAI,getGenerativeModel,getLiveGenerativeModel,GoogleAIBackend,ResponseModality,ThinkingLevel } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-ai.js";
 const firebaseConfig={
   apiKey:"AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
@@ -98,15 +98,15 @@ const firebaseConfig={
 const app=initializeApp(firebaseConfig);
 // Firebase AI Logic uses the Gemini Developer API backend. No external Gemini key
 // is read from light_ai_providers and no Cloud Functions endpoint is called.
-// Paste the reCAPTCHA v3 site key created for this Web App in Firebase App Check.
-// Chat-first phase: App Check is initialized only after a real reCAPTCHA v3 site key is set.
-// For the initial no-extra-key test, keep Firebase AI Logic App Check enforcement OFF in Firebase Console.
-// Before public long-term use, register the real web app with reCAPTCHA v3 and enforce App Check.
+// Paste the reCAPTCHA Enterprise site key created for this Web App in Firebase App Check.
+// Chat-first phase: App Check is initialized only after a real reCAPTCHA Enterprise site key is set.
+// Firebase AI Logic App Check is enforced in this project, so set the reCAPTCHA Enterprise site key before testing chat.
+// Register this existing Web app under Firebase Console > App Check > Apps.
 const FIREBASE_APPCHECK_SITE_KEY='';
 let appCheckReady=false,appCheckSetupError='';
 if(FIREBASE_APPCHECK_SITE_KEY && !FIREBASE_APPCHECK_SITE_KEY.includes('PASTE_RECAPTCHA')){
   try{
-    initializeAppCheck(app,{provider:new ReCaptchaV3Provider(FIREBASE_APPCHECK_SITE_KEY),isTokenAutoRefreshEnabled:true});
+    initializeAppCheck(app,{provider:new ReCaptchaEnterpriseProvider(FIREBASE_APPCHECK_SITE_KEY),isTokenAutoRefreshEnabled:true});
     appCheckReady=true;
   }catch(appCheckError){appCheckSetupError=String(appCheckError?.message||appCheckError);console.warn('Firebase App Check setup:',appCheckSetupError);}
 }
@@ -306,7 +306,7 @@ async function loadAIRuntimeSettings(force=false){
 }
 function aiErrorMessage(e){
   const msg=String(e?.message||e||'');const code=String(e?.code||'').toLowerCase();
-  if(/app.?check|attestation|recaptcha/i.test(msg+' '+code))return 'Firebase AI Logic の App Check 設定を確認してください。READMEの手順でWebアプリにreCAPTCHA v3を設定し、index.htmlのサイトキーを置き換えてください。';
+  if(/app.?check|attestation|recaptcha/i.test(msg+' '+code))return 'Firebase AI Logic の App Check 設定を確認してください。READMEの手順でWebアプリにreCAPTCHA Enterpriseを登録し、index.htmlのサイトキーを置き換えてください。';
   if(/api.?not.?enabled|api.*not.*enabled|service.*disabled/i.test(msg+' '+code))return 'Firebase ConsoleでFirebase AI Logicを有効にし、Gemini Developer APIを選択してください。';
   if(/quota|resource.?exhausted|429|rate.?limit/i.test(msg+' '+code))return 'AIの無料利用枠または時間あたりの上限に達した可能性があります。少し待つか、管理者画面で軽量モデルに切り替えてください。';
   if(/permission-denied|missing or insufficient permissions/i.test(msg+' '+code))return 'FirestoreまたはApp Checkの権限で拒否されました。Firebase RulesとApp Check設定を確認してください。';
