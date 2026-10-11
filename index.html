@@ -99,7 +99,10 @@ const app=initializeApp(firebaseConfig);
 // Firebase AI Logic uses the Gemini Developer API backend. No external Gemini key
 // is read from light_ai_providers and no Cloud Functions endpoint is called.
 // Paste the reCAPTCHA v3 site key created for this Web App in Firebase App Check.
-const FIREBASE_APPCHECK_SITE_KEY='PASTE_RECAPTCHA_V3_SITE_KEY_HERE';
+// Chat-first phase: App Check is initialized only after a real reCAPTCHA v3 site key is set.
+// For the initial no-extra-key test, keep Firebase AI Logic App Check enforcement OFF in Firebase Console.
+// Before public long-term use, register the real web app with reCAPTCHA v3 and enforce App Check.
+const FIREBASE_APPCHECK_SITE_KEY='';
 let appCheckReady=false,appCheckSetupError='';
 if(FIREBASE_APPCHECK_SITE_KEY && !FIREBASE_APPCHECK_SITE_KEY.includes('PASTE_RECAPTCHA')){
   try{
