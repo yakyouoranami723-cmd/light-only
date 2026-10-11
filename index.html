@@ -162,17 +162,21 @@ async function authEmailForPassphrase(passphrase){
 }
 async function checkRegistrationCode(input){
   const snap=await getDoc(doc(db,'light_public_settings','registration'));
-  if(!snap.exists()||snap.data()?.enabled!==true||!snap.data()?.codeHash)return true;
+  if(!snap.exists()||snap.data()?.enabled!==true)return true;
+  const expected=String(snap.data()?.codeHash||'');
+  if(!expected)return false; // Enabled gate with no stored hash must fail closed.
   const hash=await sha256Hex(String(input||'').trim());
-  return hash===String(snap.data().codeHash||'');
+  return hash===expected;
 }
 function friendlyAuthError(e){
   const code=String(e?.code||'');
+  const message=String(e?.message||'');
   if(code.includes('auth/invalid-credential')||code.includes('auth/wrong-password')||code.includes('auth/user-not-found')) return '合言葉が違うか、まだ登録されていません。';
-  if(code.includes('auth/email-already-in-use')) return 'この合言葉はすでに登録されています。';
+  if(code.includes('auth/email-already-in-use')) return 'この合言葉はすでに登録されています。ログイン画面から起動してください。';
   if(code.includes('auth/weak-password')) return '合言葉が弱すぎます。12文字以上で作ってください。';
   if(code.includes('auth/operation-not-allowed')) return 'FirebaseのAuthenticationで「メール/パスワード」を有効にしてください。';
-  return e?.message||'認証に失敗しました。';
+  if(code.includes('permission-denied') || /Missing or insufficient permissions/i.test(message)) return 'Firebaseの権限でプロフィール操作が拒否されました。データ保護のため、既存プロフィールを無理に上書きせず、ルールとUIDの対応を確認する必要があります。';
+  return message||'認証に失敗しました。';
 }
 
 async function startWithPassphrase(){
@@ -446,8 +450,12 @@ async function authLogin(passphrase){
   try{
     const profile=await mx4LoadProfileByKey(key);
     if(!profile){
-      await signOut(auth).catch(()=>{});localStorage.removeItem('light_last_login');
-      throw new Error('Firebase認証は成功しましたが、プロフィールがありません。新規登録から登録してください。');
+      // Keep the authenticated account. The registration form can restore the missing
+      // profile under this same UID and passphrase; do not create another Auth user.
+      localStorage.setItem('light_last_login',key);
+      showProfileModal({},true,'register');
+      setProfileMessage('この合言葉の認証アカウントは確認できましたが、プロフィールが見つかりません。既存の合言葉のまま登録すると復旧を試せます。');
+      return false;
     }
     if(profile.data.authUid && profile.data.authUid!==user.uid){
       await signOut(auth).catch(()=>{});localStorage.removeItem('light_last_login');
@@ -473,52 +481,134 @@ async function authRegister(passphrase){
   const birthday=normalizeBirthday($('profile-birthday').value);
   const bandName=$('profile-band').value.trim();
   const joinCode=$('profile-join-code').value.trim();
-  if(!validPassphrase(key))return setProfileMessage('合言葉が不正です。生成した合言葉をそのまま使ってください。'),false;
-  if(!name)return setProfileMessage('名前を入力してください。'),false;
-  if(!birthday)return setProfileMessage('誕生日は MM-DD 形式で入力してください。'),false;
-  if(!bandName)return setProfileMessage('現在のバンド名を入力してください。'),false;
+  if(!validPassphrase(key))throw new Error('合言葉が不正です。生成した合言葉をそのまま使ってください。');
+  if(!name)throw new Error('名前を入力してください。');
+  if(!birthday)throw new Error('誕生日は MM-DD 形式で入力してください。');
+  if(!bandName)throw new Error('現在のバンド名を入力してください。');
+
+  // This document is intentionally public-readable by the rules. Validate the join code
+  // before creating or signing in to any Authentication account.
   const gateSnap=await getDoc(doc(db,'light_public_settings','registration'));
-  if(gateSnap.exists()&&gateSnap.data()?.enabled===true){if(!(await checkRegistrationCode(joinCode)))return setProfileMessage('初回登録コードが違います。'),false;}
-  const existing=await mx4LoadProfileByKey(key);
+  if(gateSnap.exists()&&gateSnap.data()?.enabled===true){
+    if(!(await checkRegistrationCode(joinCode)))throw new Error('初回登録コードが違います。');
+  }
+
   const email=await authEmailForPassphrase(key);
-  // Hold the auth-state listener only for the part that can change Firebase Auth state.
   window.authFlowBusy=true;
   let cred=null;
   try{
-    if(auth.currentUser && auth.currentUser.email===email) cred=auth.currentUser;
-    else if(auth.currentUser) await signOut(auth).catch(()=>{});
-    if(!cred){
-      try{cred=(await createUserWithEmailAndPassword(auth,email,key)).user;}
-      catch(e){
+    if(auth.currentUser && auth.currentUser.email===email){
+      cred=auth.currentUser;
+    }else{
+      if(auth.currentUser)await signOut(auth).catch(()=>{});
+      try{
+        cred=(await createUserWithEmailAndPassword(auth,email,key)).user;
+      }catch(e){
+        // A previous attempt may have created Auth successfully but failed at Firestore.
+        // Sign in to that SAME account; never generate another account for the same key.
         if(String(e?.code||'')!=='auth/email-already-in-use')throw e;
         cred=(await signInWithEmailAndPassword(auth,email,key)).user;
       }
     }
-    if(existing && existing.data?.authUid && existing.data.authUid!==cred.uid) throw new Error('この合言葉は別の認証アカウントに対応しています。');
-    if(existing && existing.data?.authUid===cred.uid){
-      await signOut(auth).catch(()=>{});
-      throw new Error('この合言葉はすでに登録済みです。ログイン画面から起動してください。');
+    if(!cred?.uid)throw new Error('Firebase認証アカウントを取得できませんでした。');
+
+    // Read only after authentication. Rules allow a signed-in client to read a missing
+    // profile document, but keep existing profiles protected by their authUid.
+    let existing=null;
+    try{
+      existing=await mx4LoadProfileByKey(key);
+    }catch(e){
+      if(String(e?.code||'').includes('permission-denied')||/Missing or insufficient permissions/i.test(String(e?.message||''))){
+        throw new Error('この合言葉に対応するプロフィールは、現在の認証UIDから読み取れません。既存データを上書きしないため登録を止めました。管理者側でUIDの対応確認が必要です。');
+      }
+      throw e;
     }
-    const bandId=safeBandId(bandName), stamp=now();
-    const profile={userKey:key,credentialKey:key,authUid:cred.uid,username:canonical(name),name,displayName:name,birthday,bandId,bandName,createdAt:stamp,lastLoginAt:stamp,loginCount:1};
+
+    if(existing){
+      const old=existing.data||{};
+      if(!old.authUid){
+        throw new Error('既存プロフィールに認証UIDがありません。データを安全に保つため、自動上書きは止めました。管理者側で既存プロフィールの復旧が必要です。');
+      }
+      if(old.authUid!==cred.uid){
+        throw new Error('この合言葉のプロフィールと認証アカウントのUIDが一致しません。既存データ保護のため上書きしません。管理者確認が必要です。');
+      }
+      // The profile already belongs to this account. If complete, reuse it unchanged.
+      if(old.name&&old.birthday&&old.bandName){
+        localStorage.setItem('light_last_login',key);
+        applyProfile({userKey:key,...old});
+        hideProfileModal();
+        return true;
+      }
+    }
+
+    const bandId=safeBandId(bandName),stamp=now();
+    const oldData=existing?.data||{};
+    const profile={
+      ...oldData,
+      userKey:key,
+      credentialKey:key,
+      authUid:cred.uid,
+      username:oldData.username||canonical(name),
+      name,
+      displayName:name,
+      birthday,
+      bandId,
+      bandName,
+      createdAt:oldData.createdAt||stamp,
+      lastLoginAt:stamp,
+      loginCount:Number(oldData.loginCount||0)+1,
+      updatedAt:stamp
+    };
+
+    // The essential profile + this user's membership are the critical writes.
+    // Do not update a band's document owned by another UID: that would fail rules and
+    // would prevent the user profile from being saved in the same atomic batch.
+    const bandRef=doc(db,'light_bands',bandId);
+    const bandSnap=await getDoc(bandRef);
     const batch=writeBatch(db);
     batch.set(doc(db,'light_users',key),profile,{merge:true});
-    batch.set(doc(db,'light_bands',bandId),{bandId,name:bandName,normalizedName:canonical(bandName),createdAt:stamp,updatedAt:stamp,createdByUid:cred.uid},{merge:true});
-    batch.set(doc(db,'light_band_members',`${bandId}_${cred.uid}`),{uid:cred.uid,userKey:key,bandId,bandName,createdAt:stamp,updatedAt:stamp});
-    await writePersonIndexBatch(batch,profile);
+    if(!bandSnap.exists()){
+      batch.set(bandRef,{bandId,name:bandName,normalizedName:canonical(bandName),createdAt:stamp,updatedAt:stamp,createdByUid:cred.uid});
+    }else if(String(bandSnap.data()?.createdByUid||'')===cred.uid){
+      batch.set(bandRef,{bandId,name:bandName,normalizedName:canonical(bandName),updatedAt:stamp,createdByUid:cred.uid},{merge:true});
+    }
+    batch.set(doc(db,'light_band_members',`${bandId}_${cred.uid}`),{
+      uid:cred.uid,userKey:key,bandId,bandName,createdAt:stamp,updatedAt:stamp
+    },{merge:true});
     await batch.commit();
-    localStorage.setItem('light_last_login',key);applyProfile(profile);hideProfileModal();return true;
+
+    // The people index is secondary. Its failure must not roll back or block login.
+    // Existing index entries owned by another UID are left untouched.
+    try{
+      const indexRef=doc(db,'light_people_index',personIndexDocId(key));
+      const indexSnap=await getDoc(indexRef);
+      if(!indexSnap.exists()||String(indexSnap.data()?.authUid||'')===cred.uid){
+        await setDoc(indexRef,{
+          userKey:key,authUid:cred.uid,name:String(name).slice(0,80),
+          normalizedName:canonical(name),bandId,bandName:String(bandName).slice(0,100),
+          role:String(profile.role||'').slice(0,80),visibility:'band',updatedAt:now()
+        },{merge:true});
+      }
+    }catch(indexError){console.warn('Optional people index write skipped:',indexError);}
+
+    localStorage.setItem('light_last_login',key);
+    applyProfile(profile);
+    hideProfileModal();
+    return true;
   }catch(e){
-    console.error('authRegister failed',e);await mx4LogError(e,'authRegister');
-    // A newly created Auth account may remain when Firestore failed. It is recoverable
-    // by repeating registration with the same passphrase; we leave no active app session.
-    if(auth.currentUser?.uid){const ps=await getDoc(doc(db,'light_users',key)).catch(()=>null);if(!ps?.exists())await signOut(auth).catch(()=>{});}
+    console.error('authRegister failed',e);
+    await mx4LogError(e,'authRegister');
+    // If the essential profile did not save, end the session. The Auth account remains
+    // and can be reused by entering the same passphrase; do not delete it automatically.
+    if(cred?.uid && auth.currentUser?.uid===cred.uid){
+      const ps=await getDoc(doc(db,'light_users',key)).catch(()=>null);
+      if(!ps?.exists())await signOut(auth).catch(()=>{});
+    }
     throw e;
   }finally{
     window.authFlowBusy=false;
   }
 }
-
 async function loadCurrentProfile(explicitKey=''){
   const user=auth.currentUser;if(!user)return false;
   const key=String(explicitKey||localStorage.getItem('light_last_login')||'').trim();
