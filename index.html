@@ -82,11 +82,11 @@ button,input,textarea,select{touch-action:manipulation}
 
 
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore,doc,getDoc,setDoc,addDoc,collection,getDocs,updateDoc,deleteDoc,query,where,writeBatch,limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getStorage,ref as storageRef,uploadBytes,deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-import { getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFunctions,httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import { getFirestore,doc,getDoc,setDoc,addDoc,collection,getDocs,updateDoc,deleteDoc,query,where,writeBatch,limit } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import { getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import { initializeAppCheck,ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app-check.js";
+import { getAI,getGenerativeModel,getLiveGenerativeModel,GoogleAIBackend,ResponseModality,ThinkingLevel } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-ai.js";
 const firebaseConfig={
   apiKey:"AIzaSyChocv7osIDAf9z4b1cVcab74b15Xzoudo",
   authDomain:"light-65413.firebaseapp.com",
@@ -95,11 +95,25 @@ const firebaseConfig={
   messagingSenderId:"116819261632",
   appId:"1:116819261632:web:9d9144aa125a55371d5525"
 };
-const app=initializeApp(firebaseConfig),db=getFirestore(app),auth=getAuth(app),storage=getStorage(app);
-const functions=getFunctions(app,'asia-northeast1');
-const mightyXChat=httpsCallable(functions,'mightyXChat',{timeout:9000});
-const mightyXTranscribe=httpsCallable(functions,'mightyXTranscribe',{timeout:12000});
-const mightyXLiveToken=httpsCallable(functions,'mightyXLiveToken',{timeout:8000});
+const app=initializeApp(firebaseConfig);
+// Firebase AI Logic uses the Gemini Developer API backend. No external Gemini key
+// is read from light_ai_providers and no Cloud Functions endpoint is called.
+// Paste the reCAPTCHA v3 site key created for this Web App in Firebase App Check.
+const FIREBASE_APPCHECK_SITE_KEY='PASTE_RECAPTCHA_V3_SITE_KEY_HERE';
+let appCheckReady=false,appCheckSetupError='';
+if(FIREBASE_APPCHECK_SITE_KEY && !FIREBASE_APPCHECK_SITE_KEY.includes('PASTE_RECAPTCHA')){
+  try{
+    initializeAppCheck(app,{provider:new ReCaptchaV3Provider(FIREBASE_APPCHECK_SITE_KEY),isTokenAutoRefreshEnabled:true});
+    appCheckReady=true;
+  }catch(appCheckError){appCheckSetupError=String(appCheckError?.message||appCheckError);console.warn('Firebase App Check setup:',appCheckSetupError);}
+}
+const db=getFirestore(app),auth=getAuth(app),firebaseAI=getAI(app,{backend:new GoogleAIBackend()});
+const DEFAULT_AI_MODEL='gemini-3.8-flash';
+const FALLBACK_AI_MODEL='gemini-3.5-flash-lite';
+const DEFAULT_LIVE_MODEL='gemini-3.1-flash-live-preview';
+const ALLOWED_AI_MODELS=new Set([DEFAULT_AI_MODEL,FALLBACK_AI_MODEL]);
+const ALLOWED_LIVE_MODELS=new Set([DEFAULT_LIVE_MODEL,'gemini-2.5-flash-native-audio-preview-12-2025']);
+let cachedAIRuntimeSettings=null,cachedAIRuntimeSettingsAt=0;
 const ARCHIVE_CATEGORIES={
   personal:'個人',band:'バンド',club:'軽音楽部',live_event:'ライブでの出来事',live_staff:'ライブスタッフ',staff_shared:'スタッフ共有事項',daily:'日常'
 };
@@ -243,8 +257,8 @@ async function loadBrain(){const s=await getDoc(doc(db,'light_brains',sessionUse
 async function saveBrain(){await setDoc(doc(db,'light_brains',sessionUserKey),{authUid:auth.currentUser?.uid||'',userKey:sessionUserKey,username:sessionUserName,bandId:sessionBandId,bandName:sessionBandName,summary:String(window.lightBrain.summary||'').slice(0,3500),recentHistory:normalizeHistory(window.conversationHistory).slice(-20),updatedAt:now()});}
 function buildBrainContext(){return window.lightBrain.summary?`\n\n【ライトの長期記憶】\n${window.lightBrain.summary}`:'';}
 async function loadLegacy(){const s=await getDoc(doc(db,'light_memories',sessionUserKey));if(s.exists()){const d=s.data()||{};window.selfReflections=Array.isArray(d.reflections)?d.reflections:[];window.userFacts=Array.isArray(d.facts)?d.facts:[];}}
-async function loadMemoryFiles(){const qs=[];if(sessionUserKey)qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','personal'),where('scopeId','==',auth.currentUser?.uid||''))));if(sessionBandId)qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','band'),where('scopeId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','club'),where('scopeId','==','club'))));if(auth.currentUser?.uid)qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','related'),where('scopeId','==','related'),where('relatedUids','array-contains',auth.currentUser.uid))));const snaps=await Promise.all(qs);window.memoryFiles=[];for(const s of snaps)s.forEach(d=>{const x={id:d.id,...(d.data()||{})};if(x.suppressed!==true&&x.referenceAllowed!==false)window.memoryFiles.push(x);});window.memoryFiles=[...new Map(window.memoryFiles.map(x=>[x.id,x])).values()];window.memoryFiles.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));}
-async function loadPhotoMemories(){const qs=[];if(sessionUserKey)qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','personal'),where('scopeId','==',auth.currentUser?.uid||''))));if(sessionBandId)qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','band'),where('scopeId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','club'),where('scopeId','==','club'))));if(auth.currentUser?.uid)qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','related'),where('scopeId','==','related'),where('relatedUids','array-contains',auth.currentUser.uid))));const snaps=await Promise.all(qs);window.photoMemories=[];for(const s of snaps)s.forEach(d=>{const x={id:d.id,...(d.data()||{})};if(x.enabled!==false&&x.suppressed!==true&&x.referenceAllowed!==false)window.photoMemories.push(x);});window.photoMemories=[...new Map(window.photoMemories.map(x=>[x.id,x])).values()];window.photoMemories.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));}
+async function loadMemoryFiles(){const qs=[];if(sessionUserKey)qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','personal'),where('scopeId','==',auth.currentUser?.uid||''))));if(sessionUserKey&&sessionUserKey!==String(auth.currentUser?.uid||''))qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','personal'),where('scopeId','==',sessionUserKey))));if(sessionBandId)qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','band'),where('scopeId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','club'),where('scopeId','==','club'))));if(auth.currentUser?.uid)qs.push(getDocs(query(collection(db,'light_memory_files'),where('scopeType','==','related'),where('scopeId','==','related'),where('relatedUids','array-contains',auth.currentUser.uid))));const snaps=await Promise.all(qs);window.memoryFiles=[];for(const s of snaps)s.forEach(d=>{const x={id:d.id,...(d.data()||{})};if(x.suppressed!==true&&x.referenceAllowed!==false)window.memoryFiles.push(x);});window.memoryFiles=[...new Map(window.memoryFiles.map(x=>[x.id,x])).values()];window.memoryFiles.sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));}
+async function loadPhotoMemories(){const qs=[];if(sessionUserKey)qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','personal'),where('scopeId','==',auth.currentUser?.uid||''))));if(sessionUserKey&&sessionUserKey!==String(auth.currentUser?.uid||''))qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','personal'),where('scopeId','==',sessionUserKey))));if(sessionBandId)qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','band'),where('scopeId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','club'),where('scopeId','==','club'))));if(auth.currentUser?.uid)qs.push(getDocs(query(collection(db,'light_images'),where('scopeType','==','related'),where('scopeId','==','related'),where('relatedUids','array-contains',auth.currentUser.uid))));const snaps=await Promise.all(qs);window.photoMemories=[];for(const s of snaps)s.forEach(d=>{const x={id:d.id,...(d.data()||{})};if(x.enabled!==false&&x.suppressed!==true&&x.referenceAllowed!==false)window.photoMemories.push(x);});window.photoMemories=[...new Map(window.photoMemories.map(x=>[x.id,x])).values()];window.photoMemories.sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));}
 async function loadTimeline(){const qs=[];if(sessionBandId)qs.push(getDocs(query(collection(db,'light_history'),where('bandId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_history'),where('scopeType','==','club'))));const snaps=await Promise.all(qs);window.timelineEntries=[];for(const s of snaps)s.forEach(d=>window.timelineEntries.push({id:d.id,...(d.data()||{})}));window.timelineEntries=[...new Map(window.timelineEntries.map(x=>[x.id,x])).values()];window.timelineEntries.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||Number(b.createdAt||0)-Number(a.createdAt||0));}
 function contextCategoryText(m){let s=`[${ARCHIVE_CATEGORIES[m.category]||m.category||'資料'}]`;if(m.staffRole&&m.staffRole!=='none')s+=` / ${STAFF_ROLES[m.staffRole]||m.staffRole}`;if(m.certainty)s+=` / 確度:${m.certainty}`;if(m.validity)s+=` / 有効:${m.validity}`;if(m.trouble)s+=` / トラブル:${m.trouble}`;if(m.countermeasure)s+=` / 対処:${m.countermeasure}`;return s;}
 function getApplicableFiles(){return window.memoryFiles.filter(applicableScope);}
@@ -273,12 +287,76 @@ function historyForAI(history){return normalizeHistory(history).slice(-12).map(x
 function parseJsonLoose(text){const raw=String(text||'').trim();try{return JSON.parse(raw);}catch(_){const m=raw.match(/```(?:json)?\s*([\s\S]*?)```/i);if(m)try{return JSON.parse(m[1]);}catch(__){}const a=raw.indexOf('{'),b=raw.lastIndexOf('}');if(a>=0&&b>a)try{return JSON.parse(raw.slice(a,b+1));}catch(__){}throw new Error('AIのJSON応答を解釈できませんでした。');}}
 
 async function loadAIProviders(){window.aiProviders=[];apiConfigLoaded=true;return [];}
+async function loadAIRuntimeSettings(force=false){
+  if(!force&&cachedAIRuntimeSettings&&now()-cachedAIRuntimeSettingsAt<60000)return cachedAIRuntimeSettings;
+  const settings={model:DEFAULT_AI_MODEL,fallbackModel:FALLBACK_AI_MODEL,liveModel:DEFAULT_LIVE_MODEL};
+  try{
+    const snap=await getDoc(doc(db,'light_public_settings','ai'));
+    if(snap.exists()){
+      const d=snap.data()||{};
+      if(ALLOWED_AI_MODELS.has(String(d.model||'')))settings.model=String(d.model);
+      if(ALLOWED_AI_MODELS.has(String(d.fallbackModel||''))&&String(d.fallbackModel)!==settings.model)settings.fallbackModel=String(d.fallbackModel);
+      if(ALLOWED_LIVE_MODELS.has(String(d.liveModel||'')))settings.liveModel=String(d.liveModel);
+    }
+  }catch(e){console.debug('AI public settings unavailable; safe defaults used',e);}
+  cachedAIRuntimeSettings=settings;cachedAIRuntimeSettingsAt=now();return settings;
+}
+function aiErrorMessage(e){
+  const msg=String(e?.message||e||'');const code=String(e?.code||'').toLowerCase();
+  if(/app.?check|attestation|recaptcha/i.test(msg+' '+code))return 'Firebase AI Logic の App Check 設定を確認してください。READMEの手順でWebアプリにreCAPTCHA v3を設定し、index.htmlのサイトキーを置き換えてください。';
+  if(/api.?not.?enabled|api.*not.*enabled|service.*disabled/i.test(msg+' '+code))return 'Firebase ConsoleでFirebase AI Logicを有効にし、Gemini Developer APIを選択してください。';
+  if(/quota|resource.?exhausted|429|rate.?limit/i.test(msg+' '+code))return 'AIの無料利用枠または時間あたりの上限に達した可能性があります。少し待つか、管理者画面で軽量モデルに切り替えてください。';
+  if(/permission-denied|missing or insufficient permissions/i.test(msg+' '+code))return 'FirestoreまたはApp Checkの権限で拒否されました。Firebase RulesとApp Check設定を確認してください。';
+  return msg.slice(0,500)||'AIとの通信に失敗しました。Firebase AI Logicの設定とネットワークを確認してください。';
+}
+function makeAIRuntimeModel(modelName,system,maxOutputTokens,jsonMode,thinking){
+  const generationConfig={maxOutputTokens:Math.max(180,Math.min(1400,Number(maxOutputTokens||700)))};
+  if(jsonMode)generationConfig.responseMimeType='application/json';
+  if(String(modelName).startsWith('gemini-3.'))generationConfig.thinkingConfig={thinkingLevel:thinking==='medium'?ThinkingLevel.MEDIUM:ThinkingLevel.LOW};
+  return getGenerativeModel(firebaseAI,{model:modelName,systemInstruction:String(system||'').slice(0,12000),generationConfig});
+}
+function payloadToAIContents(messages){
+  return messages.map(m=>{
+    const parts=[];const text=String(m.text||'').slice(0,14000);if(text)parts.push({text});
+    for(const im of (Array.isArray(m.images)?m.images:[]).slice(0,2)){
+      const data=String(im.base64||'').trim();if(data)parts.push({inlineData:{mimeType:String(im.mimeType||'image/jpeg'),data}});
+    }
+    if(!parts.length)parts.push({text:' '});
+    return {role:m.role==='assistant'?'model':'user',parts};
+  });
+}
+async function generateWithAIRuntime(modelName,body){
+  const model=makeAIRuntimeModel(modelName,body.system,body.maxOutputTokens,body.jsonMode,body.thinking);
+  const result=await model.generateContent(payloadToAIContents(body.messages));
+  const text=String(result?.response?.text?.()||'').trim();
+  if(!text)throw new Error('AIから回答が返ってきませんでした。');
+  return {text,provider:'Firebase AI Logic / Gemini Developer API',model:modelName};
+}
 async function requestAI(payload){
   const messages=Array.isArray(payload?.messages)?payload.messages.slice(-12):[];
   if(!messages.length)throw new Error('AIメッセージがありません。');
   const body={system:String(payload?.system||'').slice(0,12000),messages:messages.map(m=>({role:m.role==='assistant'?'assistant':'user',text:String(m.text||'').slice(0,14000),images:(m.images||[]).slice(0,2).map(im=>({mimeType:String(im.mimeType||'image/jpeg'),base64:String(im.base64||'')}))})),maxOutputTokens:Math.max(180,Math.min(1400,Number(payload?.maxOutputTokens||700))),jsonMode:payload?.jsonMode===true,thinking:payload?.thinking==='medium'?'medium':'low'};
-  try{const r=await mightyXChat(body);const text=String(r.data?.text||'').trim();if(!text)throw new Error('AIから回答が返ってきませんでした。');return{text,provider:r.data?.provider||'',model:r.data?.model||''};}
-  catch(e){const c=String(e?.code||'');if(c.includes('deadline-exceeded'))throw new Error('AIの返事が時間内に届きませんでした。');if(c.includes('resource-exhausted'))throw new Error('AIの利用上限に達しています。少し待ってください。');throw new Error(e?.message||'AI通信に失敗しました。');}
+  const settings=await loadAIRuntimeSettings();
+  const models=[settings.model,settings.fallbackModel].filter((v,i,a)=>ALLOWED_AI_MODELS.has(v)&&a.indexOf(v)===i);
+  let lastError=null;
+  for(let i=0;i<models.length;i++){
+    try{return await generateWithAIRuntime(models[i],body);}
+    catch(e){
+      lastError=e;const m=String(e?.message||e),c=String(e?.code||'').toLowerCase();
+      const modelSpecific=/404|not found|unknown model|model.*not supported|unsupported model|429|quota|resource.?exhausted|503|temporarily unavailable/i.test(m+' '+c);
+      if(!modelSpecific||i===models.length-1)break;
+      console.warn(`Firebase AI model ${models[i]} failed; trying the configured fallback.`,e);
+    }
+  }
+  throw new Error(aiErrorMessage(lastError));
+}
+async function transcribeAudioWithAI(base64,mimeType='audio/webm'){
+  const safeMime=String(mimeType||'audio/webm').split(';')[0].toLowerCase();
+  if(!/^audio\//.test(safeMime))throw new Error('音声形式を認識できません。');
+  const settings=await loadAIRuntimeSettings();
+  const model=makeAIRuntimeModel(settings.model,'',350,false,'low');
+  const result=await model.generateContent([{role:'user',parts:[{text:'この音声を日本語で文字起こししてください。要約や説明は不要です。聞き取れない部分を勝手に補完しないでください。'},{inlineData:{mimeType:safeMime,data:String(base64||'')}}]}]);
+  const text=String(result?.response?.text?.()||'').trim();if(!text)throw new Error('音声から文字を取得できませんでした。');return text;
 }
 
 function stripBrain(reply){const ms=[...String(reply||'').matchAll(/\[BRAIN:\s*([\s\S]*?)\]/g)];let summary='';if(ms.length)summary=ms[ms.length-1][1].trim().slice(0,3500);const cleaned=String(reply||'').replace(/\[BRAIN:\s*[\s\S]*?\]/g,'').trim();return{cleaned,summary};}
@@ -671,14 +749,14 @@ async function persistPdfDocument(file,text,pages,decision={}){
   let relatedUids=Array.isArray(decision.relatedUids)?decision.relatedUids.filter(x=>typeof x==='string'&&x.trim()).slice(0,30):[];
   if(scopeType==='related'&&!relatedUids.includes(uid))relatedUids=[uid,...relatedUids].filter(Boolean).slice(0,30);
   const scopeId=scopeType==='personal'?uid:scopeType==='club'?'club':scopeType==='related'?'related':sessionBandId;if(!scopeId)return '';
-  const storageRoot=scopeType==='personal'?`users/${uid}`:scopeType==='related'?`users/${uid}/related`:scopeType==='club'?'club':`bands/${scopeId}`;
   const docId='doc-'+now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
-  const path=`${storageRoot}/documents/${docId}/${mx4SafeFileName(file.name,'document.pdf')}`;
+  // Spark-compatible storage: the extracted PDF text is stored in Firestore chunks.
+  // The original binary PDF is not uploaded to Firebase Storage.
+  const path=`firestore://light_documents/${docId}/chunks`;
   const chunks=mx4ChunkText(text,12000);const stamp=now();const privacyText=String(decision.sourceText||text||'');
   const adminVisible=mx4AdminVisible(privacy,privacyText,decision.adminVisible);
   const ddata={documentId:docId,storagePath:path,title:String(decision.title||file.name).slice(0,120),originalName:file.name,mimeType:'application/pdf',size:file.size,pages,scopeType,scopeId,bandId:sessionBandId,bandName:sessionBandName,privacy,adminVisible,memoryPriority:Math.max(1,Math.min(10,Number(decision.memoryPriority)||5)),certainty:decision.certainty||'confirmed',validity:decision.validity||'current',tags:normalizeTags(decision.tags||[]),keywords:normalizeTags(decision.tags||[]),kind:'pdf',status:'processing',enabled:true,referenceAllowed:true,suppressed:false,createdAt:stamp,updatedAt:stamp,authUid:uid,createdBy:sessionUserKey,ownerUid:uid,relatedUids,chunkCount:chunks.length};
   try{
-    await uploadBytes(storageRef(storage,path),new Blob([await file.arrayBuffer()],{type:'application/pdf'}),{contentType:'application/pdf',customMetadata:{scopeType,scopeId,privacy,adminVisible:String(adminVisible),kind:'pdf',ownerUid:uid,relatedUidsCsv:mx4CsvUids(relatedUids)}});
     await setDoc(doc(db,'light_documents',docId),ddata);
     for(let start=0;start<chunks.length;start+=400){const batch=writeBatch(db);for(let i=start;i<Math.min(start+400,chunks.length);i++)batch.set(doc(db,'light_documents',docId,'chunks',String(i)),{index:i,text:chunks[i],keywords:mx4Terms(chunks[i]).slice(0,30),createdAt:stamp});await batch.commit();}
     const memRef=await addDoc(collection(db,'light_memory_files'),{title:ddata.title,details:String(decision.summary||text.slice(0,3500)),sourceName:file.name,documentId:docId,storagePath:path,category:decision.category||'club',kind:'pdf',scopeType,scopeId,bandId:sessionBandId,bandName:sessionBandName,privacy,adminVisible,memoryPriority:ddata.memoryPriority,referencePriority:'context-dependent',certainty:ddata.certainty,validity:ddata.validity,tags:ddata.tags,keywords:ddata.keywords,enabled:true,status:'ready',directAnswer:false,referenceAllowed:true,suppressed:false,authUid:uid,createdBy:sessionUserKey,ownerUid:uid,relatedUids,createdAt:stamp,updatedAt:stamp});
@@ -686,7 +764,7 @@ async function persistPdfDocument(file,text,pages,decision={}){
     window.lastSavedMemory={kind:'memory',id:memRef.id};window.lastSavedMemoryAt=now();window.lastMemorySourceText=String(decision.sourceText||file.name||'').slice(0,2500);
     return docId;
   }catch(e){
-    await deleteDoc(doc(db,'light_documents',docId)).catch(()=>{});await mx4DeleteSubcollection('light_documents',docId,'chunks');await deleteObject(storageRef(storage,path)).catch(()=>{});void mx4LogError(e,'pdf-persist');throw e;
+    await mx4DeleteSubcollection('light_documents',docId,'chunks').catch(()=>{});await deleteDoc(doc(db,'light_documents',docId)).catch(()=>{});void mx4LogError(e,'pdf-persist');throw e;
   }
 }
 async function decidePdfMemory(file,text,pages){
@@ -711,7 +789,7 @@ async function handlePdfUpload(file){
   finally{MX4.docBusy=false;$('pdf-upload').value='';}
 }
 async function loadDocuments(){
-  const qs=[];if(sessionUserKey)qs.push(getDocs(query(collection(db,'light_documents'),where('scopeType','==','personal'),where('scopeId','==',auth.currentUser?.uid||''))));if(sessionBandId)qs.push(getDocs(query(collection(db,'light_documents'),where('scopeType','==','band'),where('scopeId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_documents'),where('scopeType','==','club'),where('scopeId','==','club'))));if(auth.currentUser?.uid)qs.push(getDocs(query(collection(db,'light_documents'),where('scopeType','==','related'),where('scopeId','==','related'),where('relatedUids','array-contains',auth.currentUser.uid))));
+  const qs=[];if(sessionUserKey)qs.push(getDocs(query(collection(db,'light_documents'),where('scopeType','==','personal'),where('scopeId','==',auth.currentUser?.uid||''))));if(sessionUserKey&&sessionUserKey!==String(auth.currentUser?.uid||''))qs.push(getDocs(query(collection(db,'light_documents'),where('scopeType','==','personal'),where('scopeId','==',sessionUserKey))));if(sessionBandId)qs.push(getDocs(query(collection(db,'light_documents'),where('scopeType','==','band'),where('scopeId','==',sessionBandId))));qs.push(getDocs(query(collection(db,'light_documents'),where('scopeType','==','club'),where('scopeId','==','club'))));if(auth.currentUser?.uid)qs.push(getDocs(query(collection(db,'light_documents'),where('scopeType','==','related'),where('scopeId','==','related'),where('relatedUids','array-contains',auth.currentUser.uid))));
   const snaps=await Promise.all(qs);window.documents=[];for(const sn of snaps)sn.forEach(d=>{const x={id:d.id,...d.data()};if(x.suppressed!==true&&x.referenceAllowed!==false&&x.enabled!==false&&x.status!=='processing')window.documents.push(x);});window.documents=[...new Map(window.documents.map(x=>[x.id,x])).values()];
 }
 async function buildDocumentContext(q){
@@ -884,12 +962,15 @@ async function archivePhoto(photo,catalog,originalText){
   const privacy=mx4PrivacyFromPlan(catalog,originalText),scopeType=mx4ScopeForPrivacy(privacy,catalog.scopeType||'band'),uid=auth.currentUser?.uid||'';if(!uid)return '';
   let relatedUids=Array.isArray(catalog.relatedUids)?catalog.relatedUids.filter(x=>typeof x==='string'&&x.trim()).slice(0,30):[];if(scopeType==='related'&&!relatedUids.includes(uid))relatedUids=[uid,...relatedUids].filter(Boolean).slice(0,30);
   const scopeId=scopeType==='personal'?uid:scopeType==='club'?'club':scopeType==='related'?'related':sessionBandId;if(!scopeId)return '';
-  const imageId='img-'+now().toString(36)+'-'+Math.random().toString(36).slice(2,8);const ext=mx4MimeExt(photo.mimeType);const storageRoot=scopeType==='personal'?`users/${uid}`:scopeType==='related'?`users/${uid}/related`:scopeType==='club'?'club':`bands/${scopeId}`;const path=`${storageRoot}/photos/${imageId}.${ext}`;const blob=await (await fetch(photo.dataUrl)).blob();const stamp=now(),adminVisible=mx4AdminVisible(privacy,originalText,catalog.adminVisible);
+  const imageId='img-'+now().toString(36)+'-'+Math.random().toString(36).slice(2,8);const path=`firestore://light_images/${imageId}/chunks`;const stamp=now(),adminVisible=mx4AdminVisible(privacy,originalText,catalog.adminVisible);
   const personCandidates=(Array.isArray(catalog.personCandidates)?catalog.personCandidates:[]).slice(0,8).map(p=>({label:String(p.label||p.name||'不明').slice(0,80),confidence:Math.max(0,Math.min(1,Number(p.confidence)||0)),status:'candidate',reason:String(p.reason||'').slice(0,300)}));
   const idata={imageId,storagePath:path,storageStatus:'processing',authUid:uid,userKey:sessionUserKey,username:sessionUserName,displayName:sessionDisplayName,bandId:sessionBandId,bandName:sessionBandName,ownerUid:uid,relatedUids,scopeType,scopeId,title:String(catalog.title||`写真 ${new Date().toLocaleString('ja-JP')}`).slice(0,120),category:catalog.category||'band',subcategory:catalog.subcategory||'',staffRole:catalog.staffRole||'none',privacy,adminVisible,tags:normalizeTags([...(catalog.tags||[]),'写真']),aiSummary:String(catalog.summary||'').slice(0,4500),aiObservation:String(catalog.aiObservation||'').slice(0,3500),humanNote:String(catalog.humanNoteSuggested||'').slice(0,1500),sourceText:String(originalText||'').slice(0,2000),date:String(catalog.date||'').slice(0,10),dateSource:catalog.dateSource||'unknown',mimeType:photo.mimeType||'image/jpeg',width:photo.width,height:photo.height,originalName:photo.originalName||'',createdAt:stamp,updatedAt:stamp,enabled:true,referenceAllowed:true,suppressed:false,status:'processing',personCandidates,instrumentCandidates:Array.isArray(catalog.instrumentCandidates)?catalog.instrumentCandidates.slice(0,8):[],equipmentCandidates:Array.isArray(catalog.equipmentCandidates)?catalog.equipmentCandidates.slice(0,8):[]};
   try{
-    await uploadBytes(storageRef(storage,path),blob,{contentType:photo.mimeType||'image/jpeg',customMetadata:{scopeType,scopeId,privacy,adminVisible:String(adminVisible),kind:'photo',ownerUid:uid,relatedUidsCsv:mx4CsvUids(relatedUids)}});
+    const photoData=String(photo.dataUrl||'');if(!photoData)throw new Error('写真データがありません。');
+    const photoChunks=mx4ChunkText(photoData,280000);idata.storagePath=path;idata.storageStatus='firestore';idata.chunkCount=photoChunks.length;
+    // Create parent metadata first because chunk rules validate the parent's scope.
     await setDoc(doc(db,'light_images',imageId),idata);
+    for(let start=0;start<photoChunks.length;start+=250){const batch=writeBatch(db);for(let i=start;i<Math.min(start+250,photoChunks.length);i++)batch.set(doc(db,'light_images',imageId,'chunks',String(i)),{index:i,data:photoChunks[i],createdAt:stamp});await batch.commit();}
     const mf=await addDoc(collection(db,'light_memory_files'),{title:idata.title,details:`${idata.aiSummary}\n\nAI観察：${idata.aiObservation}\n\nトラブル：${String(catalog.trouble||'(なし)')}\n\n人間メモ：${idata.humanNote||'(なし)'}`,keywords:idata.tags,tags:idata.tags,category:idata.category,subcategory:idata.subcategory,staffRole:idata.staffRole,scopeType,scopeId,bandId:sessionBandId,bandName:sessionBandName,kind:'photo',imageId,storagePath:path,sourceName:idata.originalName||'会話中の写真',directAnswer:false,enabled:true,status:'processing',eventId:'',privacy,adminVisible,referenceAllowed:true,suppressed:false,authUid:uid,createdBy:sessionUserKey,ownerUid:uid,relatedUids,createdAt:stamp,updatedAt:stamp,personCandidates});
     await updateDoc(doc(db,'light_images',imageId),{status:'ready',updatedAt:now(),memoryFileId:mf.id});await updateDoc(doc(db,'light_memory_files',mf.id),{status:'ready',updatedAt:now()});window.lastSavedMemory={kind:'photo',id:mf.id,imageId};window.lastSavedMemoryAt=now();window.lastMemorySourceText=String(originalText||photo.originalName||'').slice(0,2500);
     if(scopeType==='band')await saveRelation({aType:'person',aId:sessionUserKey,bType:'photo',bId:imageId,relationType:'uploaded_photo',scopeType:'band',scopeId:sessionBandId,strength:.55,confidence:1,sourceType:'user_action',adminVisible,privacy,relatedUids:[uid]});
@@ -897,7 +978,7 @@ async function archivePhoto(photo,catalog,originalText){
     const eventId=await upsertTimelineFromCatalog(catalog,imageId,mf.id);if(eventId){await updateDoc(doc(db,'light_images',imageId),{eventId,eventTitle:catalog.timelineTitle||catalog.title||'',updatedAt:now()});await updateDoc(doc(db,'light_memory_files',mf.id),{eventId,updatedAt:now()});await saveRelation({aType:'photo',aId:imageId,bType:'event',bId:eventId,relationType:'photo_of_event',scopeType:scopeType==='personal'?'band':scopeType,scopeId:scopeType==='personal'?sessionBandId:scopeId,strength:.75,confidence:.8,sourceType:'ai_catalog',adminVisible,privacy,relatedUids:[uid]});}
     return imageId;
   }catch(e){
-    await deleteDoc(doc(db,'light_images',imageId)).catch(()=>{});await deleteObject(storageRef(storage,path)).catch(()=>{});void mx4LogError(e,'photo-persist');throw e;
+    await mx4DeleteSubcollection('light_images',imageId,'chunks').catch(()=>{});await deleteDoc(doc(db,'light_images',imageId)).catch(()=>{});void mx4LogError(e,'photo-persist');throw e;
   }
 }
 async function autoArchivePhotos(photos,display,reply){
@@ -1039,32 +1120,109 @@ async function processUserInputCore(text){
   }catch(e){console.error(e);addLog('システムエラー',e.message||'AI通信に失敗しました。保存済み情報で続行できる場合はそうします。','error');void mx4LogError(e,'chat');}
   finally{sendBtn.disabled=false;chatInput.disabled=false;talkBtn.disabled=false;$('photo-btn').disabled=false;sendBtn.textContent='送信';clearAttachments();chatInput.focus();}
 }
-let liveSocket=null,liveAudioContext=null,liveMicStream=null,liveInputSource=null,liveScriptNode=null;
-let liveNextAudioTime=0,liveActiveSources=new Set(),liveInputText='',liveOutputText='',liveConnecting=false,liveEnabled=false,liveStopping=false,liveReconnectAttempts=0;
+let liveSession=null,liveReceiveTask=null,liveAudioContext=null,liveMicStream=null,liveInputSource=null,liveScriptNode=null;
+let liveNextAudioTime=0,liveActiveSources=new Set(),liveInputText='',liveOutputText='',liveConnecting=false,liveEnabled=false,liveStopping=false,liveDisconnectBusy=false,liveReconnectAttempts=0;
 let voiceRecognition=null,voiceRecognitionFinal='',voiceRecognitionTimer=null,voiceConversationActive=false,voiceSpeaking=false;
 function voiceUI(){talkBtn.textContent=voiceMode?(liveEnabled?'🟣':'🟢'):'🎙️';talkBtn.title=voiceMode?(liveEnabled?'リアルタイム会話中':'音声会話'):'音声入力';}
 function base64ToBytes(b64){const s=atob(String(b64||''));const a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a;}
 function bytesToBase64(bytes){let s='';for(let i=0;i<bytes.length;i+=0x8000)s+=String.fromCharCode(...bytes.subarray(i,i+0x8000));return btoa(s);}
 function downsampleTo16k(input,rate){const ratio=rate/16000;if(ratio<=1){const out=new Int16Array(input.length);for(let i=0;i<input.length;i++){const v=Math.max(-1,Math.min(1,input[i]));out[i]=v<0?v*0x8000:v*0x7fff;}return out;}const out=new Int16Array(Math.max(1,Math.floor(input.length/ratio)));for(let i=0;i<out.length;i++){const a=Math.floor(i*ratio),b=Math.min(input.length,Math.floor((i+1)*ratio));let sum=0,n=0;for(let j=a;j<b;j++){sum+=input[j];n++;}const v=Math.max(-1,Math.min(1,n?sum/n:0));out[i]=v<0?v*0x8000:v*0x7fff;}return out;}
 function clearLiveAudio(){for(const source of liveActiveSources){try{source.stop();}catch(_){}try{source.disconnect();}catch(_){} }liveActiveSources.clear();liveNextAudioTime=0;voiceSpeaking=false;}
-function playLivePcm(b64){if(window.isMuted||!liveAudioContext)return;const bytes=base64ToBytes(b64),len=bytes.byteLength-(bytes.byteLength%2);if(len<2)return;const pcm=new Int16Array(bytes.buffer,bytes.byteOffset,len/2);const buffer=liveAudioContext.createBuffer(1,pcm.length,24000),channel=buffer.getChannelData(0);for(let i=0;i<pcm.length;i++)channel[i]=pcm[i]/32768;const source=liveAudioContext.createBufferSource();source.buffer=buffer;source.connect(liveAudioContext.destination);const nowTime=liveAudioContext.currentTime;if(liveNextAudioTime<nowTime)liveNextAudioTime=nowTime+0.02;if(liveNextAudioTime-nowTime>1.2)liveNextAudioTime=nowTime+0.03;source.start(liveNextAudioTime);liveNextAudioTime+=buffer.duration;liveActiveSources.add(source);voiceSpeaking=true;source.onended=()=>{liveActiveSources.delete(source);if(!liveActiveSources.size)voiceSpeaking=false;};}
-async function stopLiveAudio(){clearLiveAudio();if(liveScriptNode){try{liveScriptNode.disconnect();}catch(_){}liveScriptNode=null;}if(liveInputSource){try{liveInputSource.disconnect();}catch(_){}liveInputSource=null;}if(liveMicStream){liveMicStream.getTracks().forEach(t=>t.stop());liveMicStream=null;}if(liveAudioContext){try{await liveAudioContext.close();}catch(_){}liveAudioContext=null;}}
+function playLivePcm(b64){if(window.isMuted||!liveAudioContext)return;const bytes=typeof b64==='string'?base64ToBytes(b64):new Uint8Array(b64||[]);const len=bytes.byteLength-(bytes.byteLength%2);if(len<2)return;const pcm=new Int16Array(bytes.buffer,bytes.byteOffset,len/2);const buffer=liveAudioContext.createBuffer(1,pcm.length,24000),channel=buffer.getChannelData(0);for(let i=0;i<pcm.length;i++)channel[i]=pcm[i]/32768;const source=liveAudioContext.createBufferSource();source.buffer=buffer;source.connect(liveAudioContext.destination);const nowTime=liveAudioContext.currentTime;if(liveNextAudioTime<nowTime)liveNextAudioTime=nowTime+0.02;if(liveNextAudioTime-nowTime>1.2)liveNextAudioTime=nowTime+0.03;source.start(liveNextAudioTime);liveNextAudioTime+=buffer.duration;liveActiveSources.add(source);voiceSpeaking=true;source.onended=()=>{liveActiveSources.delete(source);if(!liveActiveSources.size)voiceSpeaking=false;};}
+async function stopLiveAudio(){
+  clearLiveAudio();
+  if(liveScriptNode){try{liveScriptNode.disconnect();}catch(_){}liveScriptNode.onaudioprocess=null;liveScriptNode=null;}
+  if(liveInputSource){try{liveInputSource.disconnect();}catch(_){}liveInputSource=null;}
+  if(liveMicStream){liveMicStream.getTracks().forEach(t=>t.stop());liveMicStream=null;}
+  if(liveAudioContext){try{await liveAudioContext.close();}catch(_){}liveAudioContext=null;}
+  const old=liveSession;liveSession=null;
+  if(old){try{await old.close();}catch(_){}}
+}
 function liveSystemInstruction(){return String(makeSystemInstruction('リアルタイム音声会話',false)||'').replace(/\[BRAIN:[\s\S]*?\]/g,'').slice(0,12000);}
 async function finishLiveTurn(){if(finishLiveTurn.busy)return;finishLiveTurn.busy=true;try{const user=liveInputText.trim(),reply=liveOutputText.trim();liveInputText='';liveOutputText='';$('chat-input').value='';if(user){addLog('あなた',user,'user');window.conversationHistory.push({role:'user',parts:[{text:user}]});}if(reply){const who=window.autoMode==='oto'?'オト':'ライト';addLog(who,reply,'ai');window.conversationHistory.push({role:'model',parts:[{text:reply}]});}window.conversationHistory=normalizeHistory(window.conversationHistory).slice(-12);queueBrainSave();void saveConversationHistory();if(user){const mode=standaloneOverride(user);if(mode){setOperationalOverride(mode);avatarRuntime.mode=mode==='oto'?'oto':'light';if(avatarConfig.betaEnabled)showAvatarMode(avatarRuntime.mode);if(voiceConversationActive)setTimeout(()=>{if(voiceConversationActive)void restartLiveConversation();},30);}else if(explicitNoSaveCommand(user))void handleRememberOverride(user);else if(explicitForgetCommand(user))void handleForgetRequest(user);else if(explicitMemoryCommand(user))void persistMemoryDecision(user,{decision:'save',title:`会話からの記憶：${user.slice(0,48)}`,summary:user,importance:5,certainty:'user_stated',validity:'current',memoryType:'fact',privacy:'public',scopeType:'personal',tags:[],keywords:[],relations:[]});}}finally{finishLiveTurn.busy=false;}}
-function connectLiveSocket(token){return new Promise((resolve,reject)=>{let settled=false;const finish=(ok,error)=>{if(settled)return;settled=true;clearTimeout(timer);ok?resolve():reject(error);};const socket=new WebSocket(`wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(token)}`);liveSocket=socket;const timer=setTimeout(()=>finish(false,new Error('リアルタイム音声の接続が時間内に完了しませんでした。')),5000);socket.onopen=()=>{socket.send(JSON.stringify({setup:{model:'models/gemini-3.8-live',generationConfig:{responseModalities:['AUDIO']},inputAudioTranscription:{},outputAudioTranscription:{},sessionResumption:{},systemInstruction:{parts:[{text:liveSystemInstruction()}]}}}));};socket.onmessage=event=>{try{const msg=JSON.parse(event.data);if(msg.setupComplete){liveConnecting=false;liveEnabled=true;liveReconnectAttempts=0;voiceUI();setStatus('');finish(true);return;}const sc=msg.serverContent;if(sc?.inputTranscription?.text){liveInputText+=String(sc.inputTranscription.text);$('chat-input').value=liveInputText;setStatus('聞き取り中：'+liveInputText.slice(-80));}if(sc?.outputTranscription?.text){liveOutputText+=String(sc.outputTranscription.text);setStatus('ライトが返答中…');}for(const part of (sc?.modelTurn?.parts||[])){const audio=part?.inlineData?.data||part?.inline_data?.data;if(audio)playLivePcm(audio);}if(sc?.interrupted)clearLiveAudio();if(sc?.turnComplete)void finishLiveTurn();}catch(error){console.debug('live message parse failed',error);}};socket.onerror=()=>finish(false,new Error('リアルタイム音声に接続できませんでした。'));socket.onclose=()=>{clearTimeout(timer);const intentional=liveStopping;liveSocket=null;liveEnabled=false;liveConnecting=false;voiceUI();if(!intentional&&voiceConversationActive)void handleLiveDisconnect();};});}
-async function startLiveConversation(){if(liveConnecting||liveEnabled||!voiceConversationActive||!auth.currentUser)return false;liveConnecting=true;liveStopping=false;voiceUI();setStatus('リアルタイム会話を起動中…');try{if(!window.isSecureContext)throw new Error('HTTPSで開いているページでのみリアルタイム会話を使えます。');if(!navigator.mediaDevices?.getUserMedia||!window.WebSocket)throw new Error('このブラウザではリアルタイム会話を使えません。');const tokenResponse=await mightyXLiveToken({mode:window.autoMode==='oto'?'oto':'light'});const token=String(tokenResponse.data?.token||'');if(!token)throw new Error('リアルタイム会話用の認証を取得できませんでした。');await stopLiveAudio();liveAudioContext=new (window.AudioContext||window.webkitAudioContext)();await liveAudioContext.resume();liveMicStream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}});liveInputSource=liveAudioContext.createMediaStreamSource(liveMicStream);liveScriptNode=liveAudioContext.createScriptProcessor(2048,1,1);liveInputSource.connect(liveScriptNode);liveScriptNode.connect(liveAudioContext.destination);const sampleRate=liveAudioContext.sampleRate;liveScriptNode.onaudioprocess=event=>{const out=event.outputBuffer.getChannelData(0);out.fill(0);if(!liveSocket||liveSocket.readyState!==WebSocket.OPEN||!liveEnabled)return;const pcm=downsampleTo16k(event.inputBuffer.getChannelData(0),sampleRate);if(pcm.length)liveSocket.send(JSON.stringify({realtimeInput:{audio:{data:bytesToBase64(new Uint8Array(pcm.buffer)),mimeType:'audio/pcm;rate=16000'}}}));};await connectLiveSocket(token);return true;}catch(error){console.debug('live start failed',error);liveConnecting=false;liveEnabled=false;voiceUI();await stopLiveAudio();liveStopping=true;if(liveSocket){try{liveSocket.close();}catch(_){}liveSocket=null;}liveStopping=false;setStatus('');return false;}}
-async function handleLiveDisconnect(){if(!voiceConversationActive)return;if(liveReconnectAttempts<2){liveReconnectAttempts++;setStatus('再接続中…');setTimeout(async()=>{if(!voiceConversationActive||liveEnabled||liveConnecting)return;const ok=await startLiveConversation();if(!ok&&liveReconnectAttempts>=2)fallbackVoiceStart();},700);}else fallbackVoiceStart();}
-async function restartLiveConversation(){if(!voiceConversationActive)return;liveStopping=true;if(liveSocket){try{liveSocket.close();}catch(_){}liveSocket=null;}await stopLiveAudio();liveStopping=false;liveEnabled=false;liveConnecting=false;voiceUI();void startLiveConversation();}
+function extractLiveContent(message){
+  const candidates=[message?.serverContent,message?.payload?.serverContent,message?.payload?.content,message?.content,message?.payload];
+  for(const c of candidates){if(c&&(c.modelTurn||c.inputTranscription||c.outputTranscription||c.turnComplete||c.interrupted))return c;}
+  if(String(message?.type||'').toLowerCase().includes('servercontent'))return message;
+  return null;
+}
+async function receiveLiveMessages(session){
+  try{
+    for await(const message of session.receive()){
+      if(liveStopping||liveSession!==session||!voiceConversationActive)break;
+      const sc=extractLiveContent(message);if(!sc)continue;
+      const inText=sc.inputTranscription?.text||sc.inputAudioTranscription?.text||'';
+      const outText=sc.outputTranscription?.text||sc.outputAudioTranscription?.text||'';
+      if(inText){liveInputText+=String(inText);$('chat-input').value=liveInputText.slice(-500);setStatus('聞き取り中：'+liveInputText.slice(-80));}
+      if(outText){liveOutputText+=String(outText);setStatus('ライトが返答中…');}
+      for(const part of (sc.modelTurn?.parts||sc.model_turn?.parts||[])){
+        const audio=part?.inlineData?.data||part?.inline_data?.data;
+        if(audio){playLivePcm(audio);}
+        const txt=part?.text;if(txt&&!outText)liveOutputText+=String(txt);
+      }
+      if(sc.interrupted)clearLiveAudio();
+      if(sc.turnComplete||sc.isTurnComplete)void finishLiveTurn();
+    }
+  }catch(error){
+    if(!liveStopping&&voiceConversationActive){console.warn('Firebase AI Logic Live session closed',error);void handleLiveDisconnect();}
+  }
+}
+async function startLiveConversation(){
+  if(liveConnecting||liveEnabled||!voiceConversationActive||!auth.currentUser)return false;
+  liveConnecting=true;liveStopping=false;voiceUI();setStatus('リアルタイム会話を起動中…');
+  try{
+    if(!window.isSecureContext)throw new Error('HTTPSで開いているページでのみリアルタイム会話を使えます。');
+    if(!navigator.mediaDevices?.getUserMedia)throw new Error('このブラウザではリアルタイムマイク入力を使えません。');
+    if(liveSession||liveAudioContext||liveMicStream)await stopLiveAudio();
+    // Start microphone/audio context inside the user's button gesture for mobile autoplay permissions.
+    liveAudioContext=new (window.AudioContext||window.webkitAudioContext)();await liveAudioContext.resume();
+    liveMicStream=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    const settings=await loadAIRuntimeSettings();
+    const liveModel=getLiveGenerativeModel(firebaseAI,{
+      model:settings.liveModel,
+      systemInstruction:{parts:[{text:liveSystemInstruction()}]},
+      generationConfig:{responseModalities:[ResponseModality.AUDIO]},
+      inputAudioTranscription:{},
+      outputAudioTranscription:{}
+    });
+    liveSession=await liveModel.connect();
+    const currentSession=liveSession;liveEnabled=true;liveConnecting=false;liveReconnectAttempts=0;voiceUI();setStatus('リアルタイム会話中');
+    liveReceiveTask=receiveLiveMessages(currentSession);
+    liveInputSource=liveAudioContext.createMediaStreamSource(liveMicStream);
+    liveScriptNode=liveAudioContext.createScriptProcessor(2048,1,1);
+    liveInputSource.connect(liveScriptNode);liveScriptNode.connect(liveAudioContext.destination);
+    const sampleRate=liveAudioContext.sampleRate;
+    liveScriptNode.onaudioprocess=event=>{
+      const out=event.outputBuffer.getChannelData(0);out.fill(0);
+      if(!liveSession||liveSession!==currentSession||!liveEnabled||liveStopping)return;
+      const pcm=downsampleTo16k(event.inputBuffer.getChannelData(0),sampleRate);
+      if(pcm.length){
+        const b64=bytesToBase64(new Uint8Array(pcm.buffer));
+        try{const sent=currentSession.sendAudioRealtime(new Uint8Array(pcm.buffer));if(sent&&typeof sent.catch==='function')sent.catch(e=>console.debug('live input chunk skipped',e));}
+        catch(e){console.debug('live input chunk failed',e);}
+      }
+    };
+    return true;
+  }catch(error){
+    console.warn('Firebase AI Logic Live start failed',error);
+    liveConnecting=false;liveEnabled=false;voiceUI();await stopLiveAudio();setStatus('');
+    addLog('システム',aiErrorMessage(error),'error');
+    return false;
+  }
+}
+async function handleLiveDisconnect(){if(!voiceConversationActive||liveDisconnectBusy||liveStopping)return;liveDisconnectBusy=true;liveStopping=true;try{await stopLiveAudio();}finally{liveStopping=false;liveDisconnectBusy=false;}if(!voiceConversationActive)return;if(liveReconnectAttempts<2){liveReconnectAttempts++;setStatus('再接続中…');setTimeout(async()=>{if(!voiceConversationActive||liveEnabled||liveConnecting)return;const ok=await startLiveConversation();if(!ok&&liveReconnectAttempts>=2)fallbackVoiceStart();},700);}else{fallbackVoiceStart();}}
+async function restartLiveConversation(){if(!voiceConversationActive)return;liveStopping=true;await stopLiveAudio();liveStopping=false;liveEnabled=false;liveConnecting=false;voiceUI();void startLiveConversation();}
+
 function fallbackVoiceStart(){if(!voiceConversationActive||liveEnabled)return;setStatus('通常の音声入力に切り替えます。');if(voiceRecognition)startSpeechRecognition();else startMediaRecorderFallback();}
 function startSpeechRecognition(){if(!voiceRecognition||voiceSpeaking||liveEnabled||!voiceMode||!voiceConversationActive)return;clearTimeout(voiceRecognitionTimer);voiceRecognitionFinal='';try{voiceRecognition.start();}catch(_){}voiceUI();}
 function stopSpeechRecognition(){clearTimeout(voiceRecognitionTimer);try{voiceRecognition?.stop();}catch(_){}voiceRecognitionFinal='';}
 function installSpeechRecognitionFallback(){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return false;const r=new SR();voiceRecognition=r;r.lang='ja-JP';r.continuous=true;r.interimResults=true;r.maxAlternatives=1;r.onresult=event=>{let interim='';for(let i=event.resultIndex;i<event.results.length;i++){const t=event.results[i][0].transcript;if(event.results[i].isFinal)voiceRecognitionFinal+=t+' ';else interim+=t;}$('chat-input').value=(voiceRecognitionFinal+interim).trim();clearTimeout(voiceRecognitionTimer);if($('chat-input').value.trim())voiceRecognitionTimer=setTimeout(()=>{const t=voiceRecognitionFinal.trim();voiceRecognitionFinal='';if(t){try{r.stop();}catch(_){}void processUserInputCore(t);}},850);};r.onerror=event=>{if(event.error==='not-allowed'||event.error==='service-not-allowed'){voiceRecognition=null;addLog('システム','マイクの許可が必要です。','error');return;}if(voiceConversationActive&&!liveEnabled)setTimeout(startSpeechRecognition,500);};r.onend=()=>{if(voiceMode&&voiceConversationActive&&!liveEnabled&&!voiceSpeaking)setTimeout(startSpeechRecognition,220);};return true;}
 let fallbackMediaRecorder=null,fallbackMediaStream=null,fallbackChunks=[];
-async function startMediaRecorderFallback(){if(fallbackMediaRecorder||liveEnabled||voiceSpeaking||!voiceMode||!voiceConversationActive)return;if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){addLog('システム','このブラウザでは音声入力を使えません。','error');return;}try{fallbackMediaStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});const mime=['audio/mp4','audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus'].find(x=>MediaRecorder.isTypeSupported?.(x))||'';fallbackMediaRecorder=new MediaRecorder(fallbackMediaStream,mime?{mimeType:mime}:undefined);fallbackChunks=[];fallbackMediaRecorder.ondataavailable=event=>{if(event.data?.size)fallbackChunks.push(event.data);};fallbackMediaRecorder.onstop=async()=>{const recorder=fallbackMediaRecorder;const blob=new Blob(fallbackChunks,{type:recorder?.mimeType||mime||'audio/webm'});fallbackMediaRecorder=null;fallbackChunks=[];fallbackMediaStream?.getTracks().forEach(t=>t.stop());fallbackMediaStream=null;if(blob.size<1200)return;try{const reader=new FileReader();const base64=await new Promise((res,rej)=>{reader.onload=()=>res(String(reader.result||'').split(',')[1]||'');reader.onerror=rej;reader.readAsDataURL(blob);});const result=await mightyXTranscribe({base64,mimeType:blob.type||'audio/webm'});if(result.data?.text)await processUserInputCore(String(result.data.text));}catch(error){addLog('システム','音声を文字にできませんでした。','error');}finally{if(voiceMode&&voiceConversationActive&&!liveEnabled&&!voiceSpeaking)startMediaRecorderFallback();}};fallbackMediaRecorder.start(250);setStatus('聞き取り中…');setTimeout(()=>{if(fallbackMediaRecorder)try{fallbackMediaRecorder.stop();}catch(_){}},7000);}catch(error){addLog('システム','マイクの許可が必要です。','error');}}
+async function startMediaRecorderFallback(){if(fallbackMediaRecorder||liveEnabled||voiceSpeaking||!voiceMode||!voiceConversationActive)return;if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){addLog('システム','このブラウザでは音声入力を使えません。','error');return;}try{fallbackMediaStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});const mime=['audio/mp4','audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus'].find(x=>MediaRecorder.isTypeSupported?.(x))||'';fallbackMediaRecorder=new MediaRecorder(fallbackMediaStream,mime?{mimeType:mime}:undefined);fallbackChunks=[];fallbackMediaRecorder.ondataavailable=event=>{if(event.data?.size)fallbackChunks.push(event.data);};fallbackMediaRecorder.onstop=async()=>{const recorder=fallbackMediaRecorder;const blob=new Blob(fallbackChunks,{type:recorder?.mimeType||mime||'audio/webm'});fallbackMediaRecorder=null;fallbackChunks=[];fallbackMediaStream?.getTracks().forEach(t=>t.stop());fallbackMediaStream=null;if(blob.size<1200)return;try{const reader=new FileReader();const base64=await new Promise((res,rej)=>{reader.onload=()=>res(String(reader.result||'').split(',')[1]||'');reader.onerror=rej;reader.readAsDataURL(blob);});const transcript=await transcribeAudioWithAI(base64,blob.type||'audio/webm');if(transcript)await processUserInputCore(String(transcript));}catch(error){addLog('システム','音声を文字にできませんでした。','error');}finally{if(voiceMode&&voiceConversationActive&&!liveEnabled&&!voiceSpeaking)startMediaRecorderFallback();}};fallbackMediaRecorder.start(250);setStatus('聞き取り中…');setTimeout(()=>{if(fallbackMediaRecorder)try{fallbackMediaRecorder.stop();}catch(_){}},7000);}catch(error){addLog('システム','マイクの許可が必要です。','error');}}
 function stopMediaRecorderFallback(){try{fallbackMediaRecorder?.stop();}catch(_){}if(fallbackMediaStream){fallbackMediaStream.getTracks().forEach(t=>t.stop());fallbackMediaStream=null;}fallbackMediaRecorder=null;fallbackChunks=[];}
-async function toggleVoiceMode(){if(voiceMode){voiceMode=false;voiceConversationActive=false;localStorage.setItem('light_voice_mode','0');liveStopping=true;if(liveSocket){try{liveSocket.close();}catch(_){}liveSocket=null;}await stopLiveAudio();liveStopping=false;liveEnabled=false;liveConnecting=false;stopSpeechRecognition();stopMediaRecorderFallback();applyVoiceMode();voiceUI();setStatus('');return;}voiceMode=true;voiceConversationActive=true;localStorage.setItem('light_voice_mode','1');applyVoiceMode();voiceUI();const ok=await startLiveConversation();if(!ok)fallbackVoiceStart();}
+async function toggleVoiceMode(){if(voiceMode){voiceMode=false;voiceConversationActive=false;localStorage.setItem('light_voice_mode','0');liveStopping=true;await stopLiveAudio();liveStopping=false;liveEnabled=false;liveConnecting=false;stopSpeechRecognition();stopMediaRecorderFallback();applyVoiceMode();voiceUI();setStatus('');return;}voiceMode=true;voiceConversationActive=true;localStorage.setItem('light_voice_mode','1');applyVoiceMode();voiceUI();const ok=await startLiveConversation();if(!ok)fallbackVoiceStart();}
 function installV4TextVoice(){$('send-btn').addEventListener('click',()=>{const t=chatInput.value;chatInput.value='';void processUserInput(t);});chatInput.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.isComposing){event.preventDefault();$('send-btn').click();}});installSpeechRecognitionFallback();talkBtn.addEventListener('click',()=>{if(voiceMode){void toggleVoiceMode();return;}if(voiceRecognition)startSpeechRecognition();else startMediaRecorderFallback();});voiceUI();}
-window.addEventListener('beforeunload',()=>{liveStopping=true;try{liveSocket?.close();}catch(_){}void stopLiveAudio();stopSpeechRecognition();stopMediaRecorderFallback();});
+window.addEventListener('beforeunload',()=>{liveStopping=true;try{void liveSession?.close?.();}catch(_){}void stopLiveAudio();stopSpeechRecognition();stopMediaRecorderFallback();});
 
 
 /* ---------------- explicit action / relation extension ---------------- */
